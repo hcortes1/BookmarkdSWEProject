@@ -5,17 +5,20 @@ from argparse import ArgumentParser
 
 app = Dash(
     __name__,
-    use_pages=True
+    use_pages=True,
 )
+
+app.validation_layout = None
+
 
 app.layout = html.Div([
     dcc.Location(id="url"),
 
-    html.Div(className="header", children=[
+    html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
             html.Div(className="nav-left", children=[
                 dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon', alt='home'), href='/', className='nav-link'),
-                dcc.Link('Trending', href='/trending', className='nav-link'),
+                dcc.Link('Trending', href='/login', className='nav-link'),
                 dcc.Link('Leaderboards', href='/leaderboards', className='nav-link'),
                 dcc.Link('Showcase', href='/showcase', className='nav-link'),
             ]),
@@ -40,18 +43,17 @@ app.layout = html.Div([
     dash.page_container
 ])
 
-
 @app.callback(
-    Output("url", "pathname"),
-    Input("url", "pathname"),
+    Output('header', 'style'),
+    Input('url', 'pathname')
 )
-def sync_dropdown(pathname):
-    ctx = dash.callback_context
-
-    if ctx.triggered_id == "url":
-        return pathname
-
-    return pathname
+def toggle_header(pathname):
+    try:
+        if pathname and pathname.strip('/') == 'login':
+            return {'display': 'none'}
+    except Exception:
+        pass
+    return {}
 
 
 if __name__ == "__main__":
