@@ -14,6 +14,13 @@ pip3 install -r requirements.txt
 python3 app.py --hostname --port
 ```
 
+```bash
+# by default the app runs at
+http://localhost:8050/
+# unless hostname and port were specified
+```
+
+
 Note: you need an `.env` file in `backend/` to be able to connect to the database with the database credentials.
 
 ## About Dash Framework
