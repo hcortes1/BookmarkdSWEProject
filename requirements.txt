@@ -1,1 +1,4 @@
 dash
+python-dotenv 
+psycopg2
+supabase
