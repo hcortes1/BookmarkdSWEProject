@@ -50,15 +50,37 @@ def delete_user_account(user_id):
     cursor = connection.cursor()
 
     try:
-        # Check if user exists
+        # Check if user exists and get their profile image URL
         cursor.execute(
-            "SELECT user_id FROM users WHERE user_id = %s", (user_id,))
-        if not cursor.fetchone():
+            "SELECT user_id, profile_image_url FROM users WHERE user_id = %s", (user_id,))
+        user_record = cursor.fetchone()
+
+        if not user_record:
             cursor.close()
             connection.close()
             return False, "User not found"
 
-        # Delete the user account
+        profile_image_url = user_record[1]  # Get the profile_image_url
+
+        # Delete profile image from Supabase storage if it exists
+        if profile_image_url and supabase and "profile_image" in profile_image_url:
+            try:
+                # Extract filename from URL
+                filename = profile_image_url.split('/')[-1]
+                # Remove query parameters if any
+                if '?' in filename:
+                    filename = filename.split('?')[0]
+
+                # Delete from Supabase storage
+                delete_response = supabase.storage.from_(
+                    "profile_image").remove([filename])
+                print(f"Profile image deleted from storage: {filename}")
+            except Exception as storage_error:
+                # Don't fail the account deletion if image deletion fails
+                print(
+                    f"Warning: Could not delete profile image from storage: {storage_error}")
+
+        # Delete the user account from database
         delete_query = "DELETE FROM users WHERE user_id = %s"
         cursor.execute(delete_query, (user_id,))
 
@@ -73,7 +95,7 @@ def delete_user_account(user_id):
         cursor.close()
         connection.close()
 
-        return True, "User account deleted successfully"
+        return True, "User account and profile image deleted successfully"
 
     except Error as e:
         connection.rollback()

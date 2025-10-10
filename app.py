@@ -55,16 +55,15 @@ def update_nav_right(user_session, pathname):
         # Get user's profile image
         user_id = user_session.get('user_id')
         profile_image_src = '/assets/svg/profile.svg'  # Default fallback
-
+        
         if user_id:
             try:
-                success, message, image_url = settings_backend.get_user_profile_image_url(
-                    user_id)
+                success, message, image_url = settings_backend.get_user_profile_image_url(user_id)
                 if success and image_url and image_url.strip():
                     profile_image_src = image_url
             except Exception as e:
                 print(f"Error loading profile image for navigation: {e}")
-
+        
         # Show user navigation (bookshelf, profile, settings)
         return [
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
