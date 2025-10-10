@@ -128,11 +128,11 @@ def handle_login(n_clicks, username, password):
         return dash.no_update, dash.no_update, dash.no_update
 
     # call backend login function
-    success, message = login_backend.login_user(username, password)
+    success, message, user_id = login_backend.login_user(username, password)
 
     if success:
         # update session and redirect to home page on successful login
-        return '/', dash.no_update, {"logged_in": True, "username": username}
+        return '/', dash.no_update, {"logged_in": True, "username": username, "user_id": user_id}
     else:
         # display error message below the button
         error_message = html.Div(

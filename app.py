@@ -1,6 +1,7 @@
 import dash
 from dash import Dash, html, dcc, Input, Output
 from argparse import ArgumentParser
+import backend.settings as settings_backend
 
 
 app = Dash(
@@ -51,14 +52,33 @@ def update_nav_right(user_session, pathname):
         'logged_in', False) if user_session else False
 
     if is_logged_in:
+        # Get user's profile image
+        user_id = user_session.get('user_id')
+        profile_image_src = '/assets/svg/profile.svg'  # Default fallback
+
+        if user_id:
+            try:
+                success, message, image_url = settings_backend.get_user_profile_image_url(
+                    user_id)
+                if success and image_url and image_url.strip():
+                    profile_image_src = image_url
+            except Exception as e:
+                print(f"Error loading profile image for navigation: {e}")
+
         # Show user navigation (bookshelf, profile, settings)
         return [
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
                      className='bookshelf-img', alt='bookshelf'), href='/profile/bookshelf'),
             dcc.Link(
                 html.Div(className='profile-circle', children=[
-                    html.Img(src='/assets/svg/profile.svg',
-                             className='profile-img', alt='profile')
+                    html.Img(src=profile_image_src,
+                             className='profile-img', alt='profile',
+                             style={
+                                 'width': '32px',
+                                 'height': '32px',
+                                 'border-radius': '50%',
+                                 'object-fit': 'cover'
+                             })
                 ]),
                 href='/profile'
             ),

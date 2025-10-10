@@ -76,7 +76,7 @@ def signup_user(username, email, password):
 def login_user(username, password):
     connection = get_db_connection()
     if not connection:
-        return False, "Database connection failed"
+        return False, "Database connection failed", None
 
     cursor = connection.cursor()
 
@@ -89,12 +89,13 @@ def login_user(username, password):
         WHERE username = %s AND password = %s
     """
     cursor.execute(login_query, (username, hashed_password))
-    user_exists = cursor.fetchone()
+    user_record = cursor.fetchone()
 
     cursor.close()
     connection.close()
 
-    if user_exists:
-        return True, "Login successful"
+    if user_record:
+        user_id = user_record[0]
+        return True, "Login successful", user_id
     else:
-        return False, "Invalid username or password"
+        return False, "Invalid username or password", None
