@@ -1,0 +1,108 @@
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 20px;
+    gap: 40px;
+}
+
+/* Left section (profile + add friend) */
+.profile-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+/* Profile info */
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-user-image {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ddd;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-username {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* Add friend section */
+.add-friend-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.add-friend-title {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.friend-search-input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    width: 220px;
+}
+
+.add-friend-btn {
+    padding: 10px 16px;
+    border: none;
+    background-color: #0091ff;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add-friend-btn:hover {
+    background-color: #0073cc;
+}
+
+/* Right section (scrollable friends list) */
+.profile-right {
+    flex: 1;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-height: 500px;        /* Sets visible height */
+    overflow-y: auto;          /* Enables vertical scroll */
+}
+
+.profile-right::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.friends-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.friends-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.friends-list li {
+    background: white;
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
