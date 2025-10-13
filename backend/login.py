@@ -82,9 +82,9 @@ def login_user(username, password):
 
     hashed_password = hash_password(password)
 
-    # check login credentials
+    # check login credentials and get all user data
     login_query = """
-        SELECT user_id
+        SELECT user_id, username, email, profile_image_url, created_at
         FROM users 
         WHERE username = %s AND password = %s
     """
@@ -95,7 +95,55 @@ def login_user(username, password):
     connection.close()
 
     if user_record:
-        user_id = user_record[0]
-        return True, "Login successful", user_id
+        # Return all user data as a dictionary
+        user_data = {
+            "user_id": user_record[0],
+            "username": user_record[1],
+            "email": user_record[2],
+            "profile_image_url": user_record[3],
+            "created_at": user_record[4].isoformat() if user_record[4] else None
+        }
+        return True, "Login successful", user_data
     else:
         return False, "Invalid username or password", None
+
+
+def refresh_user_session_data(user_id):
+    """Refresh user session data from database"""
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed", None
+
+    cursor = connection.cursor()
+
+    try:
+        # Get all user data
+        query = """
+            SELECT user_id, username, email, profile_image_url, created_at
+            FROM users 
+            WHERE user_id = %s
+        """
+        cursor.execute(query, (user_id,))
+        user_record = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if user_record:
+            # Return updated session data
+            session_data = {
+                "logged_in": True,
+                "user_id": user_record[0],
+                "username": user_record[1],
+                "email": user_record[2],
+                "profile_image_url": user_record[3],
+                "created_at": user_record[4].isoformat() if user_record[4] else None
+            }
+            return True, "Session data refreshed successfully", session_data
+        else:
+            return False, "User not found", None
+
+    except Error as e:
+        cursor.close()
+        connection.close()
+        return False, f"Error refreshing session data: {e}", None
