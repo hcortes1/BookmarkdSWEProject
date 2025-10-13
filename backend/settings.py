@@ -281,3 +281,123 @@ def get_updated_user_data(user_id):
         cursor.close()
         connection.close()
         return False, f"Error retrieving user data: {e}", None
+
+
+def update_username(user_id, new_username):
+    """Update user's username"""
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed"
+
+    cursor = connection.cursor()
+
+    try:
+        # Check if new username already exists
+        cursor.execute("SELECT user_id FROM users WHERE username = %s AND user_id != %s",
+                       (new_username, user_id))
+        if cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return False, "Username already exists"
+
+        # Update username
+        cursor.execute("UPDATE users SET username = %s WHERE user_id = %s",
+                       (new_username, user_id))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return False, "User not found"
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return True, "Username updated successfully"
+
+    except Error as e:
+        connection.rollback()
+        cursor.close()
+        connection.close()
+        return False, f"Error updating username: {e}"
+
+
+def update_password(user_id, current_password, new_password):
+    """Update user's password"""
+    # Import here to avoid circular imports
+    from backend.login import hash_password
+
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed"
+
+    cursor = connection.cursor()
+
+    try:
+        # Verify current password
+        hashed_current = hash_password(current_password)
+        cursor.execute("SELECT user_id FROM users WHERE user_id = %s AND password = %s",
+                       (user_id, hashed_current))
+
+        if not cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return False, "Current password is incorrect"
+
+        # Update password
+        hashed_new = hash_password(new_password)
+        cursor.execute("UPDATE users SET password = %s WHERE user_id = %s",
+                       (hashed_new, user_id))
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return True, "Password updated successfully"
+
+    except Error as e:
+        connection.rollback()
+        cursor.close()
+        connection.close()
+        return False, f"Error updating password: {e}"
+
+
+def update_email(user_id, new_email):
+    """Update user's email"""
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed"
+
+    cursor = connection.cursor()
+
+    try:
+        # Check if new email already exists
+        cursor.execute("SELECT user_id FROM users WHERE email = %s AND user_id != %s",
+                       (new_email, user_id))
+        if cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return False, "Email already exists"
+
+        # Update email
+        cursor.execute("UPDATE users SET email = %s WHERE user_id = %s",
+                       (new_email, user_id))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return False, "User not found"
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return True, "Email updated successfully"
+
+    except Error as e:
+        connection.rollback()
+        cursor.close()
+        connection.close()
+        return False, f"Error updating email: {e}"

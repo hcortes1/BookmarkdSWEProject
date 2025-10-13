@@ -6,168 +6,156 @@ import base64
 dash.register_page(__name__, path='/profile/settings')
 
 layout = html.Div([
+    html.H1("Account Settings", style={
+            'margin': '32px 0 8px 0', 'font-size': '28px', 'font-weight': '600', 'text-align': 'center'}),
+    html.P("Manage your account information", style={
+           'margin': '0 0 32px 0', 'opacity': '0.9', 'font-size': '16px', 'text-align': 'center'}),
+
+    # Account Information Card with Two Columns
     html.Div([
-        html.H1("Settings", className="main-title"),
-
-        # Account section
         html.Div([
-            html.H2("Account Management", style={'margin-bottom': '20px'}),
-
-            # Profile Picture section
+            # Username editing (left column)
             html.Div([
-                html.H3("Profile Picture", style={'margin-bottom': '15px'}),
-
-                # Current profile picture display
+                html.H3("Username"),
                 html.Div([
-                    html.Img(
-                        id="current-profile-image",
-                        src="/assets/default-profile.svg",  # Set default source
-                        style={
-                            'width': '120px',
-                            'height': '120px',
-                            'border-radius': '50%',
-                            'object-fit': 'cover',
-                            'border': '3px solid #ddd',
-                            'margin': '0 auto 15px auto',
-                            'display': 'block',
-                            'background-color': '#f8f9fa',
-                            'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-                            'max-width': '120px',
-                            'max-height': '120px'
-                        }
-                    )
-                ], style={'text-align': 'center', 'margin-bottom': '20px'}),
-
-                # Upload new profile picture
-                html.Div([
-                    dcc.Upload(
-                        id='profile-image-upload',
-                        children=html.Div([
-                            html.I(className="fas fa-cloud-upload-alt",
-                                   style={'margin-right': '8px'}),
-                            'Upload New Profile Picture'
-                        ]),
-                        style={
-                            'width': '100%',
-                            'height': '60px',
-                            'lineHeight': '60px',
-                            'borderWidth': '2px',
-                            'borderStyle': 'dashed',
-                            'borderRadius': '8px',
-                            'textAlign': 'center',
-                            'margin': '10px 0',
-                            'cursor': 'pointer',
-                            'background-color': '#fafafa'
-                        },
-                        multiple=False,
-                        accept='image/*'
+                    dcc.Input(
+                        id='edit-username-input',
+                        type='text',
+                        placeholder='Enter new username',
+                        className='form-input',
+                        style={'width': '100%', 'margin-bottom': '10px'}
                     ),
-
-                    # Delete profile picture button
                     html.Button(
-                        "Remove Profile Picture",
-                        id="delete-profile-image-button",
-                        style={
-                            'background-color': '#6c757d',
-                            'color': 'white',
-                            'border': 'none',
-                            'padding': '8px 16px',
-                            'margin': '10px 0',
-                            'border-radius': '5px',
-                            'cursor': 'pointer'
-                        }
+                        "Update Username",
+                        id="update-username-button",
+                        className='btn-success',
+                        style={'width': '100%', 'margin-bottom': '5px'}
+                    )
+                ]),
+                html.Div(id='username-feedback',
+                         style={'margin-bottom': '0px'}),
+
+                # Email editing (same column, below username)
+                html.H3("Email"),
+                html.Div([
+                    dcc.Input(
+                        id='edit-email-input',
+                        type='email',
+                        placeholder='Enter new email',
+                        className='form-input',
+                        style={'width': '100%', 'margin-bottom': '10px'}
                     ),
+                    html.Button(
+                        "Update Email",
+                        id="update-email-button",
+                        className='btn-success',
+                        style={'width': '100%'}
+                    )
+                ]),
+                html.Div(id='email-feedback')
+            ], className='column'),
 
-                    # Profile picture feedback
-                    html.Div(id='profile-image-feedback',
-                             style={'margin-top': '10px'})
-                ])
-            ], style={
-                'border': '1px solid #ddd',
-                'border-radius': '8px',
-                'padding': '20px',
-                'margin-bottom': '30px',
-                'background-color': '#f9f9f9'
-            }),
-
-            # Logout button
+            # Password editing (right column)
             html.Div([
-                html.Button(
-                    "Log Out",
-                    id="logout-button",
-                    className="settings-button logout-button",
-                    style={
-                        'background-color': '#007bff',
-                        'color': 'white',
-                        'border': 'none',
-                        'padding': '10px 20px',
-                        'margin': '10px 10px 10px 0',
-                        'border-radius': '5px',
-                        'cursor': 'pointer'
-                    }
-                ),
-            ], style={'margin-bottom': '30px'}),
+                html.H3("Password"),
+                html.Div([
+                    dcc.Input(
+                        id='current-password-input',
+                        type='password',
+                        placeholder='Current password',
+                        className='form-input',
+                        style={'width': '100%', 'margin-bottom': '25px'}
+                    ),
+                    dcc.Input(
+                        id='new-password-input',
+                        type='password',
+                        placeholder='New password',
+                        className='form-input',
+                        style={'width': '100%', 'margin-bottom': '8px'}
+                    ),
+                    dcc.Input(
+                        id='confirm-password-input',
+                        type='password',
+                        placeholder='Confirm new password',
+                        className='form-input',
+                        style={'width': '100%', 'margin-bottom': '10px'}
+                    ),
+                    html.Button(
+                        "Update Password",
+                        id="update-password-button",
+                        className='btn-success',
+                        style={'width': '100%'}
+                    )
+                ]),
+                html.Div(id='password-feedback')
+            ], className='column'),
+        ], className='two-column-container')
+    ], className='settings-card'),
 
-            # Delete account section
-            html.Div([
-                html.H3("Danger Zone", style={
-                        'color': '#dc3545', 'margin-bottom': '15px'}),
-                html.P("Once you delete your account, there is no going back. Please be certain.",
-                       style={'margin-bottom': '15px', 'color': '#666'}),
+    # Profile Picture section
+    html.Div([
+        html.H3("Profile Picture", style={
+                'text-align': 'center', 'margin-bottom': '20px'}),
+        html.Img(
+            id="current-profile-image",
+            src="/assets/svg/default-profile.svg",
+            className="profile-image-preview"
+        ),
+        dcc.Upload(
+            id='profile-image-upload',
+            children=html.Div([
+                html.I(className="fas fa-cloud-upload-alt",
+                       style={'margin-right': '8px'}),
+                'Click or drag to upload new profile picture'
+            ]),
+            className='upload-area',
+            multiple=False,
+            accept='image/*'
+        ),
+        html.Div([
+            html.Button(
+                "Remove Profile Picture",
+                id="delete-profile-image-button",
+                className='btn-danger'
+            )
+        ], style={'text-align': 'center', 'margin-bottom': '15px'}),
+        html.Div(id='profile-image-feedback')
+    ], className='settings-card'),
 
-                # Delete confirmation checkbox
-                dcc.Checklist(
-                    id="delete-confirmation",
-                    options=[
-                        {'label': ' I understand that this action cannot be undone',
-                            'value': 'confirmed'}
-                    ],
-                    value=[],
-                    style={'margin-bottom': '15px'}
-                ),
+    # Account Actions section
+    html.Div([
+        html.Div([
+            html.Button(
+                "Log Out",
+                id="logout-button",
+                className="btn-primary",
+                style={'margin-right': '15px'}
+            ),
+            html.Button(
+                "Delete My Account",
+                id="delete-account-button",
+                className="btn-danger",
+                disabled=True
+            )
+        ], style={'text-align': 'center', 'margin-bottom': '20px'}),
 
-                # Delete account button
-                html.Button(
-                    "Delete My Account",
-                    id="delete-account-button",
-                    className="settings-button delete-button",
-                    disabled=True,
-                    style={
-                        'background-color': '#dc3545',
-                        'color': 'white',
-                        'border': 'none',
-                        'padding': '10px 20px',
-                        'margin': '10px 0',
-                        'border-radius': '5px',
-                        'cursor': 'pointer'
-                    }
-                ),
-
-                # Feedback messages
-                html.Div(id='settings-feedback', style={'margin-top': '15px'})
-            ], style={
-                'border': '1px solid #dc3545',
-                'border-radius': '5px',
-                'padding': '20px',
-                'background-color': '#fff5f5'
-            })
-
-        ], style={'max-width': '600px'})
-
-    ], className="app-container")
-])
+        # Delete confirmation checkbox
+        html.Div([
+            dcc.Checklist(
+                id="delete-confirmation",
+                options=[
+                    {'label': ' I understand that deleting my account cannot be undone',
+                        'value': 'confirmed'}
+                ],
+                value=[],
+                style={'margin-bottom': '15px'}
+            ),
+            html.Div(id='settings-feedback')
+        ], style={'text-align': 'center'})
+    ], className='settings-card')
+], className="settings-page")
 
 
-# Callback to enable/disable delete button based on confirmation
-@callback(
-    Output('delete-account-button', 'disabled'),
-    Input('delete-confirmation', 'value')
-)
-def toggle_delete_button(confirmation):
-    return 'confirmed' not in (confirmation or [])
-
-
-# Callback to handle logout
 @callback(
     Output('url', 'pathname', allow_duplicate=True),
     Output('user-session', 'data', allow_duplicate=True),
@@ -180,11 +168,11 @@ def handle_logout(n_clicks):
 
     # Clear session and redirect to home page
     return '/', {
-        "logged_in": False, 
-        "username": None, 
-        "user_id": None, 
-        "email": None, 
-        "profile_image_url": None, 
+        "logged_in": False,
+        "username": None,
+        "user_id": None,
+        "email": None,
+        "profile_image_url": None,
         "created_at": None
     }
 
@@ -220,11 +208,11 @@ def handle_delete_account(n_clicks, session_data, confirmation):
     if success:
         # Account deleted successfully - clear session and redirect to home
         return dash.no_update, '/', {
-            "logged_in": False, 
-            "username": None, 
-            "user_id": None, 
-            "email": None, 
-            "profile_image_url": None, 
+            "logged_in": False,
+            "username": None,
+            "user_id": None,
+            "email": None,
+            "profile_image_url": None,
             "created_at": None
         }
     else:
@@ -246,7 +234,7 @@ def load_current_profile_image(session_data, pathname):
 
     if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
         # Default profile image if not logged in
-        return '/assets/default-profile.svg'
+        return '/assets/svg/default-profile.svg'
 
     # Use profile image from session data first
     profile_image_url = session_data.get('profile_image_url')
@@ -254,7 +242,7 @@ def load_current_profile_image(session_data, pathname):
         return profile_image_url
     else:
         # Return default profile image if no custom image in session
-        return '/assets/default-profile.svg'
+        return '/assets/svg/default-profile.svg'
 
 
 # Callback to handle profile image upload
@@ -299,7 +287,7 @@ def handle_profile_image_upload(contents, filename, session_data):
             # Update session data with new profile image URL
             updated_session = session_data.copy()
             updated_session['profile_image_url'] = image_url
-            
+
             return html.Div("Profile picture updated successfully!",
                             style={'color': 'green'}), image_url, updated_session
         else:
@@ -336,9 +324,180 @@ def handle_profile_image_deletion(n_clicks, session_data):
         # Update session data to remove profile image URL
         updated_session = session_data.copy()
         updated_session['profile_image_url'] = None
-        
+
         return html.Div("Profile picture removed successfully!",
-                        style={'color': 'green'}), '/assets/default-profile.svg', updated_session
+                        style={'color': 'green'}), '/assets/svg/default-profile.svg', updated_session
     else:
         return html.Div(f"Error removing profile picture: {message}",
                         style={'color': 'red'}), dash.no_update, dash.no_update
+
+
+# Callback to handle username updates
+@callback(
+    Output('username-feedback', 'children'),
+    Output('user-session', 'data', allow_duplicate=True),
+    Output('edit-username-input', 'value'),
+    Input('update-username-button', 'n_clicks'),
+    State('edit-username-input', 'value'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def handle_username_update(n_clicks, new_username, session_data):
+    if not n_clicks:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    # Check if user is logged in
+    if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
+        return html.Div("Error: You must be logged in to update your username.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+    if not new_username or not new_username.strip():
+        return html.Div("Error: Username cannot be empty.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+    new_username = new_username.strip()
+    user_id = session_data['user_id']
+
+    # Check if username is the same as current
+    if new_username == session_data.get('username'):
+        return html.Div("Username is already set to this value.",
+                        style={'color': 'orange'}), dash.no_update, ""
+
+    success, message = settings_backend.update_username(user_id, new_username)
+
+    if success:
+        # Update session data with new username
+        updated_session = session_data.copy()
+        updated_session['username'] = new_username
+
+        return html.Div("Username updated successfully!",
+                        style={'color': 'green'}), updated_session, ""
+    else:
+        return html.Div(f"Error: {message}",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+
+# Callback to handle password updates
+@callback(
+    Output('password-feedback', 'children'),
+    Output('current-password-input', 'value'),
+    Output('new-password-input', 'value'),
+    Output('confirm-password-input', 'value'),
+    Input('update-password-button', 'n_clicks'),
+    State('current-password-input', 'value'),
+    State('new-password-input', 'value'),
+    State('confirm-password-input', 'value'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def handle_password_update(n_clicks, current_password, new_password, confirm_password, session_data):
+    if not n_clicks:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Check if user is logged in
+    if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
+        return html.Div("Error: You must be logged in to update your password.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+    # Validate inputs
+    if not current_password or not new_password or not confirm_password:
+        return html.Div("Error: All password fields are required.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+    if new_password != confirm_password:
+        return html.Div("Error: New passwords do not match.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+    if len(new_password) < 4:
+        return html.Div("Error: Password must be at least 4 characters long.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+    # Check if new password is the same as current password
+    if new_password == current_password:
+        return html.Div("Error: New password must be different from current password.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+    user_id = session_data['user_id']
+    success, message = settings_backend.update_password(
+        user_id, current_password, new_password)
+
+    if success:
+        return html.Div("Password updated successfully!",
+                        style={'color': 'green'}), "", "", ""
+    else:
+        return html.Div(f"Error: {message}",
+                        style={'color': 'red'}), dash.no_update, dash.no_update, dash.no_update
+
+
+# Callback to load current username in input placeholder
+@callback(
+    Output('edit-username-input', 'placeholder'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def update_username_placeholder(session_data):
+    if session_data and session_data.get('logged_in') and session_data.get('username'):
+        return f"Current: {session_data['username']}"
+    return "Enter new username"
+
+
+# Callback to handle email updates
+@callback(
+    Output('email-feedback', 'children'),
+    Output('user-session', 'data', allow_duplicate=True),
+    Output('edit-email-input', 'value'),
+    Input('update-email-button', 'n_clicks'),
+    State('edit-email-input', 'value'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def handle_email_update(n_clicks, new_email, session_data):
+    if not n_clicks:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    # Check if user is logged in
+    if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
+        return html.Div("Error: You must be logged in to update your email.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+    if not new_email or not new_email.strip():
+        return html.Div("Error: Email cannot be empty.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+    new_email = new_email.strip().lower()
+    user_id = session_data['user_id']
+
+    # Check if email is the same as current
+    if new_email == session_data.get('email'):
+        return html.Div("Email is already set to this value.",
+                        style={'color': 'orange'}), dash.no_update, ""
+
+    # Basic email validation
+    if '@' not in new_email or '.' not in new_email.split('@')[1]:
+        return html.Div("Error: Please enter a valid email address.",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+    success, message = settings_backend.update_email(user_id, new_email)
+
+    if success:
+        # Update session data with new email
+        updated_session = session_data.copy()
+        updated_session['email'] = new_email
+
+        return html.Div("Email updated successfully!",
+                        style={'color': 'green'}), updated_session, ""
+    else:
+        return html.Div(f"Error: {message}",
+                        style={'color': 'red'}), dash.no_update, dash.no_update
+
+
+# Callback to load current email in input placeholder
+@callback(
+    Output('edit-email-input', 'placeholder'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def update_email_placeholder(session_data):
+    if session_data and session_data.get('logged_in') and session_data.get('email'):
+        return f"Current: {session_data['email']}"
+    return "Enter new email"

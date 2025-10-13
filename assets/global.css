@@ -10,6 +10,11 @@ body, html {
   scroll-behavior: smooth;
 }
 
+/* Ensure content doesn't get hidden behind sticky header */
+#dash-page-content {
+  padding-top: 20px;
+}
+
 .app-container {
   max-width: 80%;
   margin: 40px auto;
