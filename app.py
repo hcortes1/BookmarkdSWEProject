@@ -52,17 +52,13 @@ def update_nav_right(user_session, pathname):
         'logged_in', False) if user_session else False
 
     if is_logged_in:
-        # Get user's profile image
-        user_id = user_session.get('user_id')
+        # Get user's profile image from session data
+        profile_image_url = user_session.get('profile_image_url')
         profile_image_src = '/assets/svg/profile.svg'  # Default fallback
         
-        if user_id:
-            try:
-                success, message, image_url = settings_backend.get_user_profile_image_url(user_id)
-                if success and image_url and image_url.strip():
-                    profile_image_src = image_url
-            except Exception as e:
-                print(f"Error loading profile image for navigation: {e}")
+        # Use profile image from session if available
+        if profile_image_url and profile_image_url.strip():
+            profile_image_src = profile_image_url
         
         # Show user navigation (bookshelf, profile, settings)
         return [

@@ -156,9 +156,81 @@ def your_function(param1, param2):
         return False, f"Database error: {e}"
 ```
 
-### Git Workflow:
+## User Session Management
 
-**DO NOT COMMIT DIRECTLY TO MAIN**
+The application implements a comprehensive user session system that stores all user data upon login for efficient access throughout the app.
+
+### Session Data Structure
+
+When a user logs in, the following data is stored in the browser session:
+
+```python
+session_data = {
+    "logged_in": True,           # Boolean - user authentication status
+    "user_id": 123,             # Integer - unique user identifier
+    "username": "john_doe",     # String - user's username
+    "email": "john@example.com", # String - user's email address
+    "profile_image_url": "https://...", # String - URL to profile image (or None)
+    "created_at": "2025-01-01T12:00:00" # String - ISO format timestamp
+}
+```
+
+### Benefits
+
+- **Reduced Database Calls**: User information is cached in session, eliminating repeated queries
+- **Improved Performance**: Faster page loads with readily available user data
+- **Real-time Updates**: Profile changes immediately reflect across the application
+- **Consistent Access**: Standardized way to access user data throughout the app
+
+### Usage in Pages
+
+Access session data in any page callback:
+
+```python
+from dash import callback, Input, Output, State
+
+@callback(
+    Output('some-output', 'children'),
+    Input('some-input', 'n_clicks'),
+    State('user-session', 'data')
+)
+def handle_user_action(n_clicks, session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return "Please log in"
+    
+    # Access user data
+    user_id = session_data['user_id']
+    username = session_data['username']
+    email = session_data['email']
+    profile_image = session_data['profile_image_url']
+    
+    return f"Welcome, {username}!"
+```
+
+### Session Updates
+
+The session is automatically updated when:
+
+- User logs in (all data populated)
+- Profile image is uploaded/deleted (profile_image_url updated)
+- User logs out (all data cleared)
+- Account is deleted (session cleared)
+
+### Backend Functions
+
+**Login**: `backend/login.py`
+
+- `login_user(username, password)` - Returns complete user data
+- `refresh_user_session_data(user_id)` - Refreshes session from database
+
+**Settings**: `backend/settings.py`
+
+- `get_updated_user_data(user_id)` - Gets fresh user data for updates
+- Profile image functions automatically update session data
+
+### Git Workflow
+
+#### DO NOT COMMIT DIRECTLY TO MAIN
 
 1. Create feature branches from `main`
 2. Make changes in appropriate directories (`pages/` for frontend, `backend/` for logic)

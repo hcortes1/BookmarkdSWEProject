@@ -179,7 +179,14 @@ def handle_logout(n_clicks):
         return dash.no_update, dash.no_update
 
     # Clear session and redirect to home page
-    return '/', {"logged_in": False, "username": None, "user_id": None}
+    return '/', {
+        "logged_in": False, 
+        "username": None, 
+        "user_id": None, 
+        "email": None, 
+        "profile_image_url": None, 
+        "created_at": None
+    }
 
 
 # Callback to handle account deletion
@@ -212,7 +219,14 @@ def handle_delete_account(n_clicks, session_data, confirmation):
 
     if success:
         # Account deleted successfully - clear session and redirect to home
-        return dash.no_update, '/', {"logged_in": False, "username": None, "user_id": None}
+        return dash.no_update, '/', {
+            "logged_in": False, 
+            "username": None, 
+            "user_id": None, 
+            "email": None, 
+            "profile_image_url": None, 
+            "created_at": None
+        }
     else:
         # Show error message
         return html.Div(f"Error deleting account: {message}",
@@ -234,19 +248,12 @@ def load_current_profile_image(session_data, pathname):
         # Default profile image if not logged in
         return '/assets/default-profile.svg'
 
-    user_id = session_data['user_id']
-    try:
-        success, message, image_url = settings_backend.get_user_profile_image_url(
-            user_id)
-
-        if success and image_url and image_url.strip():
-            # Return the actual image URL so the browser can display it
-            return image_url
-        else:
-            # Return default profile image if no custom image
-            return '/assets/default-profile.svg'
-    except Exception as e:
-        print(f"Error loading profile image: {e}")
+    # Use profile image from session data first
+    profile_image_url = session_data.get('profile_image_url')
+    if profile_image_url and profile_image_url.strip():
+        return profile_image_url
+    else:
+        # Return default profile image if no custom image in session
         return '/assets/default-profile.svg'
 
 
@@ -254,6 +261,7 @@ def load_current_profile_image(session_data, pathname):
 @callback(
     Output('profile-image-feedback', 'children'),
     Output('current-profile-image', 'src', allow_duplicate=True),
+    Output('user-session', 'data', allow_duplicate=True),
     Input('profile-image-upload', 'contents'),
     State('profile-image-upload', 'filename'),
     State('user-session', 'data'),
@@ -261,12 +269,12 @@ def load_current_profile_image(session_data, pathname):
 )
 def handle_profile_image_upload(contents, filename, session_data):
     if not contents:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     # Check if user is logged in
     if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
         return html.Div("Error: You must be logged in to upload a profile picture.",
-                        style={'color': 'red'}), dash.no_update
+                        style={'color': 'red'}), dash.no_update, dash.no_update
 
     try:
         # Decode the uploaded file
@@ -276,52 +284,61 @@ def handle_profile_image_upload(contents, filename, session_data):
         # Check file size (limit to 5MB)
         if len(decoded) > 5 * 1024 * 1024:
             return html.Div("Error: File size must be less than 5MB.",
-                            style={'color': 'red'}), dash.no_update
+                            style={'color': 'red'}), dash.no_update, dash.no_update
 
         # Check file type
         if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
             return html.Div("Error: Please upload a valid image file (PNG, JPG, JPEG, GIF, WebP).",
-                            style={'color': 'red'}), dash.no_update
+                            style={'color': 'red'}), dash.no_update, dash.no_update
 
         user_id = session_data['user_id']
         success, message, image_url = settings_backend.upload_profile_image(
             user_id, decoded, filename)
 
         if success:
+            # Update session data with new profile image URL
+            updated_session = session_data.copy()
+            updated_session['profile_image_url'] = image_url
+            
             return html.Div("Profile picture updated successfully!",
-                            style={'color': 'green'}), image_url
+                            style={'color': 'green'}), image_url, updated_session
         else:
             return html.Div(f"Error uploading image: {message}",
-                            style={'color': 'red'}), dash.no_update
+                            style={'color': 'red'}), dash.no_update, dash.no_update
 
     except Exception as e:
         return html.Div(f"Error processing image: {str(e)}",
-                        style={'color': 'red'}), dash.no_update
+                        style={'color': 'red'}), dash.no_update, dash.no_update
 
 
 # Callback to handle profile image deletion
 @callback(
     Output('profile-image-feedback', 'children', allow_duplicate=True),
     Output('current-profile-image', 'src', allow_duplicate=True),
+    Output('user-session', 'data', allow_duplicate=True),
     Input('delete-profile-image-button', 'n_clicks'),
     State('user-session', 'data'),
     prevent_initial_call=True
 )
 def handle_profile_image_deletion(n_clicks, session_data):
     if not n_clicks:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     # Check if user is logged in
     if not session_data or not session_data.get('logged_in') or not session_data.get('user_id'):
         return html.Div("Error: You must be logged in to delete your profile picture.",
-                        style={'color': 'red'}), dash.no_update
+                        style={'color': 'red'}), dash.no_update, dash.no_update
 
     user_id = session_data['user_id']
     success, message = settings_backend.delete_profile_image(user_id)
 
     if success:
+        # Update session data to remove profile image URL
+        updated_session = session_data.copy()
+        updated_session['profile_image_url'] = None
+        
         return html.Div("Profile picture removed successfully!",
-                        style={'color': 'green'}), '/assets/default-profile.svg'
+                        style={'color': 'green'}), '/assets/default-profile.svg', updated_session
     else:
         return html.Div(f"Error removing profile picture: {message}",
-                        style={'color': 'red'}), dash.no_update
+                        style={'color': 'red'}), dash.no_update, dash.no_update

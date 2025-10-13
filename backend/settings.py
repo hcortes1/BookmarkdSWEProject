@@ -244,3 +244,40 @@ def delete_profile_image(user_id):
         cursor.close()
         connection.close()
         return False, f"Error deleting profile image: {e}"
+
+
+def get_updated_user_data(user_id):
+    """Get all current user data for session updates"""
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed", None
+
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT user_id, username, email, profile_image_url, created_at
+            FROM users 
+            WHERE user_id = %s
+        """, (user_id,))
+        user_record = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if user_record:
+            user_data = {
+                "user_id": user_record[0],
+                "username": user_record[1],
+                "email": user_record[2],
+                "profile_image_url": user_record[3],
+                "created_at": user_record[4].isoformat() if user_record[4] else None
+            }
+            return True, "User data retrieved successfully", user_data
+        else:
+            return False, "User not found", None
+
+    except Error as e:
+        cursor.close()
+        connection.close()
+        return False, f"Error retrieving user data: {e}", None
