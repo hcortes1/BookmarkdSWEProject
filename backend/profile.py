@@ -1,104 +1,135 @@
-"""
-Profile + Friends service functions.
+# backend/profile.py
+from typing import Optional, List, Dict, Any
+import json
+import psycopg2
+import psycopg2.extras
+from .db import get_conn
 
-What you can do:
-- get_profile(username=...) or get_profile(user_id=...)  -> dict (includes friends[])
-- update_profile(user_id=..., bio=..., profile_image=..., favorite_books=[...], favorite_authors=[...])
-- add_friend(user_id=..., friend_id=...) / remove_friend(...)
+# ---- READ ----
 
-All functions accept access_token=... to run under the end-user (RLS).
-"""
-
-from __future__ import annotations
-
-from typing import Any, Optional
-from backend.supabase_client import get_client
-
-
-# ---------------------- READ ---------------------- #
-def get_profile(
-    *,
-    username: Optional[str] = None,
-    user_id: Optional[str] = None,
-    access_token: Optional[str] = None,
-) -> dict[str, Any] | None:
+def get_profile_by_id(user_id: str) -> Optional[Dict[str, Any]]:
+    sql = """
+    select id, username, profile_image, bio,
+           coalesce(favorite_books, '[]'::jsonb)  as favorite_books,
+           coalesce(favorite_authors, '[]'::jsonb) as favorite_authors
+      from public.profiles
+     where id = %s
     """
-    Read one profile (joined via view v_profile_with_friends).
-    Returns None if not found.
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, (user_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+def get_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
+    sql = """
+    select id, username, profile_image, bio,
+           coalesce(favorite_books, '[]'::jsonb)  as favorite_books,
+           coalesce(favorite_authors, '[]'::jsonb) as favorite_authors
+      from public.profiles
+     where lower(username) = lower(%s)
     """
-    if not username and not user_id:
-        raise ValueError("Provide username or user_id")
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, (username,))
+        row = cur.fetchone()
+        return dict(row) if row else None
 
-    sb = get_client(access_token)
-    q = sb.table("v_profile_with_friends").select("*")
-    q = q.eq("username", username) if username else q.eq("id", user_id)
-    data = q.limit(1).execute().data
-    return data[0] if data else None
+def list_friends(user_id: str) -> List[Dict[str, Any]]:
+    # Adjust if your friendship is stored differently; this expects a directed table `friends(user_id, friend_id)`
+    sql = """
+    select p.id, p.username, p.profile_image
+      from public.friends f
+      join public.profiles p on p.id = f.friend_id
+     where f.user_id = %s
+     order by p.username
+    """
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, (user_id,))
+        return [dict(r) for r in cur.fetchall()]
 
+# ---- UPDATE ----
 
-# ---------------------- WRITE (PROFILE) ---------------------- #
 def update_profile(
-    *,
     user_id: str,
+    *,
     bio: Optional[str] = None,
     profile_image: Optional[str] = None,
-    favorite_books: Optional[list[str]] = None,
-    favorite_authors: Optional[list[str]] = None,
-    access_token: Optional[str] = None,
-) -> dict[str, int]:
+    favorite_books: Optional[List[str]] = None,
+    favorite_authors: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """
-    Patch fields on public.profiles for the given user_id.
-    Only fields you pass are updated. favorite_* should be lists (jsonb).
-    Returns {"updated": <row_count>}.
+    Partial update: only fields not None are updated.
     """
-    payload: dict[str, Any] = {}
+    sets = []
+    vals: List[Any] = []
+
     if bio is not None:
-        payload["bio"] = bio
+        sets.append("bio = %s")
+        vals.append(bio)
     if profile_image is not None:
-        payload["profile_image"] = profile_image
+        sets.append("profile_image = %s")
+        vals.append(profile_image)
     if favorite_books is not None:
-        payload["favorite_books"] = favorite_books
+        sets.append("favorite_books = %s::jsonb")
+        vals.append(json.dumps(favorite_books))
     if favorite_authors is not None:
-        payload["favorite_authors"] = favorite_authors
+        sets.append("favorite_authors = %s::jsonb")
+        vals.append(json.dumps(favorite_authors))
 
-    if not payload:
-        return {"updated": 0}
+    if not sets:
+        # nothing to update -> return current row
+        prof = get_profile_by_id(user_id)
+        if prof is None:
+            raise ValueError("profile not found")
+        return prof
 
-    sb = get_client(access_token)
-    res = sb.table("profiles").update(payload).eq("id", user_id).execute()
-    return {"updated": len(res.data)}
-
-
-# ---------------------- WRITE (FRIENDS) ---------------------- #
-def _canonical_pair(a: str, b: str) -> tuple[str, str]:
-    """Store friendships once using sorted (min, max) order."""
-    return (a, b) if a <= b else (b, a)
-
-
-def add_friend(
-    *, user_id: str, friend_id: str, access_token: Optional[str] = None
-) -> dict[str, int]:
+    sql = f"""
+    update public.profiles
+       set {", ".join(sets)}
+     where id = %s
+     returning id, username, profile_image, bio,
+               coalesce(favorite_books, '[]'::jsonb)  as favorite_books,
+               coalesce(favorite_authors, '[]'::jsonb) as favorite_authors
     """
-    Insert a friendship in canonical order. If a 409 is thrown by RLS/unique
-    constraints, it means it already exists.
-    Returns {"inserted": <row_count>}.
-    """
-    u, v = _canonical_pair(user_id, friend_id)
-    sb = get_client(access_token)
-    res = sb.table("friends").insert({"user_id": u, "friend_id": v}).execute()
-    return {"inserted": len(res.data)}
+    vals.append(user_id)
 
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, tuple(vals))
+        conn.commit()
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("profile not found")
+        return dict(row)
 
-def remove_friend(
-    *, user_id: str, friend_id: str, access_token: Optional[str] = None
-) -> dict[str, int]:
+# ---- FRIENDS ----
+
+def add_friend_by_username(user_id: str, friend_username: str) -> Dict[str, Any]:
+    # find friend id
+    friend = get_profile_by_username(friend_username)
+    if not friend:
+        raise ValueError("friend username not found")
+    friend_id = friend["id"]
+    if friend_id == user_id:
+        raise ValueError("cannot friend yourself")
+
+    # insert directed edge; add second row too if you want mutual
+    sql = """
+    insert into public.friends(user_id, friend_id)
+    values (%s, %s)
+    on conflict do nothing
     """
-    Remove the canonical friendship pair.
-    Returns {"deleted": <row_count_or_len>}.
-    """
-    u, v = _canonical_pair(user_id, friend_id)
-    sb = get_client(access_token)
-    res = sb.table("friends").delete().eq("user_id", u).eq("friend_id", v).execute()
-    # some client versions return .data, some return .count
-    count = getattr(res, "count", None)
-    return {"deleted": count if isinstance(count, int) else len(res.data or [])}
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(sql, (user_id, friend_id))
+        # (optional) mutual
+        cur.execute(sql, (friend_id, user_id))
+        conn.commit()
+
+    return {"added": True, "friend_id": friend_id}
+
+def remove_friend(user_id: str, friend_id: str) -> Dict[str, Any]:
+    sql = "delete from public.friends where user_id = %s and friend_id = %s"
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(sql, (user_id, friend_id))
+        # (optional) mutual
+        cur.execute(sql, (friend_id, user_id))
+        conn.commit()
+    return {"removed": True}
