@@ -57,7 +57,7 @@ def search_users_by_username(query, current_user_id):
 # Send Friend Request
 def send_friend_request(sender_id, receiver_id):
     """
-    Create a friend request (friends table, status='pending').
+    Create a friend request
     """
     conn = get_db_connection()
     if not conn:
