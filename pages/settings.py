@@ -199,6 +199,17 @@ layout = html.Div([
 ], className="settings-page")
 
 
+# Callback to enable/disable delete account button based on confirmation checkbox
+@callback(
+    Output('delete-account-button', 'disabled'),
+    Input('delete-confirmation', 'value'),
+    prevent_initial_call=False
+)
+def toggle_delete_button(confirmation_value):
+    # Enable button only if checkbox is checked
+    return 'confirmed' not in (confirmation_value or [])
+
+
 @callback(
     Output('url', 'pathname', allow_duplicate=True),
     Output('user-session', 'data', allow_duplicate=True),

@@ -1,6 +1,7 @@
 # backend/openlibrary.py
 import requests
 import json
+import re
 from typing import List, Dict, Any, Optional
 import psycopg2
 import psycopg2.extras
@@ -106,6 +107,118 @@ class OpenLibraryAPI:
         except Exception as e:
             logger.error(f"Error searching authors: {e}")
             return []
+
+    @staticmethod
+    @staticmethod
+    def get_enhanced_book_details(book_key: str) -> Optional[Dict[str, Any]]:
+        """Get enhanced book information focusing on series detection and core metadata"""
+        try:
+            # book_key comes in format like "/works/OL123W" - use it directly
+            url = f"{OpenLibraryAPI.BASE_URL}{book_key}.json"
+
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+
+            work_data = response.json()
+
+            # Get basic work info
+            book_info = {
+                'key': work_data.get('key'),
+                'title': work_data.get('title', 'Unknown Title'),
+                'subjects': work_data.get('subjects', []),
+                'authors': work_data.get('authors', [])
+            }
+
+            # Get description
+            description = ""
+            if isinstance(work_data.get('description'), dict):
+                description = work_data['description'].get('value', '')
+            elif isinstance(work_data.get('description'), str):
+                description = work_data['description']
+            book_info['description'] = description
+
+            # Check for cover from work data first
+            if work_data.get('covers') and work_data['covers']:
+                cover_id = work_data['covers'][0]
+                book_info['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{cover_id}-L.jpg"
+                book_info['cover_id'] = cover_id
+
+            # Get editions data for additional metadata
+            editions_url = f"{OpenLibraryAPI.BASE_URL}{book_key}/editions.json"
+            try:
+                editions_response = requests.get(editions_url, timeout=10)
+                if editions_response.status_code == 200:
+                    editions_data = editions_response.json()
+
+                    # Extract basic data from editions
+                    original_language = None
+                    earliest_date = None
+
+                    for edition in editions_data.get('entries', []):
+                        # Cover images - prioritize covers from editions
+                        if not book_info.get('cover_url'):
+                            # Check for cover in edition
+                            if edition.get('covers') and edition['covers']:
+                                cover_id = edition['covers'][0]
+                                book_info['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{cover_id}-L.jpg"
+                                book_info['cover_id'] = cover_id
+
+                        # Track language from earliest edition (likely original language)
+                        if edition.get('languages') and edition.get('publish_date'):
+                            try:
+                                pub_date = edition['publish_date']
+                                if not earliest_date or pub_date < earliest_date:
+                                    earliest_date = pub_date
+                                    languages = edition['languages']
+                                    if isinstance(languages, list) and languages:
+                                        lang_key = languages[0].get(
+                                            'key', '/languages/en')
+                                        original_language = lang_key.replace(
+                                            '/languages/', '')
+                            except:
+                                pass
+
+                        # Page count
+                        if not book_info.get('page_count') and edition.get('number_of_pages'):
+                            book_info['page_count'] = edition['number_of_pages']
+
+                        # ISBNs
+                        if not book_info.get('isbn_10') and edition.get('isbn_10'):
+                            book_info['isbn_10'] = edition['isbn_10']
+                        if not book_info.get('isbn_13') and edition.get('isbn_13'):
+                            book_info['isbn_13'] = edition['isbn_13']
+
+                        # Publication date
+                        if not book_info.get('publish_date') and edition.get('publish_date'):
+                            book_info['publish_date'] = edition['publish_date']
+
+                    # Set language to original language if found, otherwise fallback logic
+                    if original_language:
+                        book_info['language'] = original_language
+                    elif not book_info.get('language'):
+                        # Fallback: look for any language in any edition
+                        for edition in editions_data.get('entries', [])[:5]:
+                            if edition.get('languages'):
+                                languages = edition['languages']
+                                if isinstance(languages, list) and languages:
+                                    lang_key = languages[0].get(
+                                        'key', '/languages/en')
+                                    book_info['language'] = lang_key.replace(
+                                        '/languages/', '')
+                                    break
+
+                    # Set defaults
+                    book_info.setdefault('language', 'en')
+                    book_info.setdefault('page_count', None)
+
+            except Exception as e:
+                logger.warning(f"Could not fetch editions for {book_key}: {e}")
+
+            return book_info
+
+        except Exception as e:
+            logger.error(f"Error getting enhanced book details: {e}")
+            return None
 
     @staticmethod
     def get_book_details(book_key: str) -> Optional[Dict[str, Any]]:
@@ -309,6 +422,267 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
 
     except Exception as e:
         logger.error(f"Error saving author to database: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optional[int]:
+    """Save book with enhanced data to database, ensuring ISBN uniqueness and filtering duplicates"""
+    try:
+        # Filter out unwanted books first
+        title = book_data.get('title', '').strip()
+
+        # Skip books with problematic titles
+        skip_keywords = [
+            'untitled', 'series collection', 'box set', 'book set',
+            'complete series', 'omnibus', 'anthology'
+        ]
+
+        if any(keyword in title.lower() for keyword in skip_keywords):
+            print(
+                f"DEBUG: Skipping book '{title}' - contains unwanted keywords")
+            return None
+
+        # Skip very short or empty titles
+        if len(title) < 3:
+            print(f"DEBUG: Skipping book '{title}' - title too short")
+            return None
+
+        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Check for similar titles by normalizing them
+            # Remove spaces, punctuation, and convert to lowercase for comparison
+            normalized_current = re.sub(r'[^a-zA-Z0-9]', '', title.lower())
+
+            print(
+                f"DEBUG: Checking for duplicates of '{title}' (normalized: '{normalized_current}')")
+
+            if author_id:
+                # For same author, look for titles that normalize to the same string
+                cur.execute("""
+                    SELECT book_id, title, description, release_date, genre
+                    FROM books 
+                    WHERE author_id = %s AND 
+                          REGEXP_REPLACE(LOWER(title), '[^a-zA-Z0-9]', '', 'g') = %s
+                """, (author_id, normalized_current))
+            else:
+                # For different/unknown authors, be more strict
+                cur.execute("""
+                    SELECT book_id, title, description, release_date, genre
+                    FROM books 
+                    WHERE REGEXP_REPLACE(LOWER(title), '[^a-zA-Z0-9]', '', 'g') = %s
+                """, (normalized_current,))
+
+            similar_books = cur.fetchall()
+
+            print(
+                f"DEBUG: Found {len(similar_books)} similar books for '{title}'")
+            for book in similar_books:
+                print(f"DEBUG: Similar book: '{book['title']}'")
+
+            # If we found similar books, apply deduplication logic
+            if similar_books:
+                current_description = book_data.get('description', '').strip()
+                current_release_date = book_data.get('release_date')
+                current_subjects = book_data.get('subjects', [])
+                current_genre_count = len(
+                    [s for s in current_subjects if s]) if current_subjects else 0
+
+                print(
+                    f"DEBUG: Current book - description: {bool(current_description)}, release_date: {current_release_date}, genres: {current_genre_count}")
+
+                for similar_book in similar_books:
+                    existing_description = similar_book.get(
+                        'description', '').strip()
+                    existing_release_date = similar_book.get('release_date')
+                    existing_genres = similar_book.get('genre', '').split(
+                        ',') if similar_book.get('genre') else []
+                    existing_genre_count = len(
+                        [g for g in existing_genres if g.strip()]) if existing_genres else 0
+
+                    print(
+                        f"DEBUG: Existing book '{similar_book['title']}' - description: {bool(existing_description)}, release_date: {existing_release_date}, genres: {existing_genre_count}")
+
+                    # Rule 1: Keep the one with description if only one has it
+                    if current_description and not existing_description:
+                        print(
+                            f"DEBUG: Current book '{title}' has description, existing doesn't - deleting existing book")
+                        # Delete the existing book and continue with saving current
+                        cur.execute(
+                            "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
+                        continue
+                    elif existing_description and not current_description:
+                        print(
+                            f"DEBUG: Existing book '{similar_book['title']}' has description, current doesn't - skipping current")
+                        return None
+
+                    # Rule 2: If both or neither have descriptions, keep the older one
+                    if current_release_date and existing_release_date:
+                        if current_release_date > existing_release_date:
+                            print(
+                                f"DEBUG: Existing book '{similar_book['title']}' is older ({existing_release_date} vs {current_release_date}) - skipping current")
+                            return None
+                        elif current_release_date < existing_release_date:
+                            print(
+                                f"DEBUG: Current book '{title}' is older ({current_release_date} vs {existing_release_date}) - deleting existing")
+                            cur.execute(
+                                "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
+                            continue
+                        elif current_release_date == existing_release_date:
+                            # Rule 3: Same release date, keep the one with more genres
+                            if current_genre_count <= existing_genre_count:
+                                print(
+                                    f"DEBUG: Existing book '{similar_book['title']}' has more/same genres ({existing_genre_count} vs {current_genre_count}) - skipping current")
+                                return None
+                            else:
+                                print(
+                                    f"DEBUG: Current book '{title}' has more genres ({current_genre_count} vs {existing_genre_count}) - deleting existing")
+                                cur.execute(
+                                    "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
+                                continue
+                    elif existing_release_date and not current_release_date:
+                        print(
+                            f"DEBUG: Existing book '{similar_book['title']}' has release date, current doesn't - skipping current")
+                        return None
+                    elif current_release_date and not existing_release_date:
+                        print(
+                            f"DEBUG: Current book '{title}' has release date, existing doesn't - deleting existing")
+                        cur.execute(
+                            "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
+                        continue
+                    else:
+                        # Neither has release date, compare genres
+                        if current_genre_count <= existing_genre_count:
+                            print(
+                                f"DEBUG: Existing book '{similar_book['title']}' has more/same genres ({existing_genre_count} vs {current_genre_count}) - skipping current")
+                            return None
+                        else:
+                            print(
+                                f"DEBUG: Current book '{title}' has more genres ({current_genre_count} vs {existing_genre_count}) - deleting existing")
+                            cur.execute(
+                                "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
+                            continue
+
+            # Prepare ISBN for uniqueness check
+            isbn = None
+            if book_data.get('isbn_13'):
+                isbn = book_data['isbn_13'][0] if isinstance(
+                    book_data['isbn_13'], list) else book_data['isbn_13']
+            elif book_data.get('isbn_10'):
+                isbn = book_data['isbn_10'][0] if isinstance(
+                    book_data['isbn_10'], list) else book_data['isbn_10']
+            elif book_data.get('isbn'):
+                isbn = book_data['isbn'][0] if isinstance(
+                    book_data['isbn'], list) else book_data['isbn']
+
+            # Check if book already exists by ISBN first (if available)
+            existing = None
+            if isbn:
+                cur.execute(
+                    "SELECT book_id FROM books WHERE isbn = %s", (isbn,))
+                existing = cur.fetchone()
+
+            # If no ISBN match, check by title and author
+            if not existing:
+                if author_id:
+                    cur.execute(
+                        "SELECT book_id FROM books WHERE LOWER(title) = LOWER(%s) AND author_id = %s",
+                        (book_data['title'], author_id)
+                    )
+                else:
+                    cur.execute(
+                        "SELECT book_id FROM books WHERE LOWER(title) = LOWER(%s)",
+                        (book_data['title'],)
+                    )
+                existing = cur.fetchone()
+
+            subjects = book_data.get('subjects', [])
+            # Store all genres as a comma-separated string for database compatibility
+            # Filter out non-genre subjects like "Open Library Staff Picks", nyt: prefixes, etc.
+            filtered_genres = []
+            for subject in subjects:
+                # Skip technical subjects and library-specific tags
+                if any(skip in subject.lower() for skip in [
+                    'nyt:', 'collection', 'open library', 'staff picks', 'protected daisy',
+                    'accessible book', 'lending library', 'in library', 'internet archive',
+                    'overdrive', 'library', 'ebook', 'kindle', 'epub'
+                ]):
+                    continue
+                filtered_genres.append(subject)
+
+            # Take the first 5 genres to avoid overwhelming the database
+            genre = ', '.join(filtered_genres[:5]) if filtered_genres else None
+
+            # Parse release date
+            release_date = None
+            date_fields = ['publish_date',
+                           'first_publish_year', 'first_publish_date']
+            for field in date_fields:
+                if book_data.get(field) and not release_date:
+                    try:
+                        date_str = str(book_data[field]).strip()
+                        if date_str:
+                            year_match = re.search(r'\b(\d{4})\b', date_str)
+                            if year_match:
+                                year = year_match.group(1)
+                                release_date = f"{year}-01-01"
+                                break
+                    except Exception as e:
+                        logger.warning(
+                            f"Error parsing date field {field}: {e}")
+
+            # Generate cover URL
+            cover_url = None
+            if book_data.get('cover_id'):
+                cover_url = f"{OpenLibraryAPI.COVERS_URL}/b/id/{book_data['cover_id']}-L.jpg"
+
+            # Prepare core fields only (no ratings, external IDs, or classifications)
+            language = book_data.get('language', 'en')
+            page_count = book_data.get('page_count')
+
+            if existing:
+                print(
+                    f"DEBUG: Updating existing book {existing['book_id']} with enhanced data")
+                update_sql = """
+                    UPDATE books 
+                    SET isbn = COALESCE(NULLIF(%s, ''), isbn),
+                        genre = COALESCE(NULLIF(%s, ''), genre),
+                        release_date = COALESCE(%s, release_date),
+                        description = COALESCE(NULLIF(%s, ''), description),
+                        cover_url = COALESCE(NULLIF(%s, ''), cover_url),
+                        language = COALESCE(NULLIF(%s, ''), language),
+                        page_count = COALESCE(%s, page_count)
+                    WHERE book_id = %s
+                """
+
+                cur.execute(update_sql, (
+                    isbn, genre, release_date, book_data.get(
+                        'description', ''), cover_url,
+                    language, page_count, existing['book_id']
+                ))
+                conn.commit()
+                return existing['book_id']
+            else:
+                print(f"DEBUG: Inserting new book with enhanced data")
+                insert_sql = """
+                    INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id,
+                                     language, page_count)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING book_id
+                """
+
+                cur.execute(insert_sql, (
+                    book_data['title'], isbn, genre, release_date,
+                    book_data.get('description', ''), cover_url, author_id,
+                    language, page_count
+                ))
+
+                result = cur.fetchone()
+                conn.commit()
+                return result['book_id'] if result else None
+
+    except Exception as e:
+        logger.error(f"Error saving enhanced book to database: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -656,19 +1030,47 @@ def search_authors_only(query: str) -> List[Dict[str, Any]]:
 
 def fetch_work_details_with_retry(work: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Fetch work details with retry logic for concurrent processing
-    Returns book_data dict or None if failed
+    Fetch enhanced work details with retry logic for concurrent processing
+    Returns book_data dict with ratings, language, and other enhanced fields
     """
     work_key = work.get('key')
     if not work_key:
         return None
 
+    # Get enhanced work details with ratings and metadata
+    try:
+        enhanced_details = OpenLibraryAPI.get_enhanced_book_details(work_key)
+        if enhanced_details:
+            # Add any missing fields and ensure proper structure
+            enhanced_details['source'] = 'openlibrary'
+            enhanced_details['key'] = work_key
+
+            # Set default cover URL if not present
+            if not enhanced_details.get('cover_url') and enhanced_details.get('cover_id'):
+                enhanced_details['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{enhanced_details['cover_id']}-L.jpg"
+
+            return enhanced_details
+        else:
+            # Fallback to basic work details if enhanced fetch fails
+            return fetch_basic_work_details(work_key)
+
+    except Exception as e:
+        logger.warning(f"Error fetching enhanced details for {work_key}: {e}")
+        # Fallback to basic work details
+        return fetch_basic_work_details(work_key)
+
+
+def fetch_basic_work_details(work_key: str) -> Optional[Dict[str, Any]]:
+    """
+    Fallback function to fetch basic work details without enhancements
+    """
     # Get work details with retry - optimized for speed
     work_details = None
     for attempt in range(2):  # Reduced to 2 attempts for speed
         try:
             work_url = f"{OpenLibraryAPI.BASE_URL}{work_key}.json"
-            work_response = requests.get(work_url, timeout=10)  # Reduced timeout
+            work_response = requests.get(
+                work_url, timeout=10)  # Reduced timeout
             work_response.raise_for_status()
             work_details = work_response.json()
             break
@@ -693,7 +1095,12 @@ def fetch_work_details_with_retry(work: Dict[str, Any]) -> Optional[Dict[str, An
         'isbn_10': work_details.get('isbn_10', []),
         'isbn_13': work_details.get('isbn_13', []),
         'cover_url': None,
-        'source': 'openlibrary'
+        'source': 'openlibrary',
+        # Default enhanced fields
+        'average_rating': 0.0,
+        'rating_count': 0,
+        'language': 'en',
+        'page_count': None
     }
 
     # Handle description
@@ -707,12 +1114,13 @@ def fetch_work_details_with_retry(work: Dict[str, Any]) -> Optional[Dict[str, An
         cover_id = work_details['covers'][0]
         book_data['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{cover_id}-M.jpg"
 
-    # Simplified editions check - only if absolutely no publication info
-    if (not book_data['isbn_10'] and not book_data['isbn_13'] and 
-        not book_data['publish_date'] and not book_data['first_publish_date']):
+    # Simplified editions check - for publication info and cover if missing
+    if (not book_data['isbn_10'] and not book_data['isbn_13'] and
+            not book_data['publish_date'] and not book_data['first_publish_date']) or not book_data['cover_url']:
         try:
             editions_url = f"{OpenLibraryAPI.BASE_URL}{work_key}/editions.json"
-            editions_response = requests.get(editions_url, timeout=5)  # Very short timeout
+            editions_response = requests.get(
+                editions_url, timeout=5)  # Very short timeout
             if editions_response.status_code == 200:
                 editions_data = editions_response.json()
                 # Only check first edition for speed
@@ -724,6 +1132,10 @@ def fetch_work_details_with_retry(work: Dict[str, Any]) -> Optional[Dict[str, An
                         book_data['isbn_13'] = edition['isbn_13']
                     if edition.get('publish_date'):
                         book_data['publish_date'] = edition['publish_date']
+                    # Try to get cover from edition if work cover not found
+                    if not book_data['cover_url'] and edition.get('covers'):
+                        cover_id = edition['covers'][0]
+                        book_data['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{cover_id}-M.jpg"
         except Exception:
             pass  # Skip editions if it fails - speed is priority
 
@@ -757,7 +1169,7 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
     """
     import time
     import re
-    
+
     print(f"DEBUG: get_or_create_author_with_books called with: {author_data}")
 
     if not author_data.get('key'):
@@ -800,7 +1212,7 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                     SELECT author_id FROM authors 
                     WHERE LOWER(name) = LOWER(%s)
                 """, (merged_author_data['name'],))
-            
+
             existing = cur.fetchone()
             if existing:
                 author_id = existing['author_id']
@@ -832,19 +1244,21 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
         all_works = []
         offset = 0
         limit = 50  # Max per request
-        
+
         while True:
             # Get works list with retry
             works_data = None
             for attempt in range(3):
                 try:
                     params = {'limit': limit, 'offset': offset}
-                    response = requests.get(works_url, params=params, timeout=15)
+                    response = requests.get(
+                        works_url, params=params, timeout=15)
                     response.raise_for_status()
                     works_data = response.json()
                     break
                 except Exception as e:
-                    print(f"DEBUG: Attempt {attempt + 1} failed for offset {offset}: {e}")
+                    print(
+                        f"DEBUG: Attempt {attempt + 1} failed for offset {offset}: {e}")
                     if attempt < 2:
                         time.sleep(2)
                     else:
@@ -853,19 +1267,22 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
             if not works_data or not works_data.get('entries'):
                 print(f"DEBUG: No more works found at offset {offset}")
                 break
-                
+
             current_works = works_data.get('entries', [])
             all_works.extend(current_works)
-            
-            print(f"DEBUG: Fetched {len(current_works)} works at offset {offset}, total so far: {len(all_works)}")
-            
+
+            print(
+                f"DEBUG: Fetched {len(current_works)} works at offset {offset}, total so far: {len(all_works)}")
+
             # If we got fewer works than the limit, we've reached the end
             if len(current_works) < limit:
-                print(f"DEBUG: Reached end of works list, got {len(current_works)} < {limit}")
+                print(
+                    f"DEBUG: Reached end of works list, got {len(current_works)} < {limit}")
                 break
-                
+
             offset += limit
-            time.sleep(0.5)  # Small delay between requests to be respectful to the API
+            # Small delay between requests to be respectful to the API
+            time.sleep(0.5)
 
         print(f"DEBUG: Total works found: {len(all_works)}")
 
@@ -875,9 +1292,9 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
 
         # Collect all book data before inserting using concurrent processing
         books_to_insert = []
-        
+
         print(f"DEBUG: Processing {len(all_works)} works concurrently...")
-        
+
         # Adaptive batch sizing based on total number of works - optimized for API limits
         if len(all_works) <= 100:
             batch_size = 30
@@ -891,28 +1308,30 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
         else:  # 1000+ works
             batch_size = 45
             max_workers = 20
-        
-        print(f"DEBUG: Using batch_size={batch_size}, max_workers={max_workers} for {len(all_works)} works (optimized for API limits)")
-        
+
+        print(
+            f"DEBUG: Using batch_size={batch_size}, max_workers={max_workers} for {len(all_works)} works (optimized for API limits)")
+
         # Process works in batches with concurrent requests
         for i in range(0, len(all_works), batch_size):
             batch = all_works[i:i + batch_size]
             batch_num = i//batch_size + 1
             total_batches = (len(all_works) + batch_size - 1)//batch_size
-            
-            print(f"DEBUG: Processing batch {batch_num}/{total_batches} ({len(batch)} works) - {len(books_to_insert)} books collected so far")
-            
+
+            print(
+                f"DEBUG: Processing batch {batch_num}/{total_batches} ({len(batch)} works) - {len(books_to_insert)} books collected so far")
+
             # Process this batch concurrently with retry for failed works
             batch_results = []
             failed_works = []
-            
+
             # First attempt
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_work = {
-                    executor.submit(fetch_work_details_with_retry, work): work 
+                    executor.submit(fetch_work_details_with_retry, work): work
                     for work in batch
                 }
-                
+
                 for future in as_completed(future_to_work):
                     work = future_to_work[future]
                     try:
@@ -922,20 +1341,22 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                         else:
                             failed_works.append(work)
                     except Exception as e:
-                        print(f"DEBUG: Failed to process work {work.get('key', 'unknown')}: {e}")
+                        print(
+                            f"DEBUG: Failed to process work {work.get('key', 'unknown')}: {e}")
                         failed_works.append(work)
-            
+
             # Retry failed works with smaller concurrency
             if failed_works:
-                print(f"DEBUG: Retrying {len(failed_works)} failed works from batch {batch_num}")
+                print(
+                    f"DEBUG: Retrying {len(failed_works)} failed works from batch {batch_num}")
                 retry_results = []
-                
+
                 with ThreadPoolExecutor(max_workers=min(10, max_workers//2)) as executor:
                     future_to_work = {
-                        executor.submit(fetch_work_details_with_retry, work): work 
+                        executor.submit(fetch_work_details_with_retry, work): work
                         for work in failed_works
                     }
-                    
+
                     for future in as_completed(future_to_work):
                         work = future_to_work[future]
                         try:
@@ -943,15 +1364,18 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                             if book_data:
                                 retry_results.append(book_data)
                         except Exception as e:
-                            print(f"DEBUG: Final failure for work {work.get('key', 'unknown')}: {e}")
-                
+                            print(
+                                f"DEBUG: Final failure for work {work.get('key', 'unknown')}: {e}")
+
                 batch_results.extend(retry_results)
-                print(f"DEBUG: Recovered {len(retry_results)} books from {len(failed_works)} failed works")
-            
+                print(
+                    f"DEBUG: Recovered {len(retry_results)} books from {len(failed_works)} failed works")
+
             books_to_insert.extend(batch_results)
             success_rate = len(batch_results) / len(batch) * 100
-            print(f"DEBUG: Batch {batch_num} completed: +{len(batch_results)} books (total: {len(books_to_insert)}, success rate: {success_rate:.1f}%)")
-            
+            print(
+                f"DEBUG: Batch {batch_num} completed: +{len(batch_results)} books (total: {len(books_to_insert)}, success rate: {success_rate:.1f}%)")
+
             # Longer delay between batches to respect API limits
             if batch_num < total_batches:  # Don't delay after the last batch
                 time.sleep(1.0)  # Increased delay to be more respectful to API
@@ -968,106 +1392,46 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
 
 
 def bulk_insert_books(books_data: List[Dict[str, Any]], author_id: int):
-    """Bulk insert books into database, skipping duplicates with individual transactions and retries"""
+    """Bulk insert books with enhanced data into database, skipping duplicates with individual transactions"""
     try:
         successful_inserts = 0
         failed_inserts = 0
-        
+
         for book_data in books_data:
             # Try to insert each book individually with retries
             for attempt in range(3):
                 try:
-                    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                        # Check if book already exists
-                        cur.execute("""
-                            SELECT book_id FROM books 
-                            WHERE LOWER(title) = LOWER(%s) AND author_id = %s
-                        """, (book_data['title'][:255], author_id))  # Truncate title for check
-                        
-                        if cur.fetchone():
-                            print(f"DEBUG: Book '{book_data['title'][:50]}...' already exists, skipping")
-                            successful_inserts += 1  # Count as successful since it exists
-                            break
+                    # Use the enhanced save function
+                    book_id = save_enhanced_book_to_db(book_data, author_id)
 
-                        # Parse release date
-                        release_date = None
-                        date_str = (book_data.get('publish_date') or 
-                                  book_data.get('first_publish_date') or 
-                                  book_data.get('first_publish_year'))
-                        
-                        if date_str:
-                            try:
-                                import re
-                                year_match = re.search(r'\b(\d{4})\b', str(date_str))
-                                if year_match:
-                                    year = year_match.group(1)
-                                    release_date = f"{year}-01-01"
-                            except Exception as e:
-                                logger.error(f"Error parsing date '{date_str}': {e}")
-
-                        # Get ISBN - truncate to reasonable length
-                        isbn = None
-                        if book_data.get('isbn_13'):
-                            isbn = book_data['isbn_13'][0] if isinstance(book_data['isbn_13'], list) else book_data['isbn_13']
-                        elif book_data.get('isbn_10'):
-                            isbn = book_data['isbn_10'][0] if isinstance(book_data['isbn_10'], list) else book_data['isbn_10']
-                        
-                        if isbn:
-                            isbn = str(isbn)[:50]  # Truncate ISBN to 50 chars
-
-                        # Get genre from subjects - truncate to reasonable length
-                        genre = None
-                        if book_data.get('subjects'):
-                            subjects = book_data['subjects']
-                            if isinstance(subjects, list) and subjects:
-                                genre = str(subjects[0])[:100]  # Truncate genre to 100 chars
-                            elif isinstance(subjects, str):
-                                genre = subjects[:100]
-
-                        # Truncate other fields to prevent length errors
-                        title = str(book_data['title'])[:255]  # Reasonable title length
-                        description = str(book_data.get('description', ''))[:2000]  # Reasonable description length
-                        cover_url = str(book_data.get('cover_url') or '')[:500]  # Reasonable URL length
-
-                        # Insert book with individual transaction
-                        insert_sql = """
-                            INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """
-                        
-                        cur.execute(insert_sql, (
-                            title,
-                            isbn,
-                            genre,
-                            release_date,
-                            description,
-                            cover_url,
-                            author_id
-                        ))
-                        
-                        conn.commit()  # Commit individual transaction
+                    if book_id:
                         successful_inserts += 1
-                        
-                        if successful_inserts % 20 == 0:
-                            print(f"DEBUG: Successfully inserted {successful_inserts} books so far...")
-                        
-                        break  # Success, exit retry loop
+                        print(
+                            f"DEBUG: Successfully saved book '{book_data['title'][:50]}...' with ID {book_id}")
+                        break
+                    else:
+                        print(
+                            f"DEBUG: Failed to save book '{book_data['title'][:50]}...' (attempt {attempt + 1})")
+                        if attempt == 2:  # Last attempt
+                            failed_inserts += 1
+                        else:
+                            time.sleep(0.5)  # Brief pause before retry
 
                 except Exception as e:
-                    if attempt < 2:
-                        print(f"DEBUG: Attempt {attempt + 1} failed for book '{book_data.get('title', 'unknown')[:50]}...': {e}")
-                        time.sleep(0.2)  # Short delay before retry
-                    else:
-                        logger.error(f"Error inserting book '{book_data.get('title', 'unknown')[:50]}...' after 3 attempts: {e}")
+                    print(
+                        f"DEBUG: Error saving book '{book_data['title'][:50]}...' (attempt {attempt + 1}): {e}")
+                    if attempt == 2:  # Last attempt
                         failed_inserts += 1
-                        break
+                    else:
+                        time.sleep(0.5)  # Brief pause before retry
 
-        print(f"DEBUG: Bulk insert completed - {successful_inserts} successful, {failed_inserts} failed")
+        print(
+            f"DEBUG: Bulk insert completed. Successful: {successful_inserts}, Failed: {failed_inserts}")
+        return successful_inserts, failed_inserts
 
     except Exception as e:
         logger.error(f"Error in bulk insert: {e}")
-        import traceback
-        traceback.print_exc()
+        return 0, len(books_data)
 
 
 def get_or_create_book_from_api(book_data: Dict[str, Any]) -> Optional[int]:

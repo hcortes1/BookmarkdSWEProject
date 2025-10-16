@@ -5,94 +5,105 @@ import psycopg2.extras
 from backend.db import get_conn
 from backend.favorites import is_author_favorited, toggle_author_favorite
 from urllib.parse import unquote, parse_qs
+from typing import Dict, Any
 
 dash.register_page(__name__, path_template="/author/<author_id>")
 
 
 def create_pagination_controls(current_page, total_pages, total_books, author_id):
     """Create pagination controls for author books"""
+    # Defensive programming - ensure we have valid numbers
+    current_page = max(1, int(current_page or 1))
+    total_pages = max(1, int(total_pages or 1))
+    total_books = max(0, int(total_books or 0))
+
     controls = []
-    
+
     # Show page info (always show this, even for single page)
     start_book = (current_page - 1) * 80 + 1
     end_book = min(current_page * 80, total_books)
-    
+
     controls.append(
-        html.Div(f"Showing {start_book}-{end_book} of {total_books} books", 
-                className="pagination-info",
-                style={'margin-bottom': '10px', 'text-align': 'center', 'color': '#666'})
+        html.Div(f"Showing {start_book}-{end_book} of {total_books} books",
+                 className="pagination-info",
+                 style={'margin-bottom': '10px', 'text-align': 'center', 'color': '#666'})
     )
-    
+
     # Only show pagination buttons if there are multiple pages
     if total_pages <= 1:
         return controls
-    
+
     # Pagination buttons
     buttons = []
-    
+
     # Previous button
     if current_page > 1:
         buttons.append(
-            html.Button("← Previous", 
-                       id={'type': 'pagination-btn', 'author_id': author_id, 'page': current_page - 1},
-                       className="pagination-btn",
-                       style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
+            html.Button("← Previous",
+                        id={'type': 'pagination-btn',
+                            'author_id': author_id, 'page': current_page - 1},
+                        className="pagination-btn",
+                        style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
         )
-    
+
     # Page number buttons (show up to 7 pages around current)
     start_page = max(1, current_page - 3)
     end_page = min(total_pages, current_page + 3)
-    
+
     if start_page > 1:
         buttons.append(
-            html.Button("1", 
-                       id={'type': 'pagination-btn', 'author_id': author_id, 'page': 1},
-                       className="pagination-btn",
-                       style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
+            html.Button("1",
+                        id={'type': 'pagination-btn',
+                            'author_id': author_id, 'page': 1},
+                        className="pagination-btn",
+                        style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
         )
         if start_page > 2:
             buttons.append(html.Span("...", style={'margin': '0 5px'}))
-    
+
     for page_num in range(start_page, end_page + 1):
         is_current = page_num == current_page
         buttons.append(
             html.Button(str(page_num),
-                       id={'type': 'pagination-btn', 'author_id': author_id, 'page': page_num},
-                       className="pagination-btn",
-                       style={
-                           'margin': '0 2px', 
-                           'padding': '8px 12px', 
+                        id={'type': 'pagination-btn',
+                            'author_id': author_id, 'page': page_num},
+                        className="pagination-btn",
+                        style={
+                'margin': '0 2px',
+                'padding': '8px 12px',
                            'cursor': 'pointer',
                            'background-color': '#007bff' if is_current else '#f8f9fa',
                            'color': 'white' if is_current else 'black',
                            'font-weight': 'bold' if is_current else 'normal'
-                       })
+            })
         )
-    
+
     if end_page < total_pages:
         if end_page < total_pages - 1:
             buttons.append(html.Span("...", style={'margin': '0 5px'}))
         buttons.append(
             html.Button(str(total_pages),
-                       id={'type': 'pagination-btn', 'author_id': author_id, 'page': total_pages},
-                       className="pagination-btn",
-                       style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        id={'type': 'pagination-btn',
+                            'author_id': author_id, 'page': total_pages},
+                        className="pagination-btn",
+                        style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
         )
-    
+
     # Next button
     if current_page < total_pages:
         buttons.append(
             html.Button("Next →",
-                       id={'type': 'pagination-btn', 'author_id': author_id, 'page': current_page + 1},
-                       className="pagination-btn",
-                       style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        id={'type': 'pagination-btn',
+                            'author_id': author_id, 'page': current_page + 1},
+                        className="pagination-btn",
+                        style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
         )
-    
+
     controls.append(
-        html.Div(buttons, 
-                style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'flex-wrap': 'wrap'})
+        html.Div(buttons,
+                 style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'flex-wrap': 'wrap'})
     )
-    
+
     return controls
 
 
@@ -107,8 +118,12 @@ def layout(author_id=None, **kwargs):
         if not author_data:
             return html.Div("Author not found", className="error-message")
 
-        # Get author's books
-        books = get_author_books(author_id)
+        # Get author's books with error handling
+        try:
+            books = get_author_books(author_id)
+        except Exception as e:
+            print(f"Error getting author books: {e}")
+            books = []
 
         return html.Div([
             # Store for favorite status feedback
@@ -205,8 +220,8 @@ def layout(author_id=None, **kwargs):
                     html.Div(id={'type': 'author-books-pagination-top', 'author_id': author_id}, children=[
                         # Initial pagination controls
                         html.Div([
-                            html.P(f"Debug: Total books: {len(books)}, Total pages: {(len(books) + 79) // 80}", style={'color': 'red', 'font-size': '12px'}),
-                            html.Div(create_pagination_controls(1, (len(books) + 79) // 80, len(books), author_id) if len(books) > 0 else [html.P("No books to display.")])
+                            html.Div(create_pagination_controls(1, max(1, (len(books) + 79) // 80), len(
+                                books), author_id) if len(books) > 0 else [html.P("No books to display.")])
                         ])
                     ], style={'margin-bottom': '20px'}),
                     html.Div(
@@ -215,20 +230,23 @@ def layout(author_id=None, **kwargs):
                             # Show first 80 books initially
                             create_book_card(book, author_id) for book in books[:80]
                         ] if books else [html.P("No books found in our database.", className="no-books-message")],
-                        className="books-grid", 
+                        className="books-grid",
                         style={
                             'display': 'grid',
-                            'grid-template-columns': 'repeat(8, 1fr)',  # 8 books per row
+                            # 8 books per row
+                            'grid-template-columns': 'repeat(8, 1fr)',
                             'gap': '20px',  # Increased gap for better spacing
                             'margin-top': '20px'
                         }
                     ),
                     html.Div(id={'type': 'author-books-pagination-bottom', 'author_id': author_id}, children=[
                         # Initial pagination controls
-                        html.Div(create_pagination_controls(1, (len(books) + 79) // 80, len(books), author_id) if len(books) > 0 else [html.P("No books to display.")])
+                        html.Div(create_pagination_controls(1, max(1, (len(books) + 79) // 80), len(
+                            books), author_id) if len(books) > 0 else [html.P("No books to display.")])
                     ], style={'margin-top': '20px'}),
                     # Store for pagination state
-                    dcc.Store(id={'type': 'author-books-page-store', 'author_id': author_id}, data={'current_page': 1, 'books_per_page': 80, 'total_books': len(books)})
+                    dcc.Store(id={'type': 'author-books-page-store', 'author_id': author_id}, data={
+                              'current_page': 1, 'books_per_page': 80, 'total_books': len(books)})
                 ], className="author-books-section", style={
                     'max-width': '1600px',  # Increased width for better space utilization
                     'margin': '30px auto 0',
@@ -250,12 +268,11 @@ def layout(author_id=None, **kwargs):
         return html.Div("Error loading author details", className="error-message")
 
 
-def create_book_card(book, author_id=None):
-    """Create a book card component"""
-    # Create link with author reference if author_id is provided
+def create_book_card(book: Dict[str, Any], author_id: int):
+    """Create a book card for author page display"""
+
+    # Create href for book details
     href = f"/book/{book['book_id']}"
-    if author_id:
-        href += f"?from_author={author_id}"
 
     return html.Div([
         dcc.Link([
@@ -263,7 +280,7 @@ def create_book_card(book, author_id=None):
                 src=book.get('cover_url') or '/assets/svg/default-book.svg',
                 style={
                     'width': '100%',
-                    'height': '200px',  # Increased height for pagination grid
+                    'height': '200px',
                     'object-fit': 'cover',
                     'border-radius': '8px'
                 }
@@ -271,22 +288,15 @@ def create_book_card(book, author_id=None):
             html.Div([
                 html.H4(book['title'], className="book-card-title", style={
                     'font-size': '14px',
-                    'margin': '10px 0 5px',
+                    'margin': '10px 0 0 0',  # Only top margin, no bottom margin
+                    'padding': '0',  # Explicitly set padding to 0
                     'line-height': '1.2',
                     'font-weight': 'bold',
                     'color': '#333',
                     'text-align': 'center',
-                    'height': '40px',
-                    'overflow': 'hidden',
-                    'display': '-webkit-box',
-                    '-webkit-line-clamp': '2',
-                    '-webkit-box-orient': 'vertical'
-                }),
-                html.P(f"Published: {book.get('publication_year', 'Unknown')}", style={
-                    'font-size': '12px',
-                    'color': '#666',
-                    'margin': '0',
-                    'text-align': 'center'
+                    # Remove height constraint and line clamping to show full title
+                    'word-wrap': 'break-word',
+                    'white-space': 'normal'
                 })
             ])
         ], href=href, style={'text-decoration': 'none', 'color': 'inherit'})
@@ -297,7 +307,10 @@ def create_book_card(book, author_id=None):
         'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
         'transition': 'transform 0.2s ease',
         'cursor': 'pointer',
-        'height': '300px'  # Fixed height for grid consistency
+        # Use min-height instead of fixed height to accommodate long titles
+        'min-height': '280px',
+        'display': 'flex',
+        'flex-direction': 'column'
     })
 
 
@@ -319,14 +332,19 @@ def get_author_details(author_id: int):
 
 
 def get_author_books(author_id: int):
-    """Get books by this author"""
+    """Get books by this author, sorted by title (no ratings)"""
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             sql = """
-                SELECT book_id, title, isbn, genre, release_date as publication_year, description, cover_url
+                SELECT book_id, title, isbn, genre, release_date as publication_year, 
+                       description, cover_url, 
+                       COALESCE(language, 'en') as language, 
+                       page_count
                 FROM books
                 WHERE author_id = %s
-                ORDER BY release_date DESC NULLS LAST, title
+                ORDER BY 
+                    COALESCE(release_date, '1900-01-01') DESC, 
+                    title ASC
             """
             cur.execute(sql, (author_id,))
             results = cur.fetchall()
@@ -454,46 +472,60 @@ def handle_author_favorite_click(n_clicks, session_data):
 # Callback to handle pagination clicks
 @callback(
     [Output({'type': 'author-books-page-store', 'author_id': dash.dependencies.MATCH}, 'data'),
-     Output({'type': 'author-books-grid', 'author_id': dash.dependencies.MATCH}, 'children'),
-     Output({'type': 'author-books-pagination-top', 'author_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'author-books-grid',
+            'author_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'author-books-pagination-top',
+            'author_id': dash.dependencies.MATCH}, 'children'),
      Output({'type': 'author-books-pagination-bottom', 'author_id': dash.dependencies.MATCH}, 'children')],
-    [Input({'type': 'pagination-btn', 'author_id': dash.dependencies.MATCH, 'page': dash.dependencies.ALL}, 'n_clicks')],
-    [State({'type': 'author-books-page-store', 'author_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'pagination-btn', 'author_id': dash.dependencies.MATCH,
+           'page': dash.dependencies.ALL}, 'n_clicks')],
+    [State({'type': 'author-books-page-store',
+           'author_id': dash.dependencies.MATCH}, 'data')],
     prevent_initial_call=True
 )
 def handle_pagination_click(clicks_list, page_data):
     """Handle pagination button clicks"""
     if not dash.callback_context.triggered or not any(clicks_list):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-    
+
     # Find which button was clicked
     triggered = dash.callback_context.triggered[0]
     button_id = triggered['prop_id'].split('.')[0]
     button_info = eval(button_id)  # Convert string back to dict
-    
-    new_page = button_info['page']
-    author_id = button_info['author_id']
-    
+
+    # Ensure valid page number
+    new_page = max(1, int(button_info.get('page', 1)))
+    author_id = int(button_info.get('author_id', 0))
+
+    # Ensure page_data is valid
+    if not page_data:
+        page_data = {'current_page': 1, 'books_per_page': 80, 'total_books': 0}
+
     # Update page data
     updated_page_data = {**page_data, 'current_page': new_page}
-    
+
     # Get author's books
     books = get_author_books(author_id)
-    books_per_page = page_data.get('books_per_page', 80)
+    books_per_page = int(page_data.get('books_per_page', 80))
     total_books = len(books)
-    total_pages = (total_books + books_per_page - 1) // books_per_page
-    
+    total_pages = max(1, (total_books + books_per_page - 1) // books_per_page)
+
+    # Ensure new_page is within valid range
+    new_page = max(1, min(new_page, total_pages))
+    updated_page_data['current_page'] = new_page
+
     # Calculate start and end indices for new page
     start_idx = (new_page - 1) * books_per_page
     end_idx = min(start_idx + books_per_page, total_books)
-    
+
     # Get books for new page
     page_books = books[start_idx:end_idx]
-    
+
     # Create book cards
     book_cards = [create_book_card(book, author_id) for book in page_books]
-    
+
     # Create updated pagination controls
-    pagination_controls = create_pagination_controls(new_page, total_pages, total_books, author_id)
-    
+    pagination_controls = create_pagination_controls(
+        new_page, total_pages, total_books, author_id)
+
     return updated_page_data, book_cards, pagination_controls, pagination_controls

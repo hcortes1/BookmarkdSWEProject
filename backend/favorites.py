@@ -73,11 +73,18 @@ def toggle_author_favorite(user_id: int, author_id: int) -> Dict[str, Any]:
 
     except Exception as e:
         print(f"Error toggling author favorite: {e}")
+        # Check if it's a database connection error
+        error_msg = str(e).lower()
+        if any(keyword in error_msg for keyword in ['ssl', 'connection', 'timeout', 'db_termination', 'shutdown']):
+            user_message = "Error adding to favorites. Please try again in a few seconds."
+        else:
+            user_message = "Error updating favorites. Please try again."
+
         return {
             'success': False,
             'action': None,
             'is_favorited': False,
-            'message': f"Error updating favorites: {str(e)}"
+            'message': user_message
         }
 
 
@@ -116,11 +123,18 @@ def toggle_book_favorite(user_id: int, book_id: int) -> Dict[str, Any]:
 
     except Exception as e:
         print(f"Error toggling book favorite: {e}")
+        # Check if it's a database connection error
+        error_msg = str(e).lower()
+        if any(keyword in error_msg for keyword in ['ssl', 'connection', 'timeout', 'db_termination', 'shutdown']):
+            user_message = "Error adding to favorites. Please try again in a few seconds."
+        else:
+            user_message = "Error updating favorites. Please try again."
+
         return {
             'success': False,
             'action': None,
             'is_favorited': False,
-            'message': f"Error updating favorites: {str(e)}"
+            'message': user_message
         }
 
 

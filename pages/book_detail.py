@@ -9,6 +9,30 @@ from urllib.parse import unquote, parse_qs
 dash.register_page(__name__, path_template="/book/<book_id>")
 
 
+def _format_language(language_code):
+    """Format language code into readable language name"""
+    language_map = {
+        'en': 'English',
+        'es': 'Spanish',
+        'fr': 'French',
+        'de': 'German',
+        'it': 'Italian',
+        'pt': 'Portuguese',
+        'ru': 'Russian',
+        'ja': 'Japanese',
+        'zh': 'Chinese',
+        'ar': 'Arabic',
+        'hi': 'Hindi',
+        'ko': 'Korean',
+        'nl': 'Dutch',
+        'sv': 'Swedish',
+        'da': 'Danish',
+        'no': 'Norwegian',
+        'fi': 'Finnish'
+    }
+    return language_map.get(language_code, language_code.upper() if language_code else 'Unknown')
+
+
 def layout(book_id=None, **kwargs):
     if not book_id:
         return html.Div("Book not found", className="error-message")
@@ -71,6 +95,19 @@ def layout(book_id=None, **kwargs):
                             html.Span(str(int(book_data.get('release_year'))) if book_data.get(
                                 'release_year') else 'Unknown')
                         ], className="book-info"),
+
+                        # Language
+                        html.Div([
+                            html.Strong("Language: "),
+                            html.Span(_format_language(
+                                book_data.get('language', 'en')))
+                        ], className="book-info") if book_data.get('language') else html.Div(),
+
+                        # Page count
+                        html.Div([
+                            html.Strong("Pages: "),
+                            html.Span(f"{book_data['page_count']} pages")
+                        ], className="book-info") if book_data.get('page_count') else html.Div(),
 
                         html.Div([
                             html.Strong("ISBN: "),
@@ -140,13 +177,15 @@ def layout(book_id=None, **kwargs):
 
 
 def get_book_details(book_id: int):
-    """Get book details from database"""
+    """Get book details from database including core enhanced fields"""
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             sql = """
                 SELECT b.book_id, b.title, b.isbn, b.genre, 
                        EXTRACT(YEAR FROM b.release_date) as release_year,
                        b.description, b.cover_url, b.author_id,
+                       COALESCE(b.language, 'en') as language, 
+                       b.page_count,
                        a.name as author_name, a.bio as author_bio
                 FROM books b
                 LEFT JOIN authors a ON b.author_id = a.author_id
@@ -161,13 +200,15 @@ def get_book_details(book_id: int):
 
 
 def get_books_with_same_title(book_id: int, title: str):
-    """Get all books with the same title as the current book"""
+    """Get all books with the same title as the current book including core enhanced fields"""
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             sql = """
                 SELECT b.book_id, b.title, b.isbn, b.genre, 
                        EXTRACT(YEAR FROM b.release_date) as release_year,
                        b.description, b.cover_url, b.author_id,
+                       COALESCE(b.language, 'en') as language, 
+                       b.page_count,
                        a.name as author_name
                 FROM books b
                 LEFT JOIN authors a ON b.author_id = a.author_id
