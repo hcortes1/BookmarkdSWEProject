@@ -57,3 +57,48 @@
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
+
+/* User profile info styles */
+.user-profile-info {
+    margin-top: 10px;
+}
+
+.user-email,
+.user-join-date {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Friend item styles */
+.friend-item {
+    display: flex;
+    align-items: center;
+}
+
+.friend-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    color: #333;
+    text-decoration: none;
+}
+
+.friend-link:hover {
+    color: #007bff;
+}
+
+.friend-avatar {
+    margin-right: 10px;
+}
+
+.friend-name {
+    font-weight: 500;
+}
+
+.no-friends {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}

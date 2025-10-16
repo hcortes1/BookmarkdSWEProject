@@ -1,7 +1,8 @@
 import dash
-from dash import Dash, html, dcc, Input, Output
+from dash import Dash, html, dcc, Input, Output, State
 from argparse import ArgumentParser
 import backend.settings as settings_backend
+import backend.profile as profile_backend
 
 
 app = Dash(
@@ -30,8 +31,12 @@ app.layout = html.Div([
             ]),
 
             html.Div(className='nav-center', children=[
-                dcc.Input(id='header-search', placeholder='Search...',
-                          type='text', className='search-input')
+                html.Div([
+                    dcc.Input(id='header-search', placeholder='Search users...',
+                              type='text', className='search-input'),
+                    html.Div(id='search-results', className='search-results',
+                             style={'display': 'none'})
+                ], className='search-container')
             ]),
 
             html.Div(id='nav-right-container',
@@ -76,7 +81,8 @@ def update_nav_right(user_session, pathname):
                                  'object-fit': 'cover'
                              })
                 ]),
-                href='/profile'
+                href=f"/profile/view/{user_session.get('username', '')}" if user_session.get(
+                    'username') else '/login'
             ),
             html.Div([
                 html.Img(src='/assets/svg/settings.svg',
@@ -118,6 +124,69 @@ def update_nav_right(user_session, pathname):
             dcc.Link('Log In / Sign Up', href='/login',
                      className='nav-link login-signup-btn')
         ]
+
+
+@app.callback(
+    Output('search-results', 'children'),
+    Output('search-results', 'style'),
+    Input('header-search', 'value'),
+    prevent_initial_call=True
+)
+def handle_search(search_value):
+    if not search_value or len(search_value.strip()) < 2:
+        return [], {'display': 'none'}
+
+    try:
+        # Search for users
+        users = profile_backend.search_users(search_value.strip())
+
+        if not users:
+            return [html.Div("No users found", className='search-no-results')], {'display': 'block'}
+
+        results = []
+        for user in users:
+            user_item = html.Div([
+                html.Img(
+                    src=user.get('profile_image_url',
+                                 '/assets/svg/default-profile.svg'),
+                    className='search-user-avatar',
+                    style={
+                        'width': '30px',
+                        'height': '30px',
+                        'border-radius': '50%',
+                        'object-fit': 'cover',
+                        'margin-right': '10px'
+                    }
+                ),
+                html.Span(user['username'], className='search-username')
+            ], className='search-user-item')
+
+            # Wrap in a link
+            user_link = dcc.Link(
+                user_item,
+                href=f"/profile/view/{user['username']}",
+                className='search-user-link',
+                style={'text-decoration': 'none', 'color': 'inherit'}
+            )
+            results.append(user_link)
+
+        return results, {'display': 'block'}
+
+    except Exception as e:
+        print(f"Error in search: {e}")
+        return [html.Div("Search error", className='search-error')], {'display': 'block'}
+
+
+@app.callback(
+    Output('header-search', 'value', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call=True
+)
+def clear_search_on_navigation(pathname):
+    # Clear search when navigating to any profile page
+    if pathname and ('/profile/' in pathname):
+        return ''
+    return dash.no_update
 
 
 @app.callback(
