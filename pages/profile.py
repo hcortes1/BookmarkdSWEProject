@@ -159,15 +159,19 @@ def update_profile_data(session_data, viewed_username):
                         'cover_url', '/assets/svg/default-book.svg')
                     book_title = book['title']
                     author_name = book.get('author_name', 'Unknown Author')
+                    book_id = book.get('book_id')
 
+                    # Create clickable link to book page
                     books_content.append(
                         html.Li([
-                            html.Img(
-                                src=book_image, className="favorite-item-image", alt=f"Cover of {book_title}"),
-                            html.Div(
-                                book_title, className="favorite-item-title"),
-                            html.Div(f"by {author_name}",
-                                     className="favorite-item-author")
+                            dcc.Link([
+                                html.Img(
+                                    src=book_image, className="favorite-item-image", alt=f"Cover of {book_title}"),
+                                html.Div(
+                                    book_title, className="favorite-item-title"),
+                                html.Div(f"by {author_name}",
+                                         className="favorite-item-author")
+                            ], href=f"/book/{book_id}?from=profile&username={viewed_username}", className="favorite-item-link")
                         ], className="favorite-item")
                     )
                 books_card_content = html.Ul(
@@ -186,17 +190,21 @@ def update_profile_data(session_data, viewed_username):
             if favorite_authors:
                 authors_content = []
                 for author in favorite_authors:
-                    # Use author image if available, otherwise use a default author image
+                    # Use author_image_url if available, otherwise use a default author image
                     author_image = author.get(
-                        'image_url', '/assets/svg/default-author.svg')
+                        'author_image_url', '/assets/svg/default-author.svg')
                     author_name = author['name']
+                    author_id = author.get('author_id')
 
+                    # Create clickable link to author page
                     authors_content.append(
                         html.Li([
-                            html.Img(
-                                src=author_image, className="favorite-author-image", alt=f"Photo of {author_name}"),
-                            html.Div(
-                                author_name, className="favorite-item-title")
+                            dcc.Link([
+                                html.Img(
+                                    src=author_image, className="favorite-author-image", alt=f"Photo of {author_name}"),
+                                html.Div(
+                                    author_name, className="favorite-item-title")
+                            ], href=f"/author/{author_id}?from=profile&username={viewed_username}", className="favorite-item-link")
                         ], className="favorite-item")
                     )
                 authors_card_content = html.Ul(

@@ -19,6 +19,7 @@ app.layout = html.Div([
     dcc.Location(id="url"),
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
+    dcc.Store(id="search-data-store", storage_type="memory", data={}),
     dcc.Interval(
         id='notifications-interval',
         interval=5*1000,  # Update every 5 seconds
@@ -40,8 +41,27 @@ app.layout = html.Div([
 
             html.Div(className='nav-center', children=[
                 html.Div([
-                    dcc.Input(id='header-search', placeholder='Search users...',
-                              type='text', className='search-input'),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='search-type-dropdown',
+                            options=[
+                                {'label': 'Users', 'value': 'users'},
+                                {'label': 'Books', 'value': 'books'},
+                                {'label': 'Authors', 'value': 'authors'}
+                            ],
+                            value='users',
+                            clearable=False,
+                            searchable=False,
+                            className='search-type-dropdown',
+                            style={
+                                'width': '100px',
+                                'margin-right': '8px'
+                            }
+                        ),
+                        dcc.Input(id='header-search', placeholder='Search...',
+                                  type='text', className='search-input',
+                                  style={'flex': '1'})
+                    ], style={'display': 'flex', 'align-items': 'center', 'width': '100%'}),
                     html.Div(id='search-results', className='search-results',
                              style={'display': 'none'})
                 ], className='search-container')
@@ -161,58 +181,170 @@ def update_nav_right(user_session, pathname):
 
 
 @app.callback(
-    Output('search-results', 'children'),
-    Output('search-results', 'style'),
-    Input('header-search', 'value'),
+    Output('header-search', 'placeholder'),
+    Input('search-type-dropdown', 'value'),
     prevent_initial_call=True
 )
-def handle_search(search_value):
+def update_search_placeholder(search_type):
+    placeholders = {
+        'users': 'Search users by username...',
+        'books': 'Search books by title...',
+        'authors': 'Search authors by name...'
+    }
+    return placeholders.get(search_type, 'Search...')
+
+
+@app.callback(
+    [Output('search-results', 'children'),
+     Output('search-results', 'style'),
+     Output('search-data-store', 'data')],
+    [Input('header-search', 'value'),
+     Input('search-type-dropdown', 'value')],
+    prevent_initial_call=True
+)
+def handle_search(search_value, search_type):
     if not search_value or len(search_value.strip()) < 2:
-        return [], {'display': 'none'}
+        return [], {'display': 'none'}, {}
 
     try:
-        # Search for users
-        users = profile_backend.search_users(search_value.strip())
+        search_query = search_value.strip()
+        search_data = {'books': [], 'authors': []}
+        
+        if search_type == 'users':
+            # Search for users only
+            users = profile_backend.search_users(search_query)
+            
+            if not users:
+                return [html.Div("No users found", className='search-no-results')], {'display': 'block'}, {}
 
-        if not users:
-            return [html.Div("No users found", className='search-no-results')], {'display': 'block'}
+            results = []
+            for user in users:
+                # Ensure we always have a valid profile image URL
+                profile_image_url = user.get('profile_image_url')
+                if not profile_image_url or not profile_image_url.strip():
+                    profile_image_url = '/assets/svg/default-profile.svg'
 
-        results = []
-        for user in users:
-            # Ensure we always have a valid profile image URL
-            profile_image_url = user.get('profile_image_url')
-            if not profile_image_url or not profile_image_url.strip():
-                profile_image_url = '/assets/svg/default-profile.svg'
+                user_item = html.Div([
+                    html.Img(
+                        src=profile_image_url,
+                        className='search-user-avatar',
+                        style={
+                            'width': '30px',
+                            'height': '30px',
+                            'border-radius': '50%',
+                            'object-fit': 'cover',
+                            'margin-right': '10px'
+                        }
+                    ),
+                    html.Span(user['username'], className='search-username')
+                ], className='search-user-item')
 
-            user_item = html.Div([
-                html.Img(
-                    src=profile_image_url,
-                    className='search-user-avatar',
-                    style={
-                        'width': '30px',
-                        'height': '30px',
-                        'border-radius': '50%',
-                        'object-fit': 'cover',
-                        'margin-right': '10px'
-                    }
-                ),
-                html.Span(user['username'], className='search-username')
-            ], className='search-user-item')
+                # Wrap in a link
+                user_link = dcc.Link(
+                    user_item,
+                    href=f"/profile/view/{user['username']}",
+                    className='search-user-link',
+                    style={'text-decoration': 'none', 'color': 'inherit'}
+                )
+                results.append(user_link)
+                
+            return results, {'display': 'block'}, {}
+            
+        elif search_type == 'books':
+            # Search for books only
+            from backend.openlibrary import search_books_only
+            
+            books = search_books_only(search_query)
+            search_data['books'] = books
+            
+            if not books:
+                return [html.Div("No books found", className='search-no-results')], {'display': 'block'}, search_data
 
-            # Wrap in a link
-            user_link = dcc.Link(
-                user_item,
-                href=f"/profile/view/{user['username']}",
-                className='search-user-link',
-                style={'text-decoration': 'none', 'color': 'inherit'}
-            )
-            results.append(user_link)
+            results = []
+            for i, book in enumerate(books[:8]):  # Limit to 8 books
+                cover_url = book.get('cover_url') or '/assets/svg/default-book.svg'
+                author_name = book.get('author_name') or (
+                    book.get('author_names')[0] if book.get('author_names') else 'Unknown Author'
+                )
+                
+                book_item = html.Div([
+                    html.Img(
+                        src=cover_url,
+                        className='search-book-cover',
+                        style={
+                            'width': '30px',
+                            'height': '40px',
+                            'object-fit': 'cover',
+                            'margin-right': '10px',
+                            'border-radius': '2px'
+                        }
+                    ),
+                    html.Div([
+                        html.Div(book['title'], className='search-book-title'),
+                        html.Div(f"by {author_name}", className='search-book-author', 
+                                style={'font-size': '12px', 'color': '#666'})
+                    ], style={'flex': '1'})
+                ], className='search-book-item', style={
+                    'display': 'flex',
+                    'align-items': 'center',
+                    'padding': '8px',
+                    'cursor': 'pointer',
+                    'border-radius': '4px'
+                }, id={'type': 'search-book', 'index': i}, n_clicks=0)
+                
+                results.append(book_item)
+                
+            return results, {'display': 'block'}, search_data
+            
+        elif search_type == 'authors':
+            # Search for authors only
+            from backend.openlibrary import search_authors_only
+            
+            authors = search_authors_only(search_query)
+            search_data['authors'] = authors
+            
+            if not authors:
+                return [html.Div("No authors found", className='search-no-results')], {'display': 'block'}, search_data
 
-        return results, {'display': 'block'}
+            results = []
+            for i, author in enumerate(authors[:8]):  # Limit to 8 authors
+                image_url = author.get('image_url') or '/assets/svg/default-author.svg'
+                
+                author_item = html.Div([
+                    html.Img(
+                        src=image_url,
+                        className='search-author-image',
+                        style={
+                            'width': '30px',
+                            'height': '30px',
+                            'border-radius': '50%',
+                            'object-fit': 'cover',
+                            'margin-right': '10px'
+                        }
+                    ),
+                    html.Div([
+                        html.Div(author['name'], className='search-author-name'),
+                        html.Div(f"Works: {author.get('work_count', 'Unknown')}", 
+                                className='search-author-works',
+                                style={'font-size': '12px', 'color': '#666'})
+                    ], style={'flex': '1'})
+                ], className='search-author-item', style={
+                    'display': 'flex',
+                    'align-items': 'center',
+                    'padding': '8px',
+                    'cursor': 'pointer',
+                    'border-radius': '4px'
+                }, id={'type': 'search-author', 'index': i}, n_clicks=0)
+                
+                results.append(author_item)
+                
+            return results, {'display': 'block'}, search_data
+
+        return [], {'display': 'none'}, {}
 
     except Exception as e:
         print(f"Error in search: {e}")
-        return [html.Div("Search error", className='search-error')], {'display': 'block'}
+        return [html.Div("Search error", className='search-error')], {'display': 'block'}, {}
 
 
 @app.callback(
@@ -490,6 +622,90 @@ def clear_search_on_navigation(pathname):
     if pathname and ('/profile/' in pathname):
         return ''
     return dash.no_update
+
+
+@app.callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    [Input({'type': 'search-book', 'index': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'search-author', 'index': dash.dependencies.ALL}, 'n_clicks')],
+    [State('search-data-store', 'data')],
+    prevent_initial_call=True
+)
+def handle_search_item_clicks(book_clicks, author_clicks, search_data):
+    print(f"DEBUG: Pattern-matching click handler called")
+    print(f"DEBUG: Book clicks: {book_clicks}")
+    print(f"DEBUG: Author clicks: {author_clicks}")
+    print(f"DEBUG: Search data: {search_data}")
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        print("DEBUG: No trigger detected")
+        return dash.no_update
+    
+    # Get the triggered component
+    triggered_prop = ctx.triggered[0]['prop_id']
+    clicked_value = ctx.triggered[0]['value']
+    
+    print(f"DEBUG: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
+    
+    if clicked_value is None or clicked_value == 0:
+        print("DEBUG: Click value is None or 0")
+        return dash.no_update
+    
+    try:
+        import json
+        # Parse the component ID
+        component_id_str = triggered_prop.split('.')[0]
+        component_data = json.loads(component_id_str.replace("'", '"'))
+        
+        item_type = component_data['type']
+        item_index = component_data['index']
+        
+        print(f"DEBUG: Item type: {item_type}, index: {item_index}")
+        
+        if item_type == 'search-book':
+            books = search_data.get('books', [])
+            print(f"DEBUG: Book click, index: {item_index}, books count: {len(books)}")
+            
+            if item_index < len(books):
+                book_data = books[item_index]
+                
+                # Store the book in database if it's from API
+                if book_data.get('source') == 'openlibrary':
+                    from backend.openlibrary import get_or_create_book_from_api
+                    book_id = get_or_create_book_from_api(book_data)
+                    if book_id:
+                        return f"/book/{book_id}"
+                else:
+                    # Local book
+                    return f"/book/{book_data['book_id']}"
+                    
+        elif item_type == 'search-author':
+            authors = search_data.get('authors', [])
+            print(f"DEBUG: Author click, index: {item_index}, authors count: {len(authors)}")
+            
+            if item_index < len(authors):
+                author_data = authors[item_index]
+                print(f"DEBUG: Author data: {author_data}")
+                
+                # Store the author and their books in database if it's from API
+                if author_data.get('source') == 'openlibrary':
+                    from backend.openlibrary import get_or_create_author_with_books
+                    author_id = get_or_create_author_with_books(author_data)
+                    print(f"DEBUG: Got author_id: {author_id}")
+                    if author_id:
+                        return f"/author/{author_id}"
+                else:
+                    # Local author
+                    return f"/author/{author_data['author_id']}"
+        
+        return dash.no_update
+        
+    except Exception as e:
+        print(f"Error handling search item click: {e}")
+        import traceback
+        traceback.print_exc()
+        return dash.no_update
 
 
 @app.callback(

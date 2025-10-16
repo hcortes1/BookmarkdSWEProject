@@ -149,6 +149,25 @@ def search_users(query: str) -> List[Dict[str, Any]]:
         return [dict(r) for r in cur.fetchall()]
 
 
+def search_all(query: str) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Combined search function that searches users, books, and authors
+    """
+    from .openlibrary import search_books_and_authors
+    
+    # Get users from existing function
+    users = search_users(query)
+    
+    # Get books and authors from Open Library integration
+    book_author_results = search_books_and_authors(query)
+    
+    return {
+        'users': users,
+        'books': book_author_results['books'],
+        'authors': book_author_results['authors']
+    }
+
+
 def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
     """
     Get complete user profile information by username for public viewing
@@ -183,7 +202,7 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
         # Get favorite authors details
         if user_data.get('favorite_authors'):
             authors_sql = """
-            select author_id, name
+            select author_id, name, author_image_url
               from public.authors
              where author_id = ANY(%s)
              order by name
