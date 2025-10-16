@@ -8,8 +8,8 @@ CREATE TABLE public.authors (
   birth_date date,
   death_date date,
   nationality character varying,
-  author_image_url character varying,
   created_at timestamp without time zone DEFAULT now(),
+  author_image_url character varying,
   CONSTRAINT authors_pkey PRIMARY KEY (author_id)
 );
 CREATE TABLE public.books (
