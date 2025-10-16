@@ -13,6 +13,50 @@
     align-items: center;
     gap: 15px;
     text-align: center;
+    max-width: 300px; /* Set maximum width to prevent expansion */
+    width: 300px; /* Fixed width for consistency */
+}
+
+/* Remove gap between username and user info */
+.profile-info #profile-username + #profile-user-info {
+    margin-top: -15px; /* Counteract the gap from flex layout */
+}
+
+/* Friends section on the left */
+.friends-section-left {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.friends-title-left {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #333;
+    text-align: center;
+}
+
+.friends-list-left {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px; /* Height for approximately 5 friends */
+    overflow-y: auto;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.friends-list-left li {
+    background: white;
+    margin-bottom: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.friends-list-left li:last-child {
+    margin-bottom: 0;
 }
 
 .profile-user-image {
@@ -30,15 +74,108 @@
     font-weight: bold;
 }
 
-/* Right section (friends list) */
+/* Right section (favorites only) */
 .profile-right {
     flex: 1;
-    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Favorites section */
+.favorites-section-container {
+    width: 100%;
+    margin-top: 20px; /* Add some space from the top */
+}
+
+.favorites-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Space between books and authors sections */
+}
+
+.favorites-card {
+    background: white;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    max-height: 500px; /* Fixed height for scrolling */
-    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #e9ecef;
+}
+
+.favorites-card-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.favorites-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.favorite-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    width: 120px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.favorite-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.favorite-item-image {
+    width: 80px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.favorite-author-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.favorite-item-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.favorite-item-author {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.favorites-empty-message {
+    font-style: italic;
+    color: #888;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
 }
 
 .friends-title {
@@ -62,14 +199,21 @@
 
 /* User profile info styles */
 .user-profile-info {
-    margin-top: 10px;
+    margin-top: 0px; /* Remove top margin to eliminate gap with username */
+    width: 100%; /* Take full width of parent container */
+    word-wrap: break-word; /* Break long words if needed */
+    overflow-wrap: break-word; /* Modern alternative for word wrapping */
 }
 
 .user-email,
-.user-join-date {
+.user-join-date,
+.user-bio {
     margin: 5px 0;
     color: #666;
     font-size: 0.9rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 /* Friend item styles */

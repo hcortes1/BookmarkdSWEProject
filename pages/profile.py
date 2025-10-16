@@ -15,10 +15,8 @@ def layout(username=None, **kwargs):
 
     return html.Div([
         html.Div([
-            html.H1(id="profile-title", children=title, className="main-title"),
-
             html.Div([
-                # LEFT SIDE – Profile picture and username
+                # LEFT SIDE – Profile picture, username, and friends
                 html.Div([
                     html.Img(
                         id='profile-image',
@@ -37,12 +35,21 @@ def layout(username=None, **kwargs):
                     # Friend request button (below member since)
                     html.Div(id="friend-request-section",
                              className="friend-request-section"),
+
+                    # Friends list (below friend request button)
+                    html.Div([
+                        html.H3(id="friends-title", children=friends_title,
+                                className="friends-title-left"),
+                        html.Ul(id="friends-list",
+                                className="friends-list-left")
+                    ], className="friends-section-left")
                 ], className="profile-info"),
 
-                # RIGHT SIDE – Scrollable friends list
+                # RIGHT SIDE – Favorites only
                 html.Div([
-                    html.H2(id="friends-title", children=friends_title, className="friends-title"),
-                    html.Ul(id="friends-list", className="friends-list")
+                    # Favorites section
+                    html.Div(id="favorites-section",
+                             className="favorites-section-container")
                 ], className="profile-right")
 
             ], className="profile-header"),
@@ -57,13 +64,13 @@ def layout(username=None, **kwargs):
 
 # Combined callback to handle all profile views using the same path structure
 @callback(
-    [Output("profile-title", "children"),
-     Output("friends-title", "children"),
+    [Output("friends-title", "children"),
      Output("profile-username", "children"),
      Output("profile-image", "src"),
      Output("profile-user-info", "children"),
      Output("friends-list", "children"),
-     Output("friend-request-section", "children")],
+     Output("friend-request-section", "children"),
+     Output("favorites-section", "children")],
     [Input("user-session", "data"),
      Input("username-store", "children")],
     prevent_initial_call=False
@@ -80,34 +87,141 @@ def update_profile_data(session_data, viewed_username):
                 viewed_username)
 
             if not user_data:
-                return "User not found", "Friends", "User not found", "", html.Div("User not found", style={'color': 'red'}), [], html.Div()
+                return "Friends", "User not found", "", html.Div("User not found", style={'color': 'red'}), [], html.Div(), html.Div()
 
             # Check if this is the logged-in user viewing their own profile
             is_own_profile = (session_data and
                               session_data.get('logged_in', False) and
                               session_data.get('username', '').lower() == viewed_username.lower())
 
-            # Set the profile title based on whether it's own profile or not
+            # Set the friends title based on whether it's own profile or not
             if is_own_profile:
-                profile_title = "Your Profile"
                 friends_title = "Your Friends"
             else:
-                profile_title = f"{user_data['username']}'s Profile"
                 friends_title = f"{user_data['username']}'s Friends"
 
-            # Format user info - show member date for all profiles
+            # Format user info - show display name, bio, and member date for all profiles
             created_at = user_data.get('created_at')
             member_since = 'Unknown'
             if created_at:
                 if hasattr(created_at, 'strftime'):
-                    member_since = created_at.strftime('%Y-%m-%d')
+                    member_since = created_at.strftime('%m/%d/%Y')
                 elif isinstance(created_at, str):
-                    member_since = created_at[:10]
+                    # Try to parse the string and reformat
+                    try:
+                        from datetime import datetime
+                        parsed_date = datetime.strptime(
+                            created_at[:10], '%Y-%m-%d')
+                        member_since = parsed_date.strftime('%m/%d/%Y')
+                    except:
+                        member_since = created_at[:10]
 
-            user_info = html.Div([
-                html.P(f"Member since: {member_since}",
-                       className="user-join-date")
-            ])
+            # Use display name if available, otherwise use username with @
+            display_name = user_data.get('display_name')
+            has_display_name = display_name and display_name.strip()
+
+            if has_display_name:
+                # Show display name large, username small below it
+                username_display = html.Div([
+                    html.Div(display_name, className="profile-display-name",
+                             style={'font-size': '1.8rem', 'font-weight': 'bold', 'margin-bottom': '5px', 'margin-top': '0px'}),
+                    html.Div(f"@{user_data['username']}", className="profile-username-small",
+                             style={'font-size': '1.2rem', 'color': '#666', 'font-weight': 'normal', 'margin-bottom': '0px', 'margin-top': '0px'})
+                ], style={'margin-bottom': '0px'})
+            else:
+                # Show username with @ if no display name
+                username_display = html.Div(f"@{user_data['username']}", className="profile-username",
+                                            style={'font-size': '1.8rem', 'font-weight': 'bold', 'margin-bottom': '0px', 'margin-top': '0px'})
+
+            user_info_elements = [
+                html.P(f"Member since: {member_since}", className="user-join-date",
+                       style={'margin-top': '0px', 'margin-bottom': '10px', 'padding-top': '0px'})
+            ]
+
+            # Add bio if it exists
+            bio = user_data.get('bio')
+            if bio and bio.strip():
+                user_info_elements.append(
+                    html.P(bio, className="user-bio",
+                           style={'margin-top': '10px', 'font-style': 'italic'})
+                )
+
+            user_info = html.Div(user_info_elements)
+
+            # Create favorite authors and books cards for the right side
+            # Favorite Books Card (now first)
+            favorite_books = user_data.get('favorite_books_details', [])
+            if favorite_books:
+                books_content = []
+                for book in favorite_books:
+                    # Use cover_url if available, otherwise use a default book image
+                    book_image = book.get(
+                        'cover_url', '/assets/svg/default-book.svg')
+                    book_title = book['title']
+                    author_name = book.get('author_name', 'Unknown Author')
+
+                    books_content.append(
+                        html.Li([
+                            html.Img(
+                                src=book_image, className="favorite-item-image", alt=f"Cover of {book_title}"),
+                            html.Div(
+                                book_title, className="favorite-item-title"),
+                            html.Div(f"by {author_name}",
+                                     className="favorite-item-author")
+                        ], className="favorite-item")
+                    )
+                books_card_content = html.Ul(
+                    books_content, className="favorites-list")
+            else:
+                # Show appropriate message when no favorite books
+                if is_own_profile:
+                    books_card_content = html.P("Search for a book and add it to your favorites!",
+                                                className="favorites-empty-message")
+                else:
+                    books_card_content = html.P(f"{user_data['username']} doesn't have any favorite books yet",
+                                                className="favorites-empty-message")
+
+            # Favorite Authors Card (now second)
+            favorite_authors = user_data.get('favorite_authors_details', [])
+            if favorite_authors:
+                authors_content = []
+                for author in favorite_authors:
+                    # Use author image if available, otherwise use a default author image
+                    author_image = author.get(
+                        'image_url', '/assets/svg/default-author.svg')
+                    author_name = author['name']
+
+                    authors_content.append(
+                        html.Li([
+                            html.Img(
+                                src=author_image, className="favorite-author-image", alt=f"Photo of {author_name}"),
+                            html.Div(
+                                author_name, className="favorite-item-title")
+                        ], className="favorite-item")
+                    )
+                authors_card_content = html.Ul(
+                    authors_content, className="favorites-list")
+            else:
+                # Show appropriate message when no favorite authors
+                if is_own_profile:
+                    authors_card_content = html.P("Search for an author and add them to your favorites!",
+                                                  className="favorites-empty-message")
+                else:
+                    authors_card_content = html.P(f"{user_data['username']} doesn't have any favorite authors yet",
+                                                  className="favorites-empty-message")
+
+            # Create the favorites cards (books first, then authors)
+            favorites_section = html.Div([
+                html.Div([
+                    html.H3("Favorite Books", className="favorites-card-title"),
+                    books_card_content
+                ], className="favorites-card"),
+                html.Div([
+                    html.H3("Favorite Authors",
+                            className="favorites-card-title"),
+                    authors_card_content
+                ], className="favorites-card")
+            ], className="favorites-container")
 
             # Friend request section
             friend_request_section = html.Div()
@@ -206,15 +320,15 @@ def update_profile_data(session_data, viewed_username):
             if not profile_image_url or not profile_image_url.strip():
                 profile_image_url = '/assets/svg/default-profile.svg'
 
-            return profile_title, friends_title, user_data['username'], profile_image_url, user_info, friends_list, friend_request_section
+            return friends_title, username_display, profile_image_url, user_info, friends_list, friend_request_section, favorites_section
 
         except Exception as e:
             print(f"Error loading user profile: {e}")
-            return "Error loading profile", "Friends", "Error loading profile", "", html.Div("An error occurred", style={'color': 'red'}), [], html.Div()
+            return "Friends", "Error loading profile", "", html.Div("An error occurred", style={'color': 'red'}), [], html.Div(), html.Div()
 
     # No username provided - should not happen with the new structure
     else:
-        return "No user specified", "Friends", "No user specified", '', html.Div("No user specified"), [], html.Div()
+        return "Friends", "No user specified", '', html.Div("No user specified"), [], html.Div(), html.Div()
 
 
 # Handle send friend request button
