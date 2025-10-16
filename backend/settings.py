@@ -187,7 +187,7 @@ def get_user_profile_image_url(user_id):
                 return True, "No profile image set", None
             return True, "Profile image URL retrieved", profile_url
         else:
-            print(f"Debug: No user found with ID {user_id}")
+            # print(f"Debug: No user found with ID {user_id}")
             return False, "User not found", None
 
     except Error as e:

@@ -228,3 +228,114 @@
 .logout-item:hover {
   background-color: #fff5f5 !important;
 }
+
+/* Notifications styles */
+.notifications-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notifications-img {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  display: block;
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 18px;
+  font-weight: bold;
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 350px;
+    max-width: 400px;
+    margin-top: 2px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+    pointer-events: auto;
+    padding: 8px 0;
+}.notifications-container:hover .notifications-dropdown,
+.notifications-dropdown:hover {
+  display: block !important;
+  pointer-events: auto;
+}
+
+.notifications-container:focus-within .notifications-dropdown {
+  display: block !important;
+  pointer-events: auto;
+}
+
+.notifications-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: transparent;
+}
+
+.notification-item {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-accept:hover {
+    background: #218838 !important;
+}
+
+.btn-decline:hover {
+    background: #c82333 !important;
+}
+
+.no-notifications,
+.notification-error {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.notification-status-message {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+.notification-status-accepted {
+    border-left: 4px solid #28a745;
+}
+
+.notification-status-declined {
+    border-left: 4px solid #dc3545;
+}
