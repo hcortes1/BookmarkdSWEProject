@@ -24,7 +24,8 @@ app.layout = html.Div([
         interval=5*1000,  # Update every 5 seconds
         n_intervals=0
     ),
-    dcc.Store(id='notification-status', data={}),  # Store notification statuses
+    # Store notification statuses
+    dcc.Store(id='notification-status', data={}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
@@ -95,8 +96,8 @@ def update_nav_right(user_session, pathname):
                 html.Img(src='/assets/svg/bell.svg',
                          className='notifications-img', alt='notifications',
                          style={'cursor': 'pointer'}),
-                html.Div(id='notification-badge', className='notification-badge', 
-                        style={'display': 'none'}),
+                html.Div(id='notification-badge', className='notification-badge',
+                         style={'display': 'none'}),
                 html.Div([
                     html.Div(id='notifications-content', children=[])
                 ], className='notifications-dropdown', style={
@@ -182,7 +183,7 @@ def handle_search(search_value):
             profile_image_url = user.get('profile_image_url')
             if not profile_image_url or not profile_image_url.strip():
                 profile_image_url = '/assets/svg/default-profile.svg'
-                
+
             user_item = html.Div([
                 html.Img(
                     src=profile_image_url,
@@ -226,45 +227,47 @@ def handle_search(search_value):
 )
 def update_notifications(user_session, n_intervals, notification_status):
     # print(f"DEBUG: update_notifications called with user_session: {user_session}, n_intervals: {n_intervals}")
-    
+
     # Check if user is logged in first to avoid component not found errors
     if not user_session or not user_session.get('logged_in', False):
         # print("DEBUG: User not logged in")
         # Return early to prevent component not found errors
         raise dash.exceptions.PreventUpdate
-    
+
     user_id = user_session.get('user_id')
     # print(f"DEBUG: Extracted user_id: {user_id}")
-    
+
     if not user_id:
         # print("DEBUG: No user_id found in session")
         raise dash.exceptions.PreventUpdate
-    
+
     # Clean up old notification statuses (older than 5 seconds)
     import time
     if notification_status is None:
         notification_status = {}
-    
+
     current_time = time.time()
     cleaned_status = {}
     for sender_id, status_data in notification_status.items():
-        if current_time - status_data.get('timestamp', 0) < 5:  # Keep for 5 seconds
+        # Keep for 5 seconds
+        if current_time - status_data.get('timestamp', 0) < 5:
             cleaned_status[sender_id] = status_data
-    
+
     try:
         # Get pending friend requests - make sure we pass user_id as string
-        pending_requests = friends_backend.get_pending_friend_requests(str(user_id))
+        pending_requests = friends_backend.get_pending_friend_requests(
+            str(user_id))
         # print(f"DEBUG: Found {len(pending_requests)} pending requests for user {user_id}")
         # print(f"DEBUG: Pending requests data: {pending_requests}")
         # print(f"DEBUG: Current notification status: {cleaned_status}")
-        
+
         # Filter out requests that have been responded to
         active_requests = []
         for request in pending_requests:
             sender_id = str(request['sender_id'])
             if sender_id not in cleaned_status:
                 active_requests.append(request)
-        
+
         # Add status messages for recently responded requests
         status_messages = []
         for sender_id, status_data in cleaned_status.items():
@@ -274,26 +277,26 @@ def update_notifications(user_session, n_intervals, notification_status):
                 if str(request['sender_id']) == sender_id:
                     username = request['username']
                     break
-            
+
             if username:
                 status_color = '#28a745' if status_data['status'] == 'accepted' else '#dc3545'
                 status_message = html.Div([
                     html.Div([
-                        html.Span("✓ " if status_data['status'] == 'accepted' else "✗ ", 
-                                style={'font-weight': 'bold', 'color': status_color}),
-                        html.Span(status_data['message'], 
-                                style={'color': status_color, 'font-weight': '500'})
+                        html.Span("✓ " if status_data['status'] == 'accepted' else "✗ ",
+                                  style={'font-weight': 'bold', 'color': status_color}),
+                        html.Span(status_data['message'],
+                                  style={'color': status_color, 'font-weight': '500'})
                     ], style={'padding': '12px 16px', 'text-align': 'center'})
                 ], className='notification-item', style={
                     'background-color': '#f8f9fa',
                     'border-left': f'4px solid {status_color}'
                 })
                 status_messages.append(status_message)
-        
+
         if not active_requests and not status_messages:
             # print("DEBUG: No pending requests or status messages found")
             return '', {'display': 'none'}, [html.Div("No notifications", className='no-notifications', style={'padding': '20px', 'text-align': 'center', 'color': '#666'})], cleaned_status
-        
+
         # Show notification count badge
         total_notifications = len(active_requests) + len(status_messages)
         count = total_notifications
@@ -311,13 +314,13 @@ def update_notifications(user_session, n_intervals, notification_status):
             'text-align': 'center',
             'line-height': '18px'
         } if count > 0 else {'display': 'none'}
-        
+
         # Create notification items for active requests
         notification_items = []
-        
+
         # Add status messages first
         notification_items.extend(status_messages)
-        
+
         # Add active friend requests
         for request in active_requests:
             username = request['username']
@@ -326,7 +329,7 @@ def update_notifications(user_session, n_intervals, notification_status):
             if not profile_image_url or not profile_image_url.strip():
                 profile_image_url = '/assets/svg/default-profile.svg'
             sender_id = request['sender_id']
-            
+
             notification_item = html.Div([
                 # Profile image as clickable link
                 dcc.Link([
@@ -341,58 +344,61 @@ def update_notifications(user_session, n_intervals, notification_status):
                         }
                     )
                 ], href=f'/profile/view/{username}', style={'margin-right': '12px'}),
-                
+
                 # Content area
                 html.Div([
                     html.Div([
                         dcc.Link(
-                            html.Strong(username, style={'color': '#1976d2', 'text-decoration': 'none'}),
+                            html.Strong(username, style={
+                                        'color': '#1976d2', 'text-decoration': 'none'}),
                             href=f'/profile/view/{username}',
                             style={'text-decoration': 'none'}
                         ),
-                        html.Span(" sent you a friend request", 
-                                style={'font-size': '14px', 'color': '#666', 'margin-left': '4px'})
+                        html.Span(" sent you a friend request",
+                                  style={'font-size': '14px', 'color': '#666', 'margin-left': '4px'})
                     ], style={'margin-bottom': '8px'}),
-                    
+
                     # Action buttons
                     html.Div([
-                        html.Button('Accept', 
-                                  id={'type': 'accept-friend', 'sender_id': sender_id},
-                                  className='btn-accept',
-                                  style={
-                                      'background': '#28a745',
-                                      'color': 'white',
-                                      'border': 'none',
-                                      'padding': '6px 12px',
-                                      'border-radius': '4px',
-                                      'margin-right': '8px',
-                                      'font-size': '12px',
-                                      'cursor': 'pointer'
-                                  }),
-                        html.Button('Decline', 
-                                  id={'type': 'decline-friend', 'sender_id': sender_id},
-                                  className='btn-decline',
-                                  style={
-                                      'background': '#dc3545',
-                                      'color': 'white',
-                                      'border': 'none',
-                                      'padding': '6px 12px',
-                                      'border-radius': '4px',
-                                      'font-size': '12px',
-                                      'cursor': 'pointer'
-                                  })
+                        html.Button('Accept',
+                                    id={'type': 'accept-friend',
+                                        'sender_id': sender_id},
+                                    className='btn-accept',
+                                    style={
+                                        'background': '#28a745',
+                                        'color': 'white',
+                                        'border': 'none',
+                                        'padding': '6px 12px',
+                                        'border-radius': '4px',
+                                        'margin-right': '8px',
+                                        'font-size': '12px',
+                                        'cursor': 'pointer'
+                                    }),
+                        html.Button('Decline',
+                                    id={'type': 'decline-friend',
+                                        'sender_id': sender_id},
+                                    className='btn-decline',
+                                    style={
+                                        'background': '#dc3545',
+                                        'color': 'white',
+                                        'border': 'none',
+                                        'padding': '6px 12px',
+                                        'border-radius': '4px',
+                                        'font-size': '12px',
+                                        'cursor': 'pointer'
+                                    })
                     ], style={'display': 'flex', 'gap': '8px'})
                 ], style={'flex': '1'})
             ], className='notification-item', style={
-                'display': 'flex', 
-                'align-items': 'flex-start', 
+                'display': 'flex',
+                'align-items': 'flex-start',
                 'padding': '12px 16px',
                 'border-bottom': '1px solid #f0f0f0'
             })
             notification_items.append(notification_item)
-        
+
         return str(count) if count > 0 else '', badge_style, notification_items, cleaned_status
-        
+
     except Exception as e:
         print(f"Error loading notifications: {e}")
         return '', {'display': 'none'}, [html.Div("Error loading notifications", className='notification-error')], {}
@@ -411,62 +417,62 @@ def handle_friend_request_response(accept_clicks, decline_clicks, user_session, 
     # print(f"DEBUG: handle_friend_request_response called")
     # print(f"DEBUG: accept_clicks: {accept_clicks}")
     # print(f"DEBUG: decline_clicks: {decline_clicks}")
-    
+
     if not user_session or not user_session.get('logged_in', False):
         # print("DEBUG: User not logged in")
         return dash.no_update, dash.no_update
-    
+
     ctx = dash.callback_context
     # print(f"DEBUG: callback_context.triggered: {ctx.triggered}")
-    
+
     if not ctx.triggered:
         print("DEBUG: No trigger detected")
         return dash.no_update, dash.no_update
-    
+
     # Get the triggered component
     triggered_prop = ctx.triggered[0]['prop_id']
     clicked_value = ctx.triggered[0]['value']
-    
+
     # print(f"DEBUG: triggered_prop: {triggered_prop}")
     # print(f"DEBUG: clicked_value: {clicked_value}")
-    
+
     # Only proceed if a button was actually clicked (value is not None and > 0)
     if clicked_value is None or clicked_value == 0:
         # print("DEBUG: Button not actually clicked (value is None or 0)")
         return dash.no_update, dash.no_update
-    
+
     try:
         # Parse the button ID more safely
         import json
         button_id_str = triggered_prop.split('.')[0]
         button_data = json.loads(button_id_str.replace("'", '"'))
-        
+
         sender_id = button_data['sender_id']
         is_accept = button_data['type'] == 'accept-friend'
-        
+
         # print(f"DEBUG: Processing friend request - sender_id: {sender_id}, accept: {is_accept}")
-        
+
         result = friends_backend.respond_to_friend_request(
             receiver_id=str(user_session['user_id']),
             sender_id=str(sender_id),
             accept=is_accept
         )
         # print(f"DEBUG: Friend request response: {result['message']}")
-        
+
         # Update notification status to show the message
         import time
         if notification_status is None:
             notification_status = {}
-        
+
         notification_status[str(sender_id)] = {
             'status': 'accepted' if is_accept else 'declined',
             'message': 'Friend request accepted!' if is_accept else 'Friend request declined.',
             'timestamp': time.time()
         }
-        
+
         # Return the same session data to trigger a refresh of notifications
         return user_session, notification_status
-        
+
     except Exception as e:
         print(f"Error responding to friend request: {e}")
         import traceback
