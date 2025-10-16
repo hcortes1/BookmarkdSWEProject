@@ -13,7 +13,7 @@ def get_user_favorites(user_id: int) -> Dict[str, List[int]]:
                 FROM users
                 WHERE user_id = %s
             """, (user_id,))
-            
+
             result = cur.fetchone()
             if result:
                 return {
@@ -45,7 +45,7 @@ def toggle_author_favorite(user_id: int, author_id: int) -> Dict[str, Any]:
             # Get current favorites
             favorites = get_user_favorites(user_id)
             favorite_authors = favorites['favorite_authors']
-            
+
             if author_id in favorite_authors:
                 # Remove from favorites
                 favorite_authors.remove(author_id)
@@ -54,23 +54,23 @@ def toggle_author_favorite(user_id: int, author_id: int) -> Dict[str, Any]:
                 # Add to favorites
                 favorite_authors.append(author_id)
                 action = 'added'
-            
+
             # Update database
             cur.execute("""
                 UPDATE users 
                 SET favorite_authors = %s
                 WHERE user_id = %s
             """, (favorite_authors, user_id))
-            
+
             conn.commit()
-            
+
             return {
                 'success': True,
                 'action': action,
                 'is_favorited': author_id in favorite_authors,
                 'message': f"Author {action} {'to' if action == 'added' else 'from'} favorites"
             }
-            
+
     except Exception as e:
         print(f"Error toggling author favorite: {e}")
         return {
@@ -88,7 +88,7 @@ def toggle_book_favorite(user_id: int, book_id: int) -> Dict[str, Any]:
             # Get current favorites
             favorites = get_user_favorites(user_id)
             favorite_books = favorites['favorite_books']
-            
+
             if book_id in favorite_books:
                 # Remove from favorites
                 favorite_books.remove(book_id)
@@ -97,23 +97,23 @@ def toggle_book_favorite(user_id: int, book_id: int) -> Dict[str, Any]:
                 # Add to favorites
                 favorite_books.append(book_id)
                 action = 'added'
-            
+
             # Update database
             cur.execute("""
                 UPDATE users 
                 SET favorite_books = %s
                 WHERE user_id = %s
             """, (favorite_books, user_id))
-            
+
             conn.commit()
-            
+
             return {
                 'success': True,
                 'action': action,
                 'is_favorited': book_id in favorite_books,
                 'message': f"Book {action} {'to' if action == 'added' else 'from'} favorites"
             }
-            
+
     except Exception as e:
         print(f"Error toggling book favorite: {e}")
         return {
@@ -136,7 +136,7 @@ def get_favorite_authors(user_id: int) -> List[Dict[str, Any]]:
                 WHERE u.user_id = %s
                 ORDER BY a.name
             """, (user_id,))
-            
+
             results = cur.fetchall()
             return [dict(result) for result in results]
     except Exception as e:
@@ -158,7 +158,7 @@ def get_favorite_books(user_id: int) -> List[Dict[str, Any]]:
                 WHERE u.user_id = %s
                 ORDER BY b.title
             """, (user_id,))
-            
+
             results = cur.fetchall()
             return [dict(result) for result in results]
     except Exception as e:

@@ -11,10 +11,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class OpenLibraryAPI:
     BASE_URL = "https://openlibrary.org"
     COVERS_URL = "https://covers.openlibrary.org"
-    
+
     @staticmethod
     def search_books(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Search for books using Open Library API"""
@@ -25,13 +26,13 @@ class OpenLibraryAPI:
                 'limit': limit,
                 'fields': 'key,title,author_name,author_key,first_publish_year,cover_i,isbn,subject,publisher'
             }
-            
+
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
-            
+
             data = response.json()
             books = []
-            
+
             for doc in data.get('docs', []):
                 book = {
                     'key': doc.get('key'),
@@ -45,21 +46,21 @@ class OpenLibraryAPI:
                     'publishers': doc.get('publisher', []),
                     'source': 'openlibrary'
                 }
-                
+
                 # Generate cover URL if available
                 if book['cover_id']:
                     book['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{book['cover_id']}-M.jpg"
                 else:
                     book['cover_url'] = None
-                    
+
                 books.append(book)
-                
+
             return books
-            
+
         except Exception as e:
             logger.error(f"Error searching books: {e}")
             return []
-    
+
     @staticmethod
     def search_authors(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Search for authors using Open Library API"""
@@ -69,13 +70,13 @@ class OpenLibraryAPI:
                 'q': query,
                 'limit': limit
             }
-            
+
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
-            
+
             data = response.json()
             authors = []
-            
+
             for doc in data.get('docs', []):
                 author = {
                     'key': doc.get('key'),
@@ -87,18 +88,18 @@ class OpenLibraryAPI:
                     'top_work': doc.get('top_work'),
                     'source': 'openlibrary'
                 }
-                
+
                 # Generate author image URL if available
                 if doc.get('key'):
                     olid = doc['key'].replace('/authors/', '')
                     author['image_url'] = f"{OpenLibraryAPI.COVERS_URL}/a/olid/{olid}-M.jpg"
                 else:
                     author['image_url'] = None
-                    
+
                 authors.append(author)
-                
+
             return authors
-            
+
         except Exception as e:
             logger.error(f"Error searching authors: {e}")
             return []
@@ -110,25 +111,25 @@ class OpenLibraryAPI:
             # book_key comes in format like "/works/OL123W" - use it directly
             url = f"{OpenLibraryAPI.BASE_URL}{book_key}.json"
             print(f"DEBUG: Requesting book details from URL: {url}")
-            
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
-            
+
             data = response.json()
-            
+
             # Get additional details like description
             description = ""
             if isinstance(data.get('description'), dict):
                 description = data['description'].get('value', '')
             elif isinstance(data.get('description'), str):
                 description = data['description']
-            
+
             # Try to get more detailed publication info from editions
             isbn_10 = data.get('isbn_10', [])
             isbn_13 = data.get('isbn_13', [])
             publish_date = data.get('publish_date')
             first_publish_date = data.get('first_publish_date')
-            
+
             # If no ISBNs or dates found in work, try to get from editions
             if not isbn_10 and not isbn_13 and not publish_date:
                 try:
@@ -137,7 +138,7 @@ class OpenLibraryAPI:
                     editions_response = requests.get(editions_url, timeout=10)
                     if editions_response.status_code == 200:
                         editions_data = editions_response.json()
-                        
+
                         # Extract ISBNs and dates from first few editions
                         for edition in editions_data.get('entries', [])[:5]:
                             if not isbn_10 and edition.get('isbn_10'):
@@ -146,13 +147,14 @@ class OpenLibraryAPI:
                                 isbn_13 = edition['isbn_13']
                             if not publish_date and edition.get('publish_date'):
                                 publish_date = edition['publish_date']
-                            
+
                             # Stop if we have what we need
                             if isbn_10 and isbn_13 and publish_date:
                                 break
                 except Exception as e:
-                    print(f"DEBUG: Could not fetch editions for {book_key}: {e}")
-            
+                    print(
+                        f"DEBUG: Could not fetch editions for {book_key}: {e}")
+
             return {
                 'key': data.get('key'),
                 'title': data.get('title', 'Unknown Title'),
@@ -166,7 +168,7 @@ class OpenLibraryAPI:
                 'number_of_pages': data.get('number_of_pages'),
                 'authors': data.get('authors', [])
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting book details: {e}")
             return None
@@ -181,22 +183,31 @@ class OpenLibraryAPI:
                 author_id = author_key.replace('/authors/', '')
             else:
                 author_id = author_key
-                
+
             url = f"{OpenLibraryAPI.BASE_URL}/authors/{author_id}.json"
             print(f"DEBUG: Requesting author details from URL: {url}")
-            
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
-            
+
             data = response.json()
-            
+
             # Handle bio field which can be a string or dict
             bio = ""
             if isinstance(data.get('bio'), dict):
                 bio = data['bio'].get('value', '')
             elif isinstance(data.get('bio'), str):
                 bio = data['bio']
-            
+
+            # Generate author image URL using OLID (more reliable than photo ID)
+            image_url = None
+            if data.get('key'):
+                olid = data['key'].replace('/authors/', '')
+                image_url = f"{OpenLibraryAPI.COVERS_URL}/a/olid/{olid}-M.jpg"
+            elif author_id:
+                # Fallback to using the cleaned author_id
+                image_url = f"{OpenLibraryAPI.COVERS_URL}/a/olid/{author_id}-M.jpg"
+
             return {
                 'key': data.get('key'),
                 'name': data.get('name', 'Unknown Author'),
@@ -204,9 +215,10 @@ class OpenLibraryAPI:
                 'birth_date': data.get('birth_date'),
                 'death_date': data.get('death_date'),
                 'wikipedia': data.get('wikipedia'),
-                'website': data.get('website')
+                'website': data.get('website'),
+                'image_url': image_url  # Add image URL
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting author details: {e}")
             return None
@@ -215,7 +227,7 @@ class OpenLibraryAPI:
 def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
     """Save author to database if not already exists"""
     print(f"DEBUG: save_author_to_db called with: {author_data}")
-    
+
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Check if author already exists by name
@@ -224,15 +236,16 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
                 (author_data['name'],)
             )
             existing = cur.fetchone()
-            
+
             if existing:
-                print(f"DEBUG: Author already exists with ID: {existing['author_id']}")
+                print(
+                    f"DEBUG: Author already exists with ID: {existing['author_id']}")
                 return existing['author_id']
-            
+
             # Parse dates
             birth_date = None
             death_date = None
-            
+
             if author_data.get('birth_date'):
                 try:
                     # Handle various date formats from Open Library
@@ -245,9 +258,10 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
                             year = year_match.group(1)
                             birth_date = f"{year}-01-01"  # Default to Jan 1
                 except Exception as e:
-                    logger.error(f"Error parsing birth date '{author_data.get('birth_date')}': {e}")
+                    logger.error(
+                        f"Error parsing birth date '{author_data.get('birth_date')}': {e}")
                     pass
-                    
+
             if author_data.get('death_date'):
                 try:
                     death_str = str(author_data['death_date']).strip()
@@ -259,18 +273,20 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
                             year = year_match.group(1)
                             death_date = f"{year}-01-01"
                 except Exception as e:
-                    logger.error(f"Error parsing death date '{author_data.get('death_date')}': {e}")
+                    logger.error(
+                        f"Error parsing death date '{author_data.get('death_date')}': {e}")
                     pass
-            
+
             # Insert new author
             insert_sql = """
                 INSERT INTO authors (name, bio, birth_date, death_date, nationality, author_image_url, created_at)
                 VALUES (%s, %s, %s, %s, %s, %s, NOW())
                 RETURNING author_id
             """
-            
-            print(f"DEBUG: Inserting author with data: name={author_data['name']}, bio={author_data.get('bio', '')[:50]}..., birth_date={birth_date}, death_date={death_date}, image_url={author_data.get('image_url')}")
-            
+
+            print(
+                f"DEBUG: Inserting author with data: name={author_data['name']}, bio={author_data.get('bio', '')[:50]}..., birth_date={birth_date}, death_date={death_date}, image_url={author_data.get('image_url')}")
+
             cur.execute(insert_sql, (
                 author_data['name'],
                 author_data.get('bio', ''),
@@ -279,14 +295,15 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
                 None,  # nationality not available from Open Library
                 author_data.get('image_url')  # author image URL
             ))
-            
+
             result = cur.fetchone()
             conn.commit()
-            
-            print(f"DEBUG: Author saved successfully with ID: {result['author_id'] if result else None}")
-            
+
+            print(
+                f"DEBUG: Author saved successfully with ID: {result['author_id'] if result else None}")
+
             return result['author_id'] if result else None
-            
+
     except Exception as e:
         logger.error(f"Error saving author to database: {e}")
         import traceback
@@ -310,9 +327,10 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                     (book_data['title'],)
                 )
             existing = cur.fetchone()
-            
+
             if existing:
-                print(f"DEBUG: Book already exists with ID: {existing['book_id']}")
+                print(
+                    f"DEBUG: Book already exists with ID: {existing['book_id']}")
                 # If this is an API book with additional data, update the existing record
                 if book_data.get('source') == 'openlibrary':
                     print(f"DEBUG: Updating existing book with new API data")
@@ -325,7 +343,7 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                             cover_url = COALESCE(NULLIF(%s, ''), cover_url)
                         WHERE book_id = %s
                     """
-                    
+
                     # Prepare data for update
                     isbn = None
                     if book_data.get('isbn_13'):
@@ -334,43 +352,46 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                         isbn = book_data['isbn_10'][0] if book_data['isbn_10'] else None
                     elif book_data.get('isbn'):
                         isbn = book_data['isbn'][0] if book_data['isbn'] else None
-                    
+
                     subjects = book_data.get('subjects', [])
                     genre = subjects[0] if subjects else None
-                    
+
                     # Parse release date
                     release_date = None
-                    date_fields = ['publish_date', 'first_publish_year', 'first_publish_date']
+                    date_fields = ['publish_date',
+                                   'first_publish_year', 'first_publish_date']
                     for field in date_fields:
                         if book_data.get(field) and not release_date:
                             try:
                                 date_str = str(book_data[field]).strip()
                                 if date_str:
                                     import re
-                                    year_match = re.search(r'\b(\d{4})\b', date_str)
+                                    year_match = re.search(
+                                        r'\b(\d{4})\b', date_str)
                                     if year_match:
                                         year = year_match.group(1)
                                         release_date = f"{year}-01-01"
                                         break
                             except Exception:
                                 continue
-                    
+
                     cur.execute(update_sql, (
                         isbn,
-                        genre, 
+                        genre,
                         release_date,
                         book_data.get('description', ''),
                         book_data.get('cover_url'),
                         existing['book_id']
                     ))
                     conn.commit()
-                    print(f"DEBUG: Updated existing book {existing['book_id']} with API data")
-                
+                    print(
+                        f"DEBUG: Updated existing book {existing['book_id']} with API data")
+
                 return existing['book_id']
-            
+
             # Prepare data for insertion
             title = book_data.get('title', 'Unknown Title')
-            
+
             # Handle ISBN - prefer ISBN-13, then ISBN-10, then from isbn array
             isbn = None
             if book_data.get('isbn_13'):
@@ -379,16 +400,17 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                 isbn = book_data['isbn_10'][0] if book_data['isbn_10'] else None
             elif book_data.get('isbn'):
                 isbn = book_data['isbn'][0] if book_data['isbn'] else None
-            
+
             # Get genre from subjects
             subjects = book_data.get('subjects', [])
             genre = subjects[0] if subjects else None
-            
+
             # Parse release date - try multiple date fields
             release_date = None
-            
+
             # Try different date fields from Open Library
-            date_fields = ['publish_date', 'first_publish_year', 'first_publish_date']
+            date_fields = ['publish_date',
+                           'first_publish_year', 'first_publish_date']
             for field in date_fields:
                 if book_data.get(field) and not release_date:
                     try:
@@ -399,24 +421,27 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                             year_match = re.search(r'\b(\d{4})\b', date_str)
                             if year_match:
                                 year = year_match.group(1)
-                                release_date = f"{year}-01-01"  # Default to Jan 1
+                                # Default to Jan 1
+                                release_date = f"{year}-01-01"
                                 break
                     except Exception as e:
-                        logger.error(f"Error parsing date field {field} '{book_data.get(field)}': {e}")
+                        logger.error(
+                            f"Error parsing date field {field} '{book_data.get(field)}': {e}")
                         continue
-            
+
             description = book_data.get('description', '')
             cover_url = book_data.get('cover_url')
-            
-            print(f"DEBUG: Inserting book: title={title}, isbn={isbn}, release_date={release_date}, author_id={author_id}")
-            
+
+            print(
+                f"DEBUG: Inserting book: title={title}, isbn={isbn}, release_date={release_date}, author_id={author_id}")
+
             # Insert new book
             insert_sql = """
                 INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING book_id
             """
-            
+
             cur.execute(insert_sql, (
                 title,
                 isbn,
@@ -426,14 +451,15 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                 cover_url,
                 author_id
             ))
-            
+
             result = cur.fetchone()
             conn.commit()
-            
-            print(f"DEBUG: Book saved successfully with ID: {result['book_id'] if result else None}")
-            
+
+            print(
+                f"DEBUG: Book saved successfully with ID: {result['book_id'] if result else None}")
+
             return result['book_id'] if result else None
-            
+
     except Exception as e:
         logger.error(f"Error saving book to database: {e}")
         import traceback
@@ -452,9 +478,9 @@ def search_books_and_authors(query: str) -> Dict[str, List[Dict[str, Any]]]:
         'authors': [],
         'users': []
     }
-    
+
     existing_author_names = set()
-    
+
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # Search local database for books
@@ -468,13 +494,13 @@ def search_books_and_authors(query: str) -> Dict[str, List[Dict[str, Any]]]:
                 ORDER BY b.title
                 LIMIT 5
             """, (f"%{query}%",))
-            
+
             local_books = cur.fetchall()
             for book in local_books:
                 book_dict = dict(book)
                 book_dict['source'] = 'local'
                 results['books'].append(book_dict)
-            
+
             # Search local database for authors
             cur.execute("""
                 SELECT a.author_id, a.name, a.bio, a.birth_date, a.death_date, a.nationality, 
@@ -488,7 +514,7 @@ def search_books_and_authors(query: str) -> Dict[str, List[Dict[str, Any]]]:
                 ORDER BY a.name
                 LIMIT 5
             """, (f"%{query}%",))
-            
+
             local_authors = cur.fetchall()
             for author in local_authors:
                 author_dict = dict(author)
@@ -497,23 +523,24 @@ def search_books_and_authors(query: str) -> Dict[str, List[Dict[str, Any]]]:
                 author_dict['image_url'] = author_dict.get('author_image_url')
                 results['authors'].append(author_dict)
                 existing_author_names.add(author_dict['name'].lower())
-            
+
             # Get all author names from database to filter API results
             cur.execute("SELECT LOWER(name) as name FROM authors")
             all_existing = cur.fetchall()
             for row in all_existing:
                 existing_author_names.add(row['name'])
-    
+
     except Exception as e:
         logger.error(f"Error searching local database: {e}")
-    
+
     # Search Open Library API for books
     api_books = OpenLibraryAPI.search_books(query, limit=5)
     results['books'].extend(api_books)
-    
+
     # Search Open Library API for authors and filter out existing ones
-    api_authors = OpenLibraryAPI.search_authors(query, limit=10)  # Get more to account for filtering
-    
+    api_authors = OpenLibraryAPI.search_authors(
+        query, limit=10)  # Get more to account for filtering
+
     filtered_api_authors = []
     for author in api_authors:
         author_name_lower = author.get('name', '').lower()
@@ -521,9 +548,9 @@ def search_books_and_authors(query: str) -> Dict[str, List[Dict[str, Any]]]:
             filtered_api_authors.append(author)
             if len(filtered_api_authors) >= 5:  # Limit API authors
                 break
-    
+
     results['authors'].extend(filtered_api_authors)
-    
+
     return results
 
 
@@ -532,7 +559,7 @@ def search_books_only(query: str) -> List[Dict[str, Any]]:
     Search for books only from both local database and Open Library API
     """
     books = []
-    
+
     try:
         # Search local database
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -546,20 +573,20 @@ def search_books_only(query: str) -> List[Dict[str, Any]]:
                 ORDER BY b.title
                 LIMIT 5
             """, (f"%{query}%",))
-            
+
             local_books = cur.fetchall()
             for book in local_books:
                 book_dict = dict(book)
                 book_dict['source'] = 'local'
                 books.append(book_dict)
-    
+
     except Exception as e:
         logger.error(f"Error searching local books: {e}")
-    
+
     # Search Open Library API
     api_books = OpenLibraryAPI.search_books(query, limit=8)
     books.extend(api_books)
-    
+
     return books
 
 
@@ -570,7 +597,7 @@ def search_authors_only(query: str) -> List[Dict[str, Any]]:
     """
     authors = []
     existing_author_names = set()
-    
+
     try:
         # Search local database
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -586,7 +613,7 @@ def search_authors_only(query: str) -> List[Dict[str, Any]]:
                 ORDER BY a.name
                 LIMIT 5
             """, (f"%{query}%",))
-            
+
             local_authors = cur.fetchall()
             for author in local_authors:
                 author_dict = dict(author)
@@ -596,19 +623,20 @@ def search_authors_only(query: str) -> List[Dict[str, Any]]:
                 authors.append(author_dict)
                 # Track existing author names (case-insensitive)
                 existing_author_names.add(author_dict['name'].lower())
-            
+
             # Also get all author names from database to filter API results
             cur.execute("SELECT LOWER(name) as name FROM authors")
             all_existing = cur.fetchall()
             for row in all_existing:
                 existing_author_names.add(row['name'])
-    
+
     except Exception as e:
         logger.error(f"Error searching local authors: {e}")
-    
+
     # Search Open Library API and filter out existing authors
-    api_authors = OpenLibraryAPI.search_authors(query, limit=15)  # Get more to account for filtering
-    
+    api_authors = OpenLibraryAPI.search_authors(
+        query, limit=15)  # Get more to account for filtering
+
     filtered_api_authors = []
     for author in api_authors:
         author_name_lower = author.get('name', '').lower()
@@ -617,9 +645,9 @@ def search_authors_only(query: str) -> List[Dict[str, Any]]:
             # Limit to 8 total results after filtering
             if len(filtered_api_authors) >= 8:
                 break
-    
+
     authors.extend(filtered_api_authors)
-    
+
     return authors
 
 
@@ -630,15 +658,15 @@ def get_or_create_author_from_api(author_data: Dict[str, Any]) -> Optional[int]:
     """
     if not author_data.get('key'):
         return None
-        
+
     # Get detailed author information
     detailed_author = OpenLibraryAPI.get_author_details(author_data['key'])
     if not detailed_author:
         return None
-    
+
     # Merge the data
     merged_data = {**author_data, **detailed_author}
-    
+
     return save_author_to_db(merged_data)
 
 
@@ -648,30 +676,30 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
     Returns author_id
     """
     print(f"DEBUG: get_or_create_author_with_books called with: {author_data}")
-    
+
     if not author_data.get('key'):
         print("DEBUG: No key found in author_data")
         return None
-        
+
     # Get detailed author information
     detailed_author = OpenLibraryAPI.get_author_details(author_data['key'])
     if not detailed_author:
         print("DEBUG: Failed to get detailed author info")
         return None
-    
+
     print(f"DEBUG: Got detailed author: {detailed_author}")
-    
+
     # Merge the data
     merged_author_data = {**author_data, **detailed_author}
-    
+
     # Save the author
     author_id = save_author_to_db(merged_author_data)
     if not author_id:
         print("DEBUG: Failed to save author to database")
         return None
-    
+
     print(f"DEBUG: Saved author with ID: {author_id}")
-    
+
     # Get the author's works/books from Open Library
     try:
         author_key = author_data['key']
@@ -680,28 +708,28 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
             author_id_clean = author_key.replace('/authors/', '')
         else:
             author_id_clean = author_key
-            
+
         works_url = f"{OpenLibraryAPI.BASE_URL}/authors/{author_id_clean}/works.json"
         print(f"DEBUG: Requesting author works from URL: {works_url}")
-        
+
         response = requests.get(works_url, params={'limit': 50}, timeout=10)
         response.raise_for_status()
-        
+
         works_data = response.json()
-        
+
         for work in works_data.get('entries', []):
             try:
                 # Get work details
                 work_key = work.get('key')
                 if not work_key:
                     continue
-                    
+
                 work_url = f"{OpenLibraryAPI.BASE_URL}{work_key}.json"
                 work_response = requests.get(work_url, timeout=10)
                 work_response.raise_for_status()
-                
+
                 work_details = work_response.json()
-                
+
                 # Create book data from work
                 book_data = {
                     'title': work_details.get('title', 'Unknown Title'),
@@ -716,26 +744,28 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                     'cover_url': None,
                     'source': 'openlibrary'
                 }
-                
+
                 # Handle description
                 if isinstance(work_details.get('description'), dict):
-                    book_data['description'] = work_details['description'].get('value', '')
+                    book_data['description'] = work_details['description'].get(
+                        'value', '')
                 elif isinstance(work_details.get('description'), str):
                     book_data['description'] = work_details['description']
-                
+
                 # Try to get cover from work
                 if work_details.get('covers'):
                     cover_id = work_details['covers'][0]
                     book_data['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{cover_id}-M.jpg"
-                
+
                 # If no ISBNs or dates, try to get from editions
                 if not book_data['isbn_10'] and not book_data['isbn_13'] and not book_data['publish_date']:
                     try:
                         editions_url = f"{OpenLibraryAPI.BASE_URL}{work_key}/editions.json"
-                        editions_response = requests.get(editions_url, timeout=10)
+                        editions_response = requests.get(
+                            editions_url, timeout=10)
                         if editions_response.status_code == 200:
                             editions_data = editions_response.json()
-                            
+
                             # Extract data from first edition with ISBNs
                             for edition in editions_data.get('entries', [])[:3]:
                                 if not book_data['isbn_10'] and edition.get('isbn_10'):
@@ -744,22 +774,24 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                                     book_data['isbn_13'] = edition['isbn_13']
                                 if not book_data['publish_date'] and edition.get('publish_date'):
                                     book_data['publish_date'] = edition['publish_date']
-                                
+
                                 if book_data['isbn_10'] or book_data['isbn_13']:
                                     break
                     except Exception as e:
-                        logger.error(f"Error fetching editions for work {work_key}: {e}")
-                
+                        logger.error(
+                            f"Error fetching editions for work {work_key}: {e}")
+
                 # Save the book
                 save_book_to_db(book_data, author_id)
-                
+
             except Exception as e:
-                logger.error(f"Error processing work {work.get('key', 'unknown')}: {e}")
+                logger.error(
+                    f"Error processing work {work.get('key', 'unknown')}: {e}")
                 continue
-                
+
     except Exception as e:
         logger.error(f"Error fetching author's works: {e}")
-    
+
     return author_id
 
 
@@ -770,25 +802,79 @@ def get_or_create_book_from_api(book_data: Dict[str, Any]) -> Optional[int]:
     """
     if not book_data.get('key'):
         return None
-        
+
     # Get detailed book information
     detailed_book = OpenLibraryAPI.get_book_details(book_data['key'])
     if detailed_book:
         # Merge the data
         book_data = {**book_data, **detailed_book}
-    
+
     # Handle authors
     author_id = None
     if book_data.get('author_names') and book_data.get('author_keys'):
         # Use the first author
         first_author_name = book_data['author_names'][0]
         first_author_key = book_data['author_keys'][0]
-        
+
         author_data = {
             'name': first_author_name,
             'key': first_author_key
         }
-        
+
         author_id = get_or_create_author_from_api(author_data)
-    
+
     return save_book_to_db(book_data, author_id)
+
+
+def get_or_create_book_with_author_books(book_data: Dict[str, Any]) -> Optional[int]:
+    """
+    When a book is clicked from API results, import the author and all their books
+    Similar to get_or_create_author_with_books but triggered from book click
+    Returns book_id of the clicked book
+    """
+    print(f"DEBUG: get_or_create_book_with_author_books called with: {book_data}")
+
+    # Extract author information from the book data
+    author_keys = book_data.get('author_keys', [])
+    author_names = book_data.get('author_names', [])
+    
+    if not author_keys or not author_names:
+        print("DEBUG: No author keys or names found in book data")
+        # Fall back to just saving the book
+        return get_or_create_book_from_api(book_data)
+    
+    # Use the first author
+    author_data = {
+        'key': f"/authors/{author_keys[0]}" if not author_keys[0].startswith('/authors/') else author_keys[0],
+        'name': author_names[0]
+    }
+    
+    print(f"DEBUG: Importing author and all their books: {author_data}")
+    
+    # This will fetch the author and all their books from the API and store them
+    author_id = get_or_create_author_with_books(author_data)
+    
+    if not author_id:
+        print("DEBUG: Failed to import author, falling back to single book save")
+        return get_or_create_book_from_api(book_data)
+    
+    # Now find the book we originally clicked on in the database
+    try:
+        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT book_id FROM books 
+                WHERE LOWER(title) = LOWER(%s) AND author_id = %s
+                LIMIT 1
+            """, (book_data['title'], author_id))
+            
+            result = cur.fetchone()
+            if result:
+                print(f"DEBUG: Found clicked book in database with ID: {result['book_id']}")
+                return result['book_id']
+            else:
+                print("DEBUG: Clicked book not found in database after import, falling back to single book save")
+                return get_or_create_book_from_api(book_data)
+                
+    except Exception as e:
+        logger.error(f"Error finding clicked book after author import: {e}")
+        return get_or_create_book_from_api(book_data)

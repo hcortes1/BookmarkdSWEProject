@@ -209,11 +209,11 @@ def handle_search(search_value, search_type):
     try:
         search_query = search_value.strip()
         search_data = {'books': [], 'authors': []}
-        
+
         if search_type == 'users':
             # Search for users only
             users = profile_backend.search_users(search_query)
-            
+
             if not users:
                 return [html.Div("No users found", className='search-no-results')], {'display': 'block'}, {}
 
@@ -247,26 +247,28 @@ def handle_search(search_value, search_type):
                     style={'text-decoration': 'none', 'color': 'inherit'}
                 )
                 results.append(user_link)
-                
+
             return results, {'display': 'block'}, {}
-            
+
         elif search_type == 'books':
             # Search for books only
             from backend.openlibrary import search_books_only
-            
+
             books = search_books_only(search_query)
             search_data['books'] = books
-            
+
             if not books:
                 return [html.Div("No books found", className='search-no-results')], {'display': 'block'}, search_data
 
             results = []
             for i, book in enumerate(books[:8]):  # Limit to 8 books
-                cover_url = book.get('cover_url') or '/assets/svg/default-book.svg'
+                cover_url = book.get(
+                    'cover_url') or '/assets/svg/default-book.svg'
                 author_name = book.get('author_name') or (
-                    book.get('author_names')[0] if book.get('author_names') else 'Unknown Author'
+                    book.get('author_names')[0] if book.get(
+                        'author_names') else 'Unknown Author'
                 )
-                
+
                 book_item = html.Div([
                     html.Img(
                         src=cover_url,
@@ -281,8 +283,8 @@ def handle_search(search_value, search_type):
                     ),
                     html.Div([
                         html.Div(book['title'], className='search-book-title'),
-                        html.Div(f"by {author_name}", className='search-book-author', 
-                                style={'font-size': '12px', 'color': '#666'})
+                        html.Div(f"by {author_name}", className='search-book-author',
+                                 style={'font-size': '12px', 'color': '#666'})
                     ], style={'flex': '1'})
                 ], className='search-book-item', style={
                     'display': 'flex',
@@ -291,25 +293,26 @@ def handle_search(search_value, search_type):
                     'cursor': 'pointer',
                     'border-radius': '4px'
                 }, id={'type': 'search-book', 'index': i}, n_clicks=0)
-                
+
                 results.append(book_item)
-                
+
             return results, {'display': 'block'}, search_data
-            
+
         elif search_type == 'authors':
             # Search for authors only
             from backend.openlibrary import search_authors_only
-            
+
             authors = search_authors_only(search_query)
             search_data['authors'] = authors
-            
+
             if not authors:
                 return [html.Div("No authors found", className='search-no-results')], {'display': 'block'}, search_data
 
             results = []
             for i, author in enumerate(authors[:8]):  # Limit to 8 authors
-                image_url = author.get('image_url') or '/assets/svg/default-author.svg'
-                
+                image_url = author.get(
+                    'image_url') or '/assets/svg/default-author.svg'
+
                 author_item = html.Div([
                     html.Img(
                         src=image_url,
@@ -323,10 +326,11 @@ def handle_search(search_value, search_type):
                         }
                     ),
                     html.Div([
-                        html.Div(author['name'], className='search-author-name'),
-                        html.Div(f"Works: {author.get('work_count', 'Unknown')}", 
-                                className='search-author-works',
-                                style={'font-size': '12px', 'color': '#666'})
+                        html.Div(author['name'],
+                                 className='search-author-name'),
+                        html.Div(f"Works: {author.get('work_count', 'Unknown')}",
+                                 className='search-author-works',
+                                 style={'font-size': '12px', 'color': '#666'})
                     ], style={'flex': '1'})
                 ], className='search-author-item', style={
                     'display': 'flex',
@@ -335,9 +339,9 @@ def handle_search(search_value, search_type):
                     'cursor': 'pointer',
                     'border-radius': '4px'
                 }, id={'type': 'search-author', 'index': i}, n_clicks=0)
-                
+
                 results.append(author_item)
-                
+
             return results, {'display': 'block'}, search_data
 
         return [], {'display': 'none'}, {}
@@ -636,58 +640,61 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
     print(f"DEBUG: Book clicks: {book_clicks}")
     print(f"DEBUG: Author clicks: {author_clicks}")
     print(f"DEBUG: Search data: {search_data}")
-    
+
     ctx = dash.callback_context
     if not ctx.triggered:
         print("DEBUG: No trigger detected")
         return dash.no_update
-    
+
     # Get the triggered component
     triggered_prop = ctx.triggered[0]['prop_id']
     clicked_value = ctx.triggered[0]['value']
-    
-    print(f"DEBUG: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
-    
+
+    print(
+        f"DEBUG: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
+
     if clicked_value is None or clicked_value == 0:
         print("DEBUG: Click value is None or 0")
         return dash.no_update
-    
+
     try:
         import json
         # Parse the component ID
         component_id_str = triggered_prop.split('.')[0]
         component_data = json.loads(component_id_str.replace("'", '"'))
-        
+
         item_type = component_data['type']
         item_index = component_data['index']
-        
+
         print(f"DEBUG: Item type: {item_type}, index: {item_index}")
-        
+
         if item_type == 'search-book':
             books = search_data.get('books', [])
-            print(f"DEBUG: Book click, index: {item_index}, books count: {len(books)}")
-            
+            print(
+                f"DEBUG: Book click, index: {item_index}, books count: {len(books)}")
+
             if item_index < len(books):
                 book_data = books[item_index]
-                
+
                 # Store the book in database if it's from API
                 if book_data.get('source') == 'openlibrary':
-                    from backend.openlibrary import get_or_create_book_from_api
-                    book_id = get_or_create_book_from_api(book_data)
+                    from backend.openlibrary import get_or_create_book_with_author_books
+                    book_id = get_or_create_book_with_author_books(book_data)
                     if book_id:
                         return f"/book/{book_id}"
                 else:
                     # Local book
                     return f"/book/{book_data['book_id']}"
-                    
+
         elif item_type == 'search-author':
             authors = search_data.get('authors', [])
-            print(f"DEBUG: Author click, index: {item_index}, authors count: {len(authors)}")
-            
+            print(
+                f"DEBUG: Author click, index: {item_index}, authors count: {len(authors)}")
+
             if item_index < len(authors):
                 author_data = authors[item_index]
                 print(f"DEBUG: Author data: {author_data}")
-                
+
                 # Store the author and their books in database if it's from API
                 if author_data.get('source') == 'openlibrary':
                     from backend.openlibrary import get_or_create_author_with_books
@@ -698,9 +705,9 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
                 else:
                     # Local author
                     return f"/author/{author_data['author_id']}"
-        
+
         return dash.no_update
-        
+
     except Exception as e:
         print(f"Error handling search item click: {e}")
         import traceback

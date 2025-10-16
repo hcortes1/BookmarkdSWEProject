@@ -154,13 +154,13 @@ def search_all(query: str) -> Dict[str, List[Dict[str, Any]]]:
     Combined search function that searches users, books, and authors
     """
     from .openlibrary import search_books_and_authors
-    
+
     # Get users from existing function
     users = search_users(query)
-    
+
     # Get books and authors from Open Library integration
     book_author_results = search_books_and_authors(query)
-    
+
     return {
         'users': users,
         'books': book_author_results['books'],
