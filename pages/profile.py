@@ -10,25 +10,26 @@ dash.register_page(__name__, path_template='/profile/view/<username>')
 def create_reviews_content(user_data, is_own_profile):
     """Create content for the reviews tab"""
     from backend.reviews import get_user_reviews
-    
+
     user_id = user_data.get('user_id')
     if not user_id:
         return html.Div([
             html.H3("Reviews", className="tab-section-title"),
             html.P("Unable to load reviews.", className="tab-empty-message")
         ])
-    
+
     # Get user's reviews and filter to only those with review text
     all_reviews = get_user_reviews(user_id)
-    reviews = [review for review in all_reviews if review.get('review_text') and review.get('review_text').strip()]
-    
+    reviews = [review for review in all_reviews if review.get(
+        'review_text') and review.get('review_text').strip()]
+
     if reviews:
         reviews_content = []
         for review in reviews:
             # Create consistent rating display (X.0/5.0 format)
             rating = review.get('rating', 0)
             rating_text = f"{rating}.0/5.0" if rating else "No rating"
-            
+
             # Format the date
             created_at = review.get('created_at')
             date_str = 'Unknown date'
@@ -38,18 +39,20 @@ def create_reviews_content(user_data, is_own_profile):
                 elif isinstance(created_at, str):
                     try:
                         from datetime import datetime
-                        parsed_date = datetime.strptime(created_at[:10], '%Y-%m-%d')
+                        parsed_date = datetime.strptime(
+                            created_at[:10], '%Y-%m-%d')
                         date_str = parsed_date.strftime('%m/%d/%Y')
                     except:
                         date_str = created_at[:10]
-            
+
             # Create review card
             review_card = html.Div([
                 html.Div([
                     # Book cover and title on the left
                     html.Div([
                         html.Img(
-                            src=review.get('cover_url', '/assets/svg/default-book.svg'),
+                            src=review.get(
+                                'cover_url', '/assets/svg/default-book.svg'),
                             className="review-book-cover",
                             style={
                                 'width': '60px',
@@ -60,26 +63,28 @@ def create_reviews_content(user_data, is_own_profile):
                             }
                         )
                     ], style={'margin-right': '15px'}),
-                    
+
                     # Review content on the right
                     html.Div([
                         # Book title and author (clickable)
                         dcc.Link([
-                            html.H4(review.get('title', 'Unknown Title'), 
-                                   style={'margin': '0 0 5px 0', 'color': '#007bff'}),
-                            html.P(f"by {review.get('author_name', 'Unknown Author')}", 
-                                  style={'margin': '0 0 10px 0', 'color': '#666', 'font-size': '0.9rem'})
+                            html.H4(review.get('title', 'Unknown Title'),
+                                    style={'margin': '0 0 5px 0', 'color': '#007bff'}),
+                            html.P(f"by {review.get('author_name', 'Unknown Author')}",
+                                   style={'margin': '0 0 10px 0', 'color': '#666', 'font-size': '0.9rem'})
                         ], href=f"/book/{review.get('book_id')}", style={'text-decoration': 'none'}),
-                        
+
                         # Rating and date
                         html.Div([
-                            html.Span(rating_text, style={'color': '#333', 'font-size': '1rem', 'font-weight': 'bold', 'margin-right': '10px'}),
-                            html.Span(date_str, style={'color': '#666', 'font-size': '0.9rem'})
+                            html.Span(rating_text, style={
+                                      'color': '#333', 'font-size': '1rem', 'font-weight': 'bold', 'margin-right': '10px'}),
+                            html.Span(date_str, style={
+                                      'color': '#666', 'font-size': '0.9rem'})
                         ], style={'margin-bottom': '10px'}),
-                        
+
                         # Review text
-                        html.P(review.get('review_text', ''), 
-                              style={'margin': '0', 'line-height': '1.5'}) if review.get('review_text') else None
+                        html.P(review.get('review_text', ''),
+                               style={'margin': '0', 'line-height': '1.5'}) if review.get('review_text') else None
                     ], style={'flex': '1'})
                 ], style={
                     'display': 'flex',
@@ -91,9 +96,9 @@ def create_reviews_content(user_data, is_own_profile):
                     'background': 'white'
                 })
             ])
-            
+
             reviews_content.append(review_card)
-        
+
         title = "Your Reviews" if is_own_profile else f"{user_data['username']}'s Reviews"
         return html.Div([
             html.H3(title, className="tab-section-title"),
@@ -104,13 +109,14 @@ def create_reviews_content(user_data, is_own_profile):
         if is_own_profile:
             return html.Div([
                 html.H3("Your Reviews", className="tab-section-title"),
-                html.P("You haven't written any reviews yet. Mark a book as finished to leave a review!", 
+                html.P("You haven't written any reviews yet. Mark a book as finished to leave a review!",
                        className="tab-empty-message")
             ])
         else:
             return html.Div([
-                html.H3(f"{user_data['username']}'s Reviews", className="tab-section-title"),
-                html.P(f"{user_data['username']} hasn't written any reviews yet.", 
+                html.H3(f"{user_data['username']}'s Reviews",
+                        className="tab-section-title"),
+                html.P(f"{user_data['username']} hasn't written any reviews yet.",
                        className="tab-empty-message")
             ])
 
@@ -118,21 +124,22 @@ def create_reviews_content(user_data, is_own_profile):
 def create_completed_books_content(user_data, is_own_profile):
     """Create content for the completed books tab"""
     from backend.bookshelf import get_user_bookshelf
-    
+
     user_id = user_data.get('user_id')
     if not user_id:
         return html.Div([
             html.H3("Completed Books", className="tab-section-title"),
-            html.P("Unable to load completed books.", className="tab-empty-message")
+            html.P("Unable to load completed books.",
+                   className="tab-empty-message")
         ])
-    
+
     # Get user's bookshelf and extract completed books
     success, message, bookshelf = get_user_bookshelf(user_id)
-    
+
     if success and bookshelf and bookshelf.get('finished'):
         completed_books = bookshelf['finished']
         books_content = []
-        
+
         for book in completed_books:
             # Format completion date
             added_at = book.get('added_at')
@@ -143,31 +150,33 @@ def create_completed_books_content(user_data, is_own_profile):
                 elif isinstance(added_at, str):
                     try:
                         from datetime import datetime
-                        parsed_date = datetime.strptime(added_at[:10], '%Y-%m-%d')
+                        parsed_date = datetime.strptime(
+                            added_at[:10], '%Y-%m-%d')
                         date_str = parsed_date.strftime('%m/%d/%Y')
                     except:
                         date_str = added_at[:10]
-            
+
             # Create rating display consistent with rest of app (X.X/5.0 format)
             if book.get('user_rating'):
                 rating = book['user_rating']
                 rating_display = html.Div(f"{rating}.0/5.0", style={
-                    'color': '#333', 
+                    'color': '#333',
                     'font-size': '0.9rem',
                     'font-weight': 'bold'
                 })
             else:
                 rating_display = html.Div("No rating", style={
-                    'color': '#999', 
+                    'color': '#999',
                     'font-size': '0.9rem'
                 })
-            
+
             # Create book card for grid layout
             book_card = html.Div([
                 # Book cover (clickable)
                 dcc.Link([
                     html.Img(
-                        src=book.get('cover_url', '/assets/svg/default-book.svg'),
+                        src=book.get(
+                            'cover_url', '/assets/svg/default-book.svg'),
                         className="completed-book-cover",
                         style={
                             'width': '120px',
@@ -181,35 +190,36 @@ def create_completed_books_content(user_data, is_own_profile):
                         }
                     )
                 ], href=f"/book/{book.get('book_id')}", style={'text-decoration': 'none'}),
-                
+
                 # Book title (clickable) - no gap below
                 dcc.Link([
-                    html.H4(book.get('title', 'Unknown Title'), 
-                           style={
-                               'margin': '10px 0 0 0',  # Remove bottom margin to eliminate gap
-                               'color': '#333',
-                               'font-size': '0.95rem',
-                               'line-height': '1.2',
-                               'text-align': 'center',
-                               'overflow': 'hidden',
-                               'display': '-webkit-box',
-                               '-webkit-line-clamp': '2',
-                               '-webkit-box-orient': 'vertical',
-                               'max-height': '2.4em'  # Limit height to 2 lines
-                           })
+                    html.H4(book.get('title', 'Unknown Title'),
+                            style={
+                        'margin': '10px 0 0 0',  # Remove bottom margin to eliminate gap
+                        'color': '#333',
+                        'font-size': '0.95rem',
+                        'line-height': '1.2',
+                        'text-align': 'center',
+                        'overflow': 'hidden',
+                        'display': '-webkit-box',
+                        '-webkit-line-clamp': '2',
+                        '-webkit-box-orient': 'vertical',
+                        'max-height': '2.4em'  # Limit height to 2 lines
+                    })
                 ], href=f"/book/{book.get('book_id')}", style={'text-decoration': 'none'}),
-                
+
                 # Completion date
                 html.Div(f"Completed: {date_str}", style={
-                    'text-align': 'center', 
+                    'text-align': 'center',
                     'margin-top': '5px',
                     'color': '#666',
                     'font-size': '0.8rem'
                 }),
-                
+
                 # User's rating (centered)
-                html.Div(rating_display, style={'text-align': 'center', 'margin-top': '5px'})
-                
+                html.Div(rating_display, style={
+                         'text-align': 'center', 'margin-top': '5px'})
+
             ], style={
                 'display': 'flex',
                 'flex-direction': 'column',
@@ -224,9 +234,9 @@ def create_completed_books_content(user_data, is_own_profile):
                 'height': '300px',  # Increased height to accommodate completion date
                 'cursor': 'pointer'
             }, className="completed-book-card")
-            
+
             books_content.append(book_card)
-        
+
         title = "Your Completed Books" if is_own_profile else f"{user_data['username']}'s Completed Books"
         return html.Div([
             html.H3(title, className="tab-section-title"),
@@ -242,13 +252,14 @@ def create_completed_books_content(user_data, is_own_profile):
         if is_own_profile:
             return html.Div([
                 html.H3("Your Completed Books", className="tab-section-title"),
-                html.P("You haven't completed any books yet. Start reading and mark books as finished!", 
+                html.P("You haven't completed any books yet. Start reading and mark books as finished!",
                        className="tab-empty-message")
             ])
         else:
             return html.Div([
-                html.H3(f"{user_data['username']}'s Completed Books", className="tab-section-title"),
-                html.P(f"{user_data['username']} hasn't completed any books yet.", 
+                html.H3(
+                    f"{user_data['username']}'s Completed Books", className="tab-section-title"),
+                html.P(f"{user_data['username']} hasn't completed any books yet.",
                        className="tab-empty-message")
             ])
 
@@ -296,19 +307,19 @@ def layout(username=None, **kwargs):
                     # Tab navigation
                     html.Div([
                         html.Button("Favorites", id="favorites-tab", className="profile-tab active-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#007bff', 
+                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#007bff',
                                            'color': 'white', 'cursor': 'pointer', 'margin-right': '5px',
                                            'border-radius': '5px 5px 0 0'}),
                         html.Button("Reviews", id="reviews-tab", className="profile-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa', 
+                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
                                            'color': '#6c757d', 'cursor': 'pointer', 'margin-right': '5px',
                                            'border-radius': '5px 5px 0 0'}),
                         html.Button("Completed", id="completed-tab", className="profile-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa', 
+                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
                                            'color': '#6c757d', 'cursor': 'pointer',
                                            'border-radius': '5px 5px 0 0'})
                     ], className="profile-tabs", style={'margin-bottom': '0', 'border-bottom': '2px solid #007bff'}),
-                    
+
                     # Tab content container
                     html.Div(id="tab-content",
                              className="tab-content-container",
@@ -321,7 +332,7 @@ def layout(username=None, **kwargs):
             # Hidden div to store the username parameter
             html.Div(id='username-store', children=username,
                      style={'display': 'none'}),
-            
+
             # Store for active tab
             dcc.Store(id='active-tab-store', data='favorites')
 
@@ -419,17 +430,18 @@ def update_profile_data(session_data, viewed_username, active_tab):
             from datetime import datetime
             current_year = datetime.now().year
             profile_user_id = user_data.get('user_id')
-            
-            stats_success, stats_message, yearly_stats = get_yearly_reading_stats(profile_user_id, current_year)
+
+            stats_success, stats_message, yearly_stats = get_yearly_reading_stats(
+                profile_user_id, current_year)
             if stats_success:
                 books_count = yearly_stats.get('books_read', 0)
                 pages_count = yearly_stats.get('pages_read', 0)
-                
+
                 user_info_elements.append(
                     html.Div([
-                        html.P(f"Books read this year: {books_count}", 
+                        html.P(f"Books read this year: {books_count}",
                                style={'margin': '15px 0 5px 0', 'font-weight': 'bold', 'color': '#333'}),
-                        html.P(f"Pages read this year: {pages_count:,}", 
+                        html.P(f"Pages read this year: {pages_count:,}",
                                style={'margin': '5px 0 0 0', 'font-weight': 'bold', 'color': '#333'})
                     ], className="yearly-stats")
                 )
@@ -511,7 +523,8 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 # Create the favorites cards (books first, then authors)
                 tab_content = html.Div([
                     html.Div([
-                        html.H3("Favorite Books", className="favorites-card-title"),
+                        html.H3("Favorite Books",
+                                className="favorites-card-title"),
                         books_card_content
                     ], className="favorites-card"),
                     html.Div([
@@ -525,12 +538,14 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 tab_content = create_reviews_content(user_data, is_own_profile)
             elif active_tab == 'completed':
                 # Create completed books content
-                tab_content = create_completed_books_content(user_data, is_own_profile)
+                tab_content = create_completed_books_content(
+                    user_data, is_own_profile)
             else:
                 # Default to favorites
                 tab_content = html.Div([
                     html.Div([
-                        html.H3("Favorite Books", className="favorites-card-title"),
+                        html.H3("Favorite Books",
+                                className="favorites-card-title"),
                         books_card_content
                     ], className="favorites-card"),
                     html.Div([
@@ -664,29 +679,29 @@ def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-    
+
     # Determine which tab was clicked
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    
+
     # Base styles for tabs
     active_style = {
-        'padding': '10px 20px', 'border': 'none', 'background': '#007bff', 
+        'padding': '10px 20px', 'border': 'none', 'background': '#007bff',
         'color': 'white', 'cursor': 'pointer', 'margin-right': '5px',
         'border-radius': '5px 5px 0 0'
     }
     inactive_style = {
-        'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa', 
+        'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
         'color': '#6c757d', 'cursor': 'pointer', 'margin-right': '5px',
         'border-radius': '5px 5px 0 0'
     }
-    
+
     if button_id == 'favorites-tab':
         return 'favorites', active_style, inactive_style, inactive_style
     elif button_id == 'reviews-tab':
         return 'reviews', inactive_style, active_style, inactive_style
     elif button_id == 'completed-tab':
         return 'completed', inactive_style, inactive_style, active_style
-    
+
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 

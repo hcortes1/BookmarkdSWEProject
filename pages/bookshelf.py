@@ -123,7 +123,8 @@ def create_book_card(book, show_status_buttons=True):
             # Book cover - prominent display
             html.Div([
                 html.Img(
-                    src=book.get('cover_url') or '/assets/svg/default-book.svg',
+                    src=book.get(
+                        'cover_url') or '/assets/svg/default-book.svg',
                     style={
                         'width': '100%',
                         'height': '180px',
@@ -135,7 +136,7 @@ def create_book_card(book, show_status_buttons=True):
                     }
                 )
             ], style={'margin-bottom': '10px'}),
-            
+
             # Book info - compact
             html.Div([
                 html.H4(book['title'], style={
@@ -160,14 +161,17 @@ def create_book_card(book, show_status_buttons=True):
                 }),
                 # Show user rating if exists - X.X/5.0 format
                 html.Div([
-                    html.Span(f"{book.get('user_rating', 0):.1f}/5.0", 
-                             style={'font-size': '12px', 'color': '#ffc107', 'font-weight': 'bold'}) if book.get('user_rating') else
-                    html.Span("Not rated", style={'font-size': '11px', 'color': '#999'})
+                    html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
+                              style={'font-size': '12px', 'color': '#ffc107', 'font-weight': 'bold'}) if book.get('user_rating') else
+                    html.Span("Not rated", style={
+                              'font-size': '11px', 'color': '#999'})
                 ], style={'margin-bottom': '5px'}),
                 # Show if has review
                 html.Div([
-                    html.Span("📝", style={'font-size': '12px', 'margin-right': '3px'}),
-                    html.Span("Has review", style={'font-size': '10px', 'color': '#28a745'})
+                    html.Span(
+                        "📝", style={'font-size': '12px', 'margin-right': '3px'}),
+                    html.Span("Has review", style={
+                              'font-size': '10px', 'color': '#28a745'})
                 ]) if book.get('review_text') and book.get('review_text').strip() else html.Div()
             ])
         ], href=f"/book/{book['book_id']}", style={
@@ -277,12 +281,12 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
                 }),
                 html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
                        style={
-                           'text-align': 'center', 
-                           'color': '#666', 
+                           'text-align': 'center',
+                           'color': '#666',
                            'font-size': '16px',
                            'line-height': '1.5',
                            'max-width': '400px'
-                       })
+                })
             ], style={
                 'display': 'flex',
                 'flex-direction': 'column',
