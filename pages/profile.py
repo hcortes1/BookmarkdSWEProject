@@ -77,7 +77,8 @@ def create_reviews_content(user_data, is_own_profile):
                         # Rating and date
                         html.Div([
                             html.Span(rating_text, style={
-                                      'color': '#333', 'font-size': '1rem', 'font-weight': 'bold', 'margin-right': '10px'}),
+                                      'font-size': '1rem', 'font-weight': 'bold', 'margin-right': '10px'},
+                                      className='rating-color'),
                             html.Span(date_str, style={
                                       'color': '#666', 'font-size': '0.9rem'})
                         ], style={'margin-bottom': '10px'}),
@@ -92,9 +93,8 @@ def create_reviews_content(user_data, is_own_profile):
                     'padding': '15px',
                     'border': '1px solid #ddd',
                     'border-radius': '8px',
-                    'margin-bottom': '15px',
-                    'background': 'white'
-                })
+                    'margin-bottom': '15px'
+                }, className='secondary-bg')
             ])
 
             reviews_content.append(review_card)
@@ -160,10 +160,9 @@ def create_completed_books_content(user_data, is_own_profile):
             if book.get('user_rating'):
                 rating = book['user_rating']
                 rating_display = html.Div(f"{rating}.0/5.0", style={
-                    'color': '#333',
                     'font-size': '0.9rem',
                     'font-weight': 'bold'
-                })
+                }, className='rating-color')
             else:
                 rating_display = html.Div("No rating", style={
                     'color': '#999',
@@ -227,13 +226,12 @@ def create_completed_books_content(user_data, is_own_profile):
                 'padding': '15px',
                 'border': '1px solid #e0e0e0',
                 'border-radius': '10px',
-                'background': 'white',
                 'box-shadow': '0 2px 4px rgba(0,0,0,0.05)',
                 'transition': 'box-shadow 0.2s, transform 0.2s',
                 'width': '160px',
                 'height': '300px',  # Increased height to accommodate completion date
                 'cursor': 'pointer'
-            }, className="completed-book-card")
+            }, className="completed-book-card secondary-bg")
 
             books_content.append(book_card)
 
@@ -322,8 +320,8 @@ def layout(username=None, **kwargs):
 
                     # Tab content container
                     html.Div(id="tab-content",
-                             className="tab-content-container",
-                             style={'background': 'white', 'padding': '20px', 'border-radius': '0 0 10px 10px',
+                             className="tab-content-container secondary-bg",
+                             style={'padding': '20px', 'border-radius': '0 0 10px 10px',
                                     'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'})
                 ], className="profile-right")
 

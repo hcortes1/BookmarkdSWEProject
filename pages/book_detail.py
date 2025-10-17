@@ -109,9 +109,9 @@ def layout(book_id=None, **kwargs):
                                 href=f"/reviews/{book_id}",
                                 style={
                                     'font-weight': 'bold',
-                                    'color': '#007bff',
                                     'text-decoration': 'none'
-                                }
+                                },
+                                className='rating-color'
                             ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Span(
                                 "No ratings yet",
                                 style={'color': '#666'}
@@ -207,11 +207,10 @@ def layout(book_id=None, **kwargs):
 
                     ], className="book-details", style={'flex': '1', 'margin-left': '30px'})
 
-                ], className="book-detail-container", style={
+                ], className="book-detail-container secondary-bg", style={
                     'display': 'flex',
                     'max-width': '800px',
                     'margin': '0 auto',
-                    'background': 'white',
                     'padding': '30px',
                     'border-radius': '12px',
                     'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
@@ -362,7 +361,6 @@ def layout(book_id=None, **kwargs):
                                      style={'margin-top': '15px'})
                         ], style={
                             'position': 'relative',
-                            'background': 'white',
                             'padding': '25px',
                             'border-radius': '10px',
                             'box-shadow': '0 4px 20px rgba(0,0,0,0.3)',
@@ -370,7 +368,7 @@ def layout(book_id=None, **kwargs):
                             'width': '90%',
                             'max-height': '80vh',
                             'overflow-y': 'auto'
-                        })
+                        }, className='secondary-bg')
                     ], id={'type': 'modal-overlay', 'book_id': book_id})
                 ], id={'type': 'bookshelf-modal', 'book_id': book_id}, style={'display': 'none'}),
 
@@ -414,13 +412,12 @@ def layout(book_id=None, **kwargs):
                             ], style={'text-align': 'right'})
                         ], style={
                             'position': 'relative',
-                            'background': 'white',
                             'padding': '25px',
                             'border-radius': '10px',
                             'box-shadow': '0 4px 20px rgba(0,0,0,0.3)',
                             'max-width': '400px',
                             'width': '90%'
-                        })
+                        }, className='secondary-bg')
                     ], style={
                         'position': 'fixed',
                         'top': '0',
@@ -585,11 +582,10 @@ def populate_other_editions(nav_data):
             }) for book in other_books
         ])
     ], style={
-        'background': 'white',
         'padding': '20px',
         'border-radius': '12px',
         'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
-    })
+    }, className='secondary-bg')
 
 
 # Callback to set initial favorite button state

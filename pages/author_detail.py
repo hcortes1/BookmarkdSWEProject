@@ -204,11 +204,10 @@ def layout(author_id=None, **kwargs):
 
                     ], className="author-details", style={'flex': '1', 'margin-left': '30px'})
 
-                ], className="author-detail-container", style={
+                ], className="author-detail-container secondary-bg", style={
                     'display': 'flex',
                     'max-width': '800px',
                     'margin': '0 auto',
-                    'background': 'white',
                     'padding': '30px',
                     'border-radius': '12px',
                     'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
@@ -247,10 +246,9 @@ def layout(author_id=None, **kwargs):
                     # Store for pagination state
                     dcc.Store(id={'type': 'author-books-page-store', 'author_id': author_id}, data={
                               'current_page': 1, 'books_per_page': 80, 'total_books': len(books)})
-                ], className="author-books-section", style={
+                ], className="author-books-section secondary-bg", style={
                     'max-width': '1600px',  # Increased width for better space utilization
                     'margin': '30px auto 0',
-                    'background': 'white',
                     'padding': '20px',  # Reduced padding to give more space to books
                     'border-radius': '12px',
                     'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
@@ -288,9 +286,9 @@ def create_book_card(book: Dict[str, Any], author_id: int):
                     href=f"/reviews/{book['book_id']}",
                     style={
                         'font-weight': 'bold',
-                        'color': '#007bff',
                         'text-decoration': 'none'
-                    }
+                    },
+                    className='rating-color'
                 )
             ], style={
                 'text-align': 'center',
@@ -342,8 +340,7 @@ def create_book_card(book: Dict[str, Any], author_id: int):
                 year_info
             ])
         ], href=href, style={'text-decoration': 'none', 'color': 'inherit'})
-    ], className="book-card", style={
-        'background': 'white',
+    ], className="book-card secondary-bg", style={
         'border-radius': '10px',
         'padding': '15px',
         'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',

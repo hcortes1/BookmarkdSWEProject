@@ -76,13 +76,12 @@ layout = html.Div([
                             })
             ], style={'text-align': 'right'})
         ], style={
-            'background': 'white',
             'padding': '25px',
             'border-radius': '8px',
             'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
             'max-width': '400px',
             'width': '90%'
-        })
+        }, className='secondary-bg')
     ], id='remove-confirmation-modal', style={'display': 'none'})
 ])
 
@@ -162,7 +161,9 @@ def create_book_card(book, show_status_buttons=True):
                 # Show user rating if exists - X.X/5.0 format
                 html.Div([
                     html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
-                              style={'font-size': '12px', 'color': '#ffc107', 'font-weight': 'bold'}) if book.get('user_rating') else
+                              style={'font-size': '12px',
+                                     'font-weight': 'bold'},
+                              className='rating-color') if book.get('user_rating') else
                     html.Span("Not rated", style={
                               'font-size': '11px', 'color': '#999'})
                 ], style={'margin-bottom': '5px'}),
@@ -182,14 +183,13 @@ def create_book_card(book, show_status_buttons=True):
 
     ], style={
         'position': 'relative',
-        'background': 'white',
         'padding': '15px',
         'border-radius': '8px',
         'box-shadow': '0 2px 6px rgba(0,0,0,0.1)',
         'transition': 'all 0.2s ease',
         'height': '300px',
         'overflow': 'hidden'
-    }, className='bookshelf-book-card')
+    }, className='bookshelf-book-card secondary-bg')
 
 
 # Callback to handle tab switching
@@ -297,12 +297,6 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         ])
 
     return html.Div([
-        html.H2(f"{current_tab_info['title']} ({len(books)})", style={
-            'color': current_tab_info['color'],
-            'margin-bottom': '20px',
-            'border-bottom': f"2px solid {current_tab_info['color']}",
-            'padding-bottom': '10px'
-        }),
         html.Div([
             create_book_card(book) for book in books
         ], style={
