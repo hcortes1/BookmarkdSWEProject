@@ -101,17 +101,21 @@ def layout(book_id=None, **kwargs):
                             ) if book_data.get('author_id') else book_data.get('author_name', 'Unknown Author')
                         ], className="book-author"),
 
-                        # Rating information
+                        # Rating information (clickable)
                         html.Div([
                             html.Strong("Rating: "),
-                            html.Span(f"{book_data.get('average_rating', 0):.1f}/5.0 ({book_data.get('rating_count', 0)})",
-                                      style={
-                                          'font-weight': 'bold',
-                                          'color': '#007bff'
-                                      })
-                        ], className="book-info") if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Div([
-                            html.Strong("Rating: "),
-                            html.Span("No ratings yet", style={'color': '#666'})
+                            dcc.Link(
+                                f"{book_data.get('average_rating', 0):.1f}/5.0 ({book_data.get('rating_count', 0)})",
+                                href=f"/reviews/{book_id}",
+                                style={
+                                    'font-weight': 'bold',
+                                    'color': '#007bff',
+                                    'text-decoration': 'none'
+                                }
+                            ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Span(
+                                "No ratings yet",
+                                style={'color': '#666'}
+                            )
                         ], className="book-info"),
 
                         html.Div([
@@ -216,6 +220,12 @@ def layout(book_id=None, **kwargs):
                 # Store for modal visibility
                 dcc.Store(id={'type': 'modal-visible',
                           'book_id': book_id}, data=False),
+
+                # Store for review removal confirmation
+                dcc.Store(id={'type': 'review-removal-confirmation-visible',
+                          'book_id': book_id}, data=False),
+                dcc.Store(id={'type': 'pending-status-change',
+                          'book_id': book_id}, data=None),
 
                 # Bookshelf overlay modal
                 html.Div([
@@ -363,6 +373,67 @@ def layout(book_id=None, **kwargs):
                         })
                     ], id={'type': 'modal-overlay', 'book_id': book_id})
                 ], id={'type': 'bookshelf-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Review removal confirmation modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3("Remove Review?", style={
+                                'margin': '0 0 20px 0',
+                                'color': '#dc3545'
+                            }),
+                            html.P("Changing from 'Finished' to another status will remove your rating and review for this book. Are you sure you want to continue?",
+                                   style={
+                                       'margin-bottom': '20px',
+                                       'line-height': '1.5'
+                                   }),
+                            html.Div([
+                                html.Button("Cancel",
+                                            id={'type': 'cancel-review-removal',
+                                                'book_id': book_id},
+                                            style={
+                                                'padding': '10px 20px',
+                                                'margin-right': '10px',
+                                                'background': '#6c757d',
+                                                'color': 'white',
+                                                'border': 'none',
+                                                'border-radius': '4px',
+                                                'cursor': 'pointer'
+                                            }),
+                                html.Button("Continue & Remove Review",
+                                            id={'type': 'confirm-review-removal',
+                                                'book_id': book_id},
+                                            style={
+                                                'padding': '10px 20px',
+                                                'background': '#dc3545',
+                                                'color': 'white',
+                                                'border': 'none',
+                                                'border-radius': '4px',
+                                                'cursor': 'pointer'
+                                            })
+                            ], style={'text-align': 'right'})
+                        ], style={
+                            'position': 'relative',
+                            'background': 'white',
+                            'padding': '25px',
+                            'border-radius': '10px',
+                            'box-shadow': '0 4px 20px rgba(0,0,0,0.3)',
+                            'max-width': '400px',
+                            'width': '90%'
+                        })
+                    ], style={
+                        'position': 'fixed',
+                        'top': '0',
+                        'left': '0',
+                        'width': '100%',
+                        'height': '100%',
+                        'background': 'rgba(0,0,0,0.5)',
+                        'display': 'flex',
+                        'justify-content': 'center',
+                        'align-items': 'center',
+                        'z-index': '1001'  # Higher than bookshelf modal
+                    })
+                ], id={'type': 'review-removal-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Other editions/versions section
                 html.Div(id='other-editions-section', children=[
@@ -672,7 +743,13 @@ def close_bookshelf_modal(n_clicks):
             'book_id': dash.dependencies.MATCH}, 'children'),
      Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH},
             'children', allow_duplicate=True),
-     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
+     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH},
+            'data', allow_duplicate=True),
+     Output({'type': 'review-removal-modal',
+            'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'review-removal-confirmation-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
     [Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH, 'status': 'to_read'}, 'n_clicks'),
      Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH,
            'status': 'reading'}, 'n_clicks'),
@@ -684,7 +761,7 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
     """Handle status selection - add to shelf or show review form"""
     ctx = dash.callback_context
     if not ctx.triggered or not session_data or not session_data.get('logged_in'):
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Determine which button was clicked
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -692,6 +769,23 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
     book_id = button_data['book_id']
     status = button_data['status']
     user_id = session_data.get('user_id')
+
+    # Check current bookshelf status
+    success, message, current_status = get_book_shelf_status(user_id, book_id)
+
+    # If user currently has book as "completed" (finished) and wants to change to something else, show confirmation
+    if success and current_status == 'completed' and status != 'finished':
+        # Store the pending status change and show confirmation modal
+        return (
+            dash.no_update,  # Status selection modal stays
+            dash.no_update,  # Review form stays
+            dash.no_update,  # Feedback stays
+            dash.no_update,  # Button stays
+            dash.no_update,  # Modal visibility stays
+            {'display': 'block'},  # Show confirmation modal
+            True,  # Mark confirmation as visible
+            {'book_id': book_id, 'new_status': status}  # Store pending change
+        )
 
     if status == 'finished':
         # Show review form for finished books
@@ -701,7 +795,10 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
             html.Div("Please provide a rating to mark as finished.",
                      style={'color': '#666'}),
             dash.no_update,
-            dash.no_update
+            dash.no_update,
+            dash.no_update,  # Keep confirmation modal hidden
+            dash.no_update,  # Don't change confirmation state
+            dash.no_update   # No pending change
         )
     else:
         # Add to bookshelf with selected status (convert to database format)
@@ -719,7 +816,10 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
                 dash.no_update,
                 html.Div(message, style={'color': 'green'}),
                 f"📚 Manage: {status_text}",
-                False  # Close modal
+                False,  # Close modal
+                dash.no_update,  # Keep confirmation modal hidden
+                dash.no_update,  # Don't change confirmation state
+                dash.no_update   # No pending change
             )
         else:
             return (
@@ -727,7 +827,10 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
                 dash.no_update,
                 html.Div(message, style={'color': 'red'}),
                 dash.no_update,
-                dash.no_update
+                dash.no_update,
+                dash.no_update,  # Keep confirmation modal hidden
+                dash.no_update,  # Don't change confirmation state
+                dash.no_update   # No pending change
             )
 
 
@@ -926,4 +1029,94 @@ def handle_book_favorite_click(n_clicks, session_data):
         return dash.no_update, dash.no_update, html.Div(
             result['message'],
             style={'color': 'red'}
+        )
+
+
+# Callback to handle confirmation modal cancellation
+@callback(
+    [Output({'type': 'review-removal-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'review-removal-confirmation-visible',
+            'book_id': dash.dependencies.MATCH}, 'data'),
+     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'cancel-review-removal',
+           'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    prevent_initial_call=True
+)
+def cancel_review_removal(n_clicks):
+    """Cancel the review removal confirmation"""
+    if n_clicks:
+        return (
+            {'display': 'none'},  # Hide confirmation modal
+            False,  # Mark as not visible
+            {}  # Clear pending change
+        )
+    return dash.no_update, dash.no_update, dash.no_update
+
+
+# Callback to handle confirmation modal confirmation
+@callback(
+    [Output({'type': 'review-removal-modal', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'modal-feedback', 'book_id': dash.dependencies.MATCH},
+            'children', allow_duplicate=True),
+     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH},
+            'children', allow_duplicate=True),
+     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH},
+            'data', allow_duplicate=True),
+     Output({'type': 'review-removal-confirmation-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
+    [Input({'type': 'confirm-review-removal',
+           'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def confirm_review_removal(n_clicks, pending_change, session_data):
+    """Confirm the review removal and proceed with status change"""
+    if not n_clicks or not pending_change or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    book_id = pending_change.get('book_id')
+    new_status = pending_change.get('new_status')
+    user_id = session_data.get('user_id')
+
+    if not book_id or not new_status:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Import needed functions
+    from backend.bookshelf import update_shelf_status
+    from backend.reviews import delete_review
+
+    # Remove the review first
+    review_success, review_message = delete_review(user_id, book_id)
+
+    # Update the shelf status
+    db_status = SHELF_TYPE_MAPPING.get(new_status, new_status)
+    status_success, status_message = update_shelf_status(
+        user_id, book_id, db_status)
+
+    if review_success and status_success:
+        status_text = {
+            'to_read': 'Want to Read',
+            'reading': 'Currently Reading'
+        }.get(new_status, new_status)
+
+        return (
+            {'display': 'none'},  # Hide confirmation modal
+            html.Div("Review removed and status updated successfully.",
+                     style={'color': 'green'}),
+            f"📚 Manage: {status_text}",
+            False,  # Close main modal
+            False,  # Mark confirmation as not visible
+            {}  # Clear pending change
+        )
+    else:
+        error_msg = f"Error: {review_message if not review_success else status_message}"
+        return (
+            {'display': 'none'},  # Hide confirmation modal
+            html.Div(error_msg, style={'color': 'red'}),
+            dash.no_update,
+            dash.no_update,
+            False,  # Mark confirmation as not visible
+            {}  # Clear pending change
         )

@@ -273,27 +273,32 @@ def create_book_card(book: Dict[str, Any], author_id: int):
 
     # Create href for book details
     href = f"/book/{book['book_id']}"
-    
+
     # Format rating information
     rating_info = []
     average_rating = book.get('average_rating')
     rating_count = book.get('rating_count', 0)
-    
+
     if average_rating and average_rating > 0 and rating_count > 0:
-        # Create rating display in format: average/5.0 (count)
+        # Create clickable rating display in format: average/5.0 (count)
         rating_info.append(
-            html.Div(
-                f"{average_rating:.1f}/5.0 ({rating_count})",
-                style={
-                    'text-align': 'center',
-                    'margin': '5px 0',
-                    'font-size': '12px',
-                    'font-weight': 'bold',
-                    'color': '#007bff'
-                }
-            )
+            html.Div([
+                dcc.Link(
+                    f"{average_rating:.1f}/5.0 ({rating_count})",
+                    href=f"/reviews/{book['book_id']}",
+                    style={
+                        'font-weight': 'bold',
+                        'color': '#007bff',
+                        'text-decoration': 'none'
+                    }
+                )
+            ], style={
+                'text-align': 'center',
+                'margin': '5px 0',
+                'font-size': '12px'
+            })
         )
-    
+
     # Format release year
     release_year = book.get('release_year')
     year_info = None

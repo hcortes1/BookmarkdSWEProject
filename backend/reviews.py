@@ -78,7 +78,7 @@ def get_book_reviews(book_id, limit=10, offset=0):
                 query = """
                     SELECT 
                         r.review_id, r.rating, r.review_text, r.created_at,
-                        u.username, u.profile_image_url
+                        u.username, u.display_name, u.profile_image_url
                     FROM reviews r
                     JOIN users u ON r.user_id = u.user_id
                     WHERE r.book_id = %s AND r.ai_filtered = false
@@ -90,11 +90,12 @@ def get_book_reviews(book_id, limit=10, offset=0):
 
                 # Get total count
                 count_query = """
-                    SELECT COUNT(*) FROM reviews 
+                    SELECT COUNT(*) as count FROM reviews 
                     WHERE book_id = %s AND ai_filtered = false
                 """
                 cursor.execute(count_query, (book_id,))
-                total_count = cursor.fetchone()[0]
+                count_result = cursor.fetchone()
+                total_count = count_result['count'] if count_result else 0
 
                 return True, "Reviews retrieved", {
                     'reviews': [dict(row) for row in results],

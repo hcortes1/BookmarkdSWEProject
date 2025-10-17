@@ -133,9 +133,22 @@ def create_book_card(book, show_status_buttons=True):
                     html.Div([
                         html.Span("Your rating: ", style={
                                   'font-size': '12px', 'color': '#666'}),
-                        html.Span("⭐" * book['user_rating'] if book.get('user_rating') else "Not rated",
-                                  style={'font-size': '12px', 'color': '#ffc107'})
+                        html.Span(f"{book['user_rating']}/5.0" if book.get('user_rating') else "Not rated",
+                                  style={'font-size': '12px', 'color': '#007bff', 'font-weight': 'bold'})
                     ]) if book.get('user_rating') else html.Div(),
+                    # Show review text if exists
+                    html.Div([
+                        html.Span("Your review: ", style={
+                                  'font-size': '11px', 'color': '#666'}),
+                        html.P(book.get('review_text', ''),
+                               style={
+                                   'font-size': '11px',
+                                   'color': '#555',
+                                   'margin': '2px 0 0 0',
+                                   'line-height': '1.3',
+                                   'font-style': 'italic'
+                        })
+                    ]) if book.get('review_text') and book.get('review_text').strip() else html.Div(),
                     html.P(f"Added: {book['added_at'].strftime('%m/%d/%Y') if book.get('added_at') else 'Unknown'}",
                            style={
                         'margin': '8px 0 0 0',
