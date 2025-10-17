@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State, callback
 import backend.bookshelf as bookshelf_backend
 import backend.reviews as reviews_backend
+from backend.favorites import is_book_favorited
 
 dash.register_page(__name__, path='/profile/bookshelf')
 
@@ -86,8 +87,19 @@ layout = html.Div([
 ])
 
 
-def create_book_card(book, show_status_buttons=True):
+def create_book_card(book, show_status_buttons=True, reading_status=None, user_id=None):
     """Create a book card component for grid bookshelf view"""
+    
+    # Check if the book is favorited
+    is_favorited = False
+    if user_id and book.get('book_id'):
+        try:
+            is_favorited = is_book_favorited(user_id, book['book_id'])
+        except:
+            is_favorited = False
+    
+    # Determine border styling based on favorite status
+    border_style = '3px solid #007bff' if is_favorited else 'none'
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
@@ -125,21 +137,23 @@ def create_book_card(book, show_status_buttons=True):
                     src=book.get(
                         'cover_url') or '/assets/svg/default-book.svg',
                     style={
-                        'width': '100%',
+                        'width': '120px',
                         'height': '180px',
                         'object-fit': 'contain',
-                        'border-radius': '6px',
-                        'box-shadow': '0 4px 8px rgba(0,0,0,0.15)',
-                        'transition': 'transform 0.2s ease',
-                        'background-color': '#f8f9fa'
+                        'border-radius': '8px',
+                        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
+                        'transition': 'transform 0.2s',
+                        'display': 'block',
+                        'background-color': '#f8f9fa',
+                        'margin': '0 auto'  # Center the image horizontally
                     }
                 )
-            ], style={'margin-bottom': '10px'}),
+            ], style={'margin-bottom': '5px', 'text-align': 'center', 'display': 'flex', 'justify-content': 'center'}),
 
-            # Book info - compact
+            # Book info - compact and centered
             html.Div([
                 html.H4(book['title'], style={
-                    'margin': '0 0 5px 0',
+                    'margin': '0 0 0 0',  # Remove bottom margin to eliminate gap
                     'font-size': '14px',
                     'color': '#333',
                     'font-weight': '600',
@@ -148,32 +162,59 @@ def create_book_card(book, show_status_buttons=True):
                     'overflow': 'hidden',
                     'display': '-webkit-box',
                     '-webkit-line-clamp': '2',
-                    '-webkit-box-orient': 'vertical'
+                    '-webkit-box-orient': 'vertical',
+                    'text-align': 'center'
                 }),
                 html.P(book.get('author_name', 'Unknown Author'), style={
-                    'margin': '0 0 8px 0',
+                    'margin': '1px 0 3px 0',  # Further reduced margins
                     'font-size': '12px',
                     'color': '#666',
                     'white-space': 'nowrap',
                     'overflow': 'hidden',
-                    'text-overflow': 'ellipsis'
+                    'text-overflow': 'ellipsis',
+                    'text-align': 'center'
                 }),
-                # Show user rating if exists - X.X/5.0 format
+                # Display different info based on reading status
                 html.Div([
-                    html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
-                              style={'font-size': '12px',
-                                     'font-weight': 'bold'},
-                              className='rating-color') if book.get('user_rating') else
-                    html.Span("Not rated", style={
-                              'font-size': '11px', 'color': '#999'})
-                ], style={'margin-bottom': '5px'}),
+                    # For completed books: show rating if exists, plus date added
+                    html.Div([
+                        html.Div([
+                            html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
+                                      style={'font-size': '11px',
+                                             'font-weight': 'bold'},
+                                      className='rating-color') if book.get('user_rating') else
+                            html.Span("Not rated", style={
+                                      'font-size': '10px', 'color': '#999'})
+                        ], style={'margin-bottom': '1px', 'text-align': 'center'}),
+                        # Date added for completed books
+                        html.Div([
+                            html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                            html.Span(
+                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                                else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
+                                else 'Unknown date',
+                                style={'font-size': '9px', 'color': '#666'}
+                            )
+                        ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                    ]) if reading_status == 'finished' else
+                    # For want-to-read and currently reading: only show date added
+                    html.Div([
+                        html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                        html.Span(
+                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                            else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
+                            else 'Unknown date',
+                            style={'font-size': '9px', 'color': '#666'}
+                        )
+                    ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                ]),
                 # Show if has review
                 html.Div([
                     html.Span(
                         "📝", style={'font-size': '12px', 'margin-right': '3px'}),
                     html.Span("Has review", style={
                               'font-size': '10px', 'color': '#28a745'})
-                ]) if book.get('review_text') and book.get('review_text').strip() else html.Div()
+                ], style={'text-align': 'center'}) if book.get('review_text') and book.get('review_text').strip() else html.Div()
             ])
         ], href=f"/book/{book['book_id']}", style={
             'text-decoration': 'none',
@@ -183,12 +224,18 @@ def create_book_card(book, show_status_buttons=True):
 
     ], style={
         'position': 'relative',
-        'padding': '15px',
+        'display': 'flex',
+        'flex-direction': 'column',
+        'align-items': 'center',
+        'padding': '10px',  # Reduced padding from 15px to 10px
         'border-radius': '8px',
         'box-shadow': '0 2px 6px rgba(0,0,0,0.1)',
         'transition': 'all 0.2s ease',
         'height': '300px',
-        'overflow': 'hidden'
+        'overflow': 'hidden',
+        'width': '160px',  # Fixed width to prevent cards from being too wide
+        'margin': '0 auto',  # Center the card
+        'border': border_style  # Add favorite border if applicable
     }, className='bookshelf-book-card secondary-bg')
 
 
@@ -298,7 +345,7 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
 
     return html.Div([
         html.Div([
-            create_book_card(book) for book in books
+            create_book_card(book, reading_status=shelf_type, user_id=user_id) for book in books
         ], style={
             'display': 'grid',
             'grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))',
