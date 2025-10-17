@@ -151,7 +151,8 @@ def layout(book_id=None, **kwargs):
                         html.Div([
                             html.Strong("Description: "),
                             dcc.Markdown(
-                                book_data.get('description') or 'No description available.',
+                                book_data.get(
+                                    'description') or 'No description available.',
                                 className="book-description"
                             )
                         ], className="book-info-block"),

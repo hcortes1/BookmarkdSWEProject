@@ -34,6 +34,11 @@ body, html {
   background-color: #e5e5e5;
 }
 
+/* Unified lighter background color for profile elements */
+.lighter-bg {
+  background-color: #f0f0f0;
+}
+
 /* Unified rating color for consistent rating display across the app */
 .rating-color {
   color: #ff9800;

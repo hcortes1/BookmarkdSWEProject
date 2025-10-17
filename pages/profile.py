@@ -94,7 +94,7 @@ def create_reviews_content(user_data, is_own_profile):
                     'border': '1px solid #ddd',
                     'border-radius': '8px',
                     'margin-bottom': '15px'
-                }, className='secondary-bg')
+                }, className='lighter-bg')
             ])
 
             reviews_content.append(review_card)
@@ -231,7 +231,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 'width': '160px',
                 'height': '300px',  # Increased height to accommodate completion date
                 'cursor': 'pointer'
-            }, className="completed-book-card secondary-bg")
+            }, className="completed-book-card lighter-bg")
 
             books_content.append(book_card)
 
@@ -296,7 +296,7 @@ def layout(username=None, **kwargs):
                         html.H3(id="friends-title", children=friends_title,
                                 className="friends-title-left"),
                         html.Ul(id="friends-list",
-                                className="friends-list-left")
+                                className="friends-list-left secondary-bg")
                     ], className="friends-section-left")
                 ], className="profile-info"),
 
@@ -470,7 +470,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                                 html.Div(f"by {author_name}",
                                          className="favorite-item-author")
                             ], href=f"/book/{book_id}?from=profile&username={viewed_username}", className="favorite-item-link")
-                        ], className="favorite-item")
+                        ], className="favorite-item lighter-bg")
                     )
                 books_card_content = html.Ul(
                     books_content, className="favorites-list")
@@ -503,7 +503,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                                 html.Div(
                                     author_name, className="favorite-item-title")
                             ], href=f"/author/{author_id}?from=profile&username={viewed_username}", className="favorite-item-link")
-                        ], className="favorite-item")
+                        ], className="favorite-item lighter-bg")
                     )
                 authors_card_content = html.Ul(
                     authors_content, className="favorites-list")
@@ -524,12 +524,12 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
                         books_card_content
-                    ], className="favorites-card"),
+                    ], className="favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
                         authors_card_content
-                    ], className="favorites-card")
+                    ], className="favorites-card lighter-bg")
                 ], className="favorites-container")
             elif active_tab == 'reviews':
                 # Create reviews content
@@ -545,12 +545,12 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
                         books_card_content
-                    ], className="favorites-card"),
+                    ], className="favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
                         authors_card_content
-                    ], className="favorites-card")
+                    ], className="favorites-card lighter-bg")
                 ], className="favorites-container")
 
             # Friend request section
@@ -639,7 +639,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                             href=f"/profile/view/{friend['username']}",
                             className='friend-link',
                             style={'text-decoration': 'none', 'color': 'inherit'})
-                    ], className="friend-item")
+                    ], className="friend-item lighter-bg")
                     friends_list.append(friend_item)
             else:
                 friends_list = [
