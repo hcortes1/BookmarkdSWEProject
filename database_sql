@@ -21,6 +21,10 @@ CREATE TABLE public.books (
   description text,
   cover_url character varying,
   author_id integer,
+  average_rating numeric,
+  rating_count integer DEFAULT 0,
+  language character varying DEFAULT 'en'::character varying,
+  page_count integer,
   CONSTRAINT books_pkey PRIMARY KEY (book_id),
   CONSTRAINT books_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.authors(author_id)
 );

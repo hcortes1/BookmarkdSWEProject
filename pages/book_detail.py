@@ -201,8 +201,9 @@ def layout(book_id=None, **kwargs):
                 }),
 
                 # Store for modal visibility
-                dcc.Store(id={'type': 'modal-visible', 'book_id': book_id}, data=False),
-                
+                dcc.Store(id={'type': 'modal-visible',
+                          'book_id': book_id}, data=False),
+
                 # Bookshelf overlay modal
                 html.Div([
                     html.Div([
@@ -212,89 +213,100 @@ def layout(book_id=None, **kwargs):
                                 'color': '#333'
                             }),
                             html.Button("×", id={'type': 'close-bookshelf-modal', 'book_id': book_id},
-                                      style={
-                                          'position': 'absolute',
-                                          'top': '15px',
-                                          'right': '15px',
-                                          'background': 'none',
-                                          'border': 'none',
+                                        style={
+                                'position': 'absolute',
+                                'top': '15px',
+                                'right': '15px',
+                                'background': 'none',
+                                'border': 'none',
                                           'font-size': '24px',
                                           'cursor': 'pointer',
                                           'color': '#666'
-                                      }),
-                            
+                            }),
+
                             # Status selection
                             html.Div([
-                                html.H4("Choose status:", style={'margin-bottom': '15px'}),
+                                html.H4("Choose status:", style={
+                                        'margin-bottom': '15px'}),
                                 html.Div([
-                                    html.Button("Want to Read", 
-                                              id={'type': 'select-status', 'book_id': book_id, 'status': 'to_read'},
-                                              className="status-btn",
-                                              style={
-                                                  'display': 'block',
-                                                  'width': '100%',
-                                                  'margin-bottom': '10px',
-                                                  'padding': '12px',
-                                                  'background': '#17a2b8',
-                                                  'color': 'white',
-                                                  'border': 'none',
-                                                  'border-radius': '5px',
-                                                  'cursor': 'pointer',
-                                                  'font-size': '14px'
-                                              }),
-                                    html.Button("Currently Reading", 
-                                              id={'type': 'select-status', 'book_id': book_id, 'status': 'reading'},
-                                              className="status-btn",
-                                              style={
-                                                  'display': 'block',
-                                                  'width': '100%',
-                                                  'margin-bottom': '10px',
-                                                  'padding': '12px',
-                                                  'background': '#ffc107',
-                                                  'color': 'black',
-                                                  'border': 'none',
-                                                  'border-radius': '5px',
-                                                  'cursor': 'pointer',
-                                                  'font-size': '14px'
-                                              }),
-                                    html.Button("Mark as Finished", 
-                                              id={'type': 'select-status', 'book_id': book_id, 'status': 'finished'},
-                                              className="status-btn",
-                                              style={
-                                                  'display': 'block',
-                                                  'width': '100%',
-                                                  'margin-bottom': '15px',
-                                                  'padding': '12px',
-                                                  'background': '#28a745',
-                                                  'color': 'white',
-                                                  'border': 'none',
-                                                  'border-radius': '5px',
-                                                  'cursor': 'pointer',
-                                                  'font-size': '14px'
-                                              })
+                                    html.Button("Want to Read",
+                                                id={'type': 'select-status',
+                                                    'book_id': book_id, 'status': 'to_read'},
+                                                className="status-btn",
+                                                style={
+                                                    'display': 'block',
+                                                    'width': '100%',
+                                                    'margin-bottom': '10px',
+                                                    'padding': '12px',
+                                                    'background': '#17a2b8',
+                                                    'color': 'white',
+                                                    'border': 'none',
+                                                    'border-radius': '5px',
+                                                    'cursor': 'pointer',
+                                                    'font-size': '14px'
+                                                }),
+                                    html.Button("Currently Reading",
+                                                id={'type': 'select-status',
+                                                    'book_id': book_id, 'status': 'reading'},
+                                                className="status-btn",
+                                                style={
+                                                    'display': 'block',
+                                                    'width': '100%',
+                                                    'margin-bottom': '10px',
+                                                    'padding': '12px',
+                                                    'background': '#ffc107',
+                                                    'color': 'black',
+                                                    'border': 'none',
+                                                    'border-radius': '5px',
+                                                    'cursor': 'pointer',
+                                                    'font-size': '14px'
+                                                }),
+                                    html.Button("Mark as Finished",
+                                                id={'type': 'select-status',
+                                                    'book_id': book_id, 'status': 'finished'},
+                                                className="status-btn",
+                                                style={
+                                                    'display': 'block',
+                                                    'width': '100%',
+                                                    'margin-bottom': '15px',
+                                                    'padding': '12px',
+                                                    'background': '#28a745',
+                                                    'color': 'white',
+                                                    'border': 'none',
+                                                    'border-radius': '5px',
+                                                    'cursor': 'pointer',
+                                                    'font-size': '14px'
+                                                })
                                 ])
                             ], id={'type': 'status-selection', 'book_id': book_id}),
-                            
+
                             # Review form (shown when marking as finished)
                             html.Div([
-                                html.H4("Write a Review", style={'margin-bottom': '15px'}),
+                                html.H4("Write a Review", style={
+                                        'margin-bottom': '15px'}),
                                 html.Div([
-                                    html.Label("Rating (required):", style={'display': 'block', 'margin-bottom': '5px'}),
+                                    html.Label("Rating (required):", style={
+                                               'display': 'block', 'margin-bottom': '5px'}),
                                     dcc.Dropdown(
-                                        id={'type': 'rating-dropdown', 'book_id': book_id},
+                                        id={'type': 'rating-dropdown',
+                                            'book_id': book_id},
                                         options=[
                                             {'label': '⭐ 1 - Poor', 'value': 1},
                                             {'label': '⭐⭐ 2 - Fair', 'value': 2},
                                             {'label': '⭐⭐⭐ 3 - Good', 'value': 3},
-                                            {'label': '⭐⭐⭐⭐ 4 - Very Good', 'value': 4},
-                                            {'label': '⭐⭐⭐⭐⭐ 5 - Excellent', 'value': 5}
+                                            {'label': '⭐⭐⭐⭐ 4 - Very Good',
+                                                'value': 4},
+                                            {'label': '⭐⭐⭐⭐⭐ 5 - Excellent',
+                                                'value': 5}
                                         ],
                                         placeholder="Select a rating",
                                         style={'margin-bottom': '15px'}
                                     ),
-                                    html.Label("Review (optional):", style={'display': 'block', 'margin-bottom': '5px'}),
+                                    html.Label("Review (optional):", style={
+                                               'display': 'block', 'margin-bottom': '5px'}),
                                     dcc.Textarea(
-                                        id={'type': 'review-text', 'book_id': book_id},
+                                        id={'type': 'review-text',
+                                            'book_id': book_id},
                                         placeholder="Write your review here...",
                                         style={
                                             'width': '100%',
@@ -307,23 +319,24 @@ def layout(book_id=None, **kwargs):
                                         }
                                     ),
                                     html.Button("Save Review & Mark as Finished",
-                                              id={'type': 'save-review', 'book_id': book_id},
-                                              style={
-                                                  'width': '100%',
-                                                  'padding': '12px',
-                                                  'background': '#28a745',
-                                                  'color': 'white',
-                                                  'border': 'none',
-                                                  'border-radius': '5px',
-                                                  'cursor': 'pointer',
-                                                  'font-size': '14px'
-                                              })
+                                                id={'type': 'save-review',
+                                                    'book_id': book_id},
+                                                style={
+                                                    'width': '100%',
+                                                    'padding': '12px',
+                                                    'background': '#28a745',
+                                                    'color': 'white',
+                                                    'border': 'none',
+                                                    'border-radius': '5px',
+                                                    'cursor': 'pointer',
+                                                    'font-size': '14px'
+                                                })
                                 ])
-                            ], id={'type': 'review-form', 'book_id': book_id}, 
-                               style={'display': 'none'}),
-                            
-                            html.Div(id={'type': 'modal-feedback', 'book_id': book_id}, 
-                                    style={'margin-top': '15px'})
+                            ], id={'type': 'review-form', 'book_id': book_id},
+                                style={'display': 'none'}),
+
+                            html.Div(id={'type': 'modal-feedback', 'book_id': book_id},
+                                     style={'margin-top': '15px'})
                         ], style={
                             'position': 'relative',
                             'background': 'white',
@@ -545,7 +558,8 @@ def set_initial_book_favorite_state(store_id, session_data):
 
 # Callback to set initial bookshelf button state
 @callback(
-    [Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH}, 'children')],
+    [Output({'type': 'book-bookshelf-btn',
+            'book_id': dash.dependencies.MATCH}, 'children')],
     [Input({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
     [State('user-session', 'data')],
     prevent_initial_call=False
@@ -570,7 +584,8 @@ def set_initial_bookshelf_button_state(store_id, session_data):
 # Callback to handle bookshelf button clicks (open modal)
 @callback(
     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
-    Input({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    Input({'type': 'book-bookshelf-btn',
+          'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     State('user-session', 'data'),
     prevent_initial_call=True
 )
@@ -616,9 +631,11 @@ def update_modal_visibility(is_visible):
 # Callback to close bookshelf modal
 @callback(
     [Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'status-selection',
+            'book_id': dash.dependencies.MATCH}, 'style'),
      Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style')],
-    Input({'type': 'close-bookshelf-modal', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    Input({'type': 'close-bookshelf-modal',
+          'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     prevent_initial_call=True
 )
 def close_bookshelf_modal(n_clicks):
@@ -636,12 +653,16 @@ def close_bookshelf_modal(n_clicks):
 # Callback to handle status selection
 @callback(
     [Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
-     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
-     Output({'type': 'modal-feedback', 'book_id': dash.dependencies.MATCH}, 'children'),
-     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
+     Output({'type': 'modal-feedback',
+            'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH},
+            'children', allow_duplicate=True),
      Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
     [Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH, 'status': 'to_read'}, 'n_clicks'),
-     Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH, 'status': 'reading'}, 'n_clicks'),
+     Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH,
+           'status': 'reading'}, 'n_clicks'),
      Input({'type': 'select-status', 'book_id': dash.dependencies.MATCH, 'status': 'finished'}, 'n_clicks')],
     [State('user-session', 'data')],
     prevent_initial_call=True
@@ -664,7 +685,8 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
         return (
             {'display': 'none'},  # Hide status selection
             {'display': 'block'},  # Show review form
-            html.Div("Please provide a rating to mark as finished.", style={'color': '#666'}),
+            html.Div("Please provide a rating to mark as finished.",
+                     style={'color': '#666'}),
             dash.no_update,
             dash.no_update
         )
@@ -672,13 +694,13 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
         # Add to bookshelf with selected status (convert to database format)
         db_status = SHELF_TYPE_MAPPING.get(status, status)
         success, message = add_to_bookshelf(user_id, book_id, db_status)
-        
+
         if success:
             status_text = {
                 'to_read': 'Want to Read',
                 'reading': 'Currently Reading'
             }.get(status, status)
-            
+
             return (
                 dash.no_update,
                 dash.no_update,
@@ -699,9 +721,12 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
 # Callback to handle review submission
 @callback(
     [Output({'type': 'modal-feedback', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
-     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
-     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value'),
+     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH},
+            'children', allow_duplicate=True),
+     Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH},
+            'data', allow_duplicate=True),
+     Output({'type': 'rating-dropdown',
+            'book_id': dash.dependencies.MATCH}, 'value'),
      Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value')],
     Input({'type': 'save-review', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     [State({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value'),
@@ -716,7 +741,8 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
 
     if not rating:
         return (
-            html.Div("Please select a rating before submitting.", style={'color': 'red'}),
+            html.Div("Please select a rating before submitting.",
+                     style={'color': 'red'}),
             dash.no_update,
             dash.no_update,
             dash.no_update,
@@ -732,23 +758,27 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
     # Save review and add to bookshelf in single operation
     try:
         # First add to bookshelf
-        shelf_success, shelf_message = add_to_bookshelf(user_id, book_id, 'completed')
-        
+        shelf_success, shelf_message = add_to_bookshelf(
+            user_id, book_id, 'completed')
+
         if not shelf_success:
             return (
-                html.Div(f"Error updating bookshelf: {shelf_message}", style={'color': 'red'}),
+                html.Div(f"Error updating bookshelf: {shelf_message}", style={
+                         'color': 'red'}),
                 dash.no_update,
                 dash.no_update,
                 dash.no_update,
                 dash.no_update
             )
-        
+
         # Then save review
-        review_success, review_message = create_or_update_review(user_id, book_id, rating, review_text)
-        
+        review_success, review_message = create_or_update_review(
+            user_id, book_id, rating, review_text)
+
         if not review_success:
             return (
-                html.Div(f"Bookshelf updated but error saving review: {review_message}", style={'color': 'orange'}),
+                html.Div(f"Bookshelf updated but error saving review: {review_message}", style={
+                         'color': 'orange'}),
                 "📚 Manage: Finished",
                 dash.no_update,
                 dash.no_update,
@@ -756,7 +786,8 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
             )
 
         return (
-            html.Div("Review saved and book marked as finished!", style={'color': 'green'}),
+            html.Div("Review saved and book marked as finished!",
+                     style={'color': 'green'}),
             "📚 Manage: Finished",
             False,  # Close modal
             None,  # Clear rating
@@ -775,9 +806,11 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
 # Callback to handle remove from bookshelf
 @callback(
     [Output({'type': 'book-bookshelf-feedback', 'book_id': dash.dependencies.MATCH}, 'children'),
-     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
+     Output({'type': 'book-bookshelf-btn', 'book_id': dash.dependencies.MATCH},
+            'children', allow_duplicate=True),
      Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
-    Input({'type': 'remove-from-shelf', 'book_id': dash.dependencies.ALL}, 'n_clicks'),
+    Input({'type': 'remove-from-shelf',
+          'book_id': dash.dependencies.ALL}, 'n_clicks'),
     State('user-session', 'data'),
     prevent_initial_call=True
 )
@@ -795,22 +828,24 @@ def handle_remove_from_bookshelf(remove_clicks, session_data):
     # Remove from bookshelf (this will also remove the review if it exists)
     from backend.bookshelf import remove_from_bookshelf
     from backend.reviews import delete_review
-    
+
     # First remove the review (which will update book ratings)
     review_success, review_message = delete_review(user_id, book_id)
-    
+
     # Then remove from bookshelf
     shelf_success, shelf_message = remove_from_bookshelf(user_id, book_id)
-    
+
     if shelf_success:
         return (
-            html.Div("Book removed from bookshelf and review deleted!", style={'color': 'green'}),
+            html.Div("Book removed from bookshelf and review deleted!",
+                     style={'color': 'green'}),
             "📚 Add to Bookshelf",
             False  # Close modal
         )
     else:
         return (
-            html.Div(f"Error removing from bookshelf: {shelf_message}", style={'color': 'red'}),
+            html.Div(f"Error removing from bookshelf: {shelf_message}", style={
+                     'color': 'red'}),
             dash.no_update,
             dash.no_update
         )

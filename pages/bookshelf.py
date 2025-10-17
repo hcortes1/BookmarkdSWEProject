@@ -20,21 +20,23 @@ layout = html.Div([
 
         # Store for refresh trigger
         dcc.Store(id='bookshelf-refresh-trigger', data=0),
-        
+
         # Store for book to remove
         dcc.Store(id='book-to-remove', data=None)
 
     ], className="app-container", style={'max-width': '1200px', 'margin': '0 auto', 'padding': '20px'}),
-    
+
     # Confirmation modal
     html.Div([
         html.Div([
-            html.H3("Remove Book", style={'margin': '0 0 15px 0', 'color': '#333'}),
-            html.P(id='remove-confirmation-text', children="Are you sure you want to remove this book from your bookshelf?"),
+            html.H3("Remove Book", style={
+                    'margin': '0 0 15px 0', 'color': '#333'}),
+            html.P(id='remove-confirmation-text',
+                   children="Are you sure you want to remove this book from your bookshelf?"),
             html.Div([
-                html.Button("Cancel", 
-                           id='cancel-remove',
-                           style={
+                html.Button("Cancel",
+                            id='cancel-remove',
+                            style={
                                'padding': '10px 20px',
                                'margin-right': '10px',
                                'background': '#6c757d',
@@ -42,17 +44,17 @@ layout = html.Div([
                                'border': 'none',
                                'border-radius': '4px',
                                'cursor': 'pointer'
-                           }),
-                html.Button("Remove", 
-                           id='confirm-remove',
-                           style={
+                            }),
+                html.Button("Remove",
+                            id='confirm-remove',
+                            style={
                                'padding': '10px 20px',
                                'background': '#dc3545',
                                'color': 'white',
                                'border': 'none',
                                'border-radius': '4px',
                                'cursor': 'pointer'
-                           })
+                            })
             ], style={'text-align': 'right'})
         ], style={
             'background': 'white',
@@ -70,38 +72,39 @@ def create_book_card(book, show_status_buttons=True):
     """Create a book card component"""
     return html.Div([
         # Remove button as subtle X in top-right corner
-        html.Button("×", 
-                   id={'type': 'remove-book-btn', 'book_id': book['book_id']},
-                   style={
-                       'position': 'absolute',
-                       'top': '8px',
-                       'right': '8px',
-                       'width': '24px',
-                       'height': '24px',
-                       'border': 'none',
-                       'border-radius': '50%',
-                       'background': 'rgba(220, 53, 69, 0.1)',
-                       'color': '#dc3545',
-                       'font-size': '16px',
-                       'font-weight': 'bold',
-                       'cursor': 'pointer',
-                       'display': 'flex',
-                       'align-items': 'center',
-                       'justify-content': 'center',
-                       'z-index': '10',
-                       'transition': 'all 0.2s ease',
-                       'opacity': '0.7'
-                   },
-                   className='remove-btn-hover',
-                   title="Remove from bookshelf"
-        ) if show_status_buttons else html.Div(),
-        
+        html.Button("×",
+                    id={'type': 'remove-book-btn', 'book_id': book['book_id']},
+                    style={
+                        'position': 'absolute',
+                        'top': '8px',
+                        'right': '8px',
+                        'width': '24px',
+                        'height': '24px',
+                        'border': 'none',
+                        'border-radius': '50%',
+                        'background': 'rgba(220, 53, 69, 0.1)',
+                        'color': '#dc3545',
+                        'font-size': '16px',
+                        'font-weight': 'bold',
+                        'cursor': 'pointer',
+                        'display': 'flex',
+                        'align-items': 'center',
+                        'justify-content': 'center',
+                        'z-index': '10',
+                        'transition': 'all 0.2s ease',
+                        'opacity': '0.7'
+                    },
+                    className='remove-btn-hover',
+                    title="Remove from bookshelf"
+                    ) if show_status_buttons else html.Div(),
+
         # Wrap entire card content in a link
         dcc.Link([
             # Book cover and info
             html.Div([
                 html.Img(
-                    src=book.get('cover_url') or '/assets/svg/default-book.svg',
+                    src=book.get(
+                        'cover_url') or '/assets/svg/default-book.svg',
                     style={
                         'width': '80px',
                         'height': '120px',
@@ -128,16 +131,17 @@ def create_book_card(book, show_status_buttons=True):
                     }),
                     # Show user rating if exists
                     html.Div([
-                        html.Span("Your rating: ", style={'font-size': '12px', 'color': '#666'}),
-                        html.Span("⭐" * book['user_rating'] if book.get('user_rating') else "Not rated", 
-                                 style={'font-size': '12px', 'color': '#ffc107'})
+                        html.Span("Your rating: ", style={
+                                  'font-size': '12px', 'color': '#666'}),
+                        html.Span("⭐" * book['user_rating'] if book.get('user_rating') else "Not rated",
+                                  style={'font-size': '12px', 'color': '#ffc107'})
                     ]) if book.get('user_rating') else html.Div(),
-                    html.P(f"Added: {book['added_at'].strftime('%m/%d/%Y') if book.get('added_at') else 'Unknown'}", 
-                          style={
-                              'margin': '8px 0 0 0',
-                              'font-size': '11px',
-                              'color': '#999'
-                          })
+                    html.P(f"Added: {book['added_at'].strftime('%m/%d/%Y') if book.get('added_at') else 'Unknown'}",
+                           style={
+                        'margin': '8px 0 0 0',
+                        'font-size': '11px',
+                        'color': '#999'
+                    })
                 ], style={'flex': '1'})
             ], style={
                 'display': 'flex',
@@ -148,7 +152,7 @@ def create_book_card(book, show_status_buttons=True):
             'color': 'inherit',
             'display': 'block'
         })
-        
+
     ], style={
         'position': 'relative',
         'background': 'white',
@@ -171,8 +175,8 @@ def load_bookshelf_content(session_data, refresh_trigger):
     """Load and display user's bookshelf"""
     if not session_data or not session_data.get('logged_in'):
         return html.Div([
-            html.P("Please log in to view your bookshelf.", 
-                  style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
+            html.P("Please log in to view your bookshelf.",
+                   style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
         ])
 
     user_id = session_data.get('user_id')
@@ -180,14 +184,14 @@ def load_bookshelf_content(session_data, refresh_trigger):
 
     if not success:
         return html.Div([
-            html.P(f"Error loading bookshelf: {message}", 
-                  style={'text-align': 'center', 'color': 'red', 'margin-top': '50px'})
+            html.P(f"Error loading bookshelf: {message}",
+                   style={'text-align': 'center', 'color': 'red', 'margin-top': '50px'})
         ])
 
     if not any(bookshelf.values()):
         return html.Div([
-            html.P("Your bookshelf is empty. Start adding books from the book detail pages!", 
-                  style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
+            html.P("Your bookshelf is empty. Start adding books from the book detail pages!",
+                   style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
         ])
 
     sections = []
@@ -268,12 +272,14 @@ def show_remove_confirmation(remove_clicks, session_data, bookshelf_content):
     if not success:
         return dash.no_update, dash.no_update, dash.no_update
 
-    # Find the specific book
+    # Find the specific book and its shelf type
     book_title = "this book"
+    book_shelf_type = None
     for shelf_type, books in bookshelf.items():
         for book in books:
             if book['book_id'] == book_id:
                 book_title = f'"{book["title"]}"'
+                book_shelf_type = shelf_type
                 break
 
     modal_style = {
@@ -289,7 +295,13 @@ def show_remove_confirmation(remove_clicks, session_data, bookshelf_content):
         'z-index': '1000'
     }
 
-    return modal_style, book_id, f"Are you sure you want to remove {book_title} from your bookshelf?"
+    # Create confirmation message based on shelf type
+    if book_shelf_type == 'finished':
+        confirmation_text = f"Are you sure you want to remove {book_title} from your bookshelf? This will also delete your review for this book."
+    else:
+        confirmation_text = f"Are you sure you want to remove {book_title} from your bookshelf?"
+
+    return modal_style, book_id, confirmation_text
 
 
 # Callback to hide confirmation modal
@@ -321,8 +333,21 @@ def handle_confirmed_removal(confirm_clicks, session_data, book_id, current_trig
         return dash.no_update, dash.no_update
 
     user_id = session_data.get('user_id')
-    success, message = bookshelf_backend.remove_from_bookshelf(user_id, book_id)
     
+    # First check what shelf type this book is on
+    shelf_success, shelf_message, shelf_type = bookshelf_backend.get_book_shelf_status(user_id, book_id)
+    
+    # If the book is on the "completed" shelf (finished), also delete the review
+    if shelf_success and shelf_type == 'completed':
+        # Delete the review first (this will automatically update book ratings via triggers)
+        review_success, review_message = reviews_backend.delete_review(user_id, book_id)
+        # Note: We don't need to check review_success because the review might not exist
+        # and that's okay - we still want to remove the book from bookshelf
+    
+    # Remove the book from bookshelf
+    success, message = bookshelf_backend.remove_from_bookshelf(
+        user_id, book_id)
+
     if success:
         return current_trigger + 1, {'display': 'none'}
     else:
