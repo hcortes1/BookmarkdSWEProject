@@ -150,8 +150,10 @@ def layout(book_id=None, **kwargs):
 
                         html.Div([
                             html.Strong("Description: "),
-                            html.P(book_data.get('description') or 'No description available.',
-                                   className="book-description")
+                            dcc.Markdown(
+                                book_data.get('description') or 'No description available.',
+                                className="book-description"
+                            )
                         ], className="book-info-block"),
 
                         # Action buttons section

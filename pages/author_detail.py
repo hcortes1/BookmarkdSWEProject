@@ -9,7 +9,6 @@ from typing import Dict, Any
 
 dash.register_page(__name__, path_template="/author/<author_id>")
 
-
 def create_pagination_controls(current_page, total_pages, total_books, author_id):
     """Create pagination controls for author books"""
     # Defensive programming - ensure we have valid numbers
@@ -174,8 +173,10 @@ def layout(author_id=None, **kwargs):
 
                         html.Div([
                             html.Strong("Biography: "),
-                            html.P(author_data.get('bio') or 'No biography available.',
-                                   className="author-bio")
+                            dcc.Markdown(
+                                author_data.get('bio') or 'No biography available.',
+                                className="author-bio"
+                            )
                         ], className="author-info-block"),
 
                         # Favorite button
