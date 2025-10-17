@@ -438,9 +438,9 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 user_info_elements.append(
                     html.Div([
                         html.P(f"Books read this year: {books_count}",
-                               style={'margin': '15px 0 5px 0', 'font-weight': 'bold', 'color': '#333'}),
+                               style={'margin': '0px 0 3px 0', 'color': '#333'}),
                         html.P(f"Pages read this year: {pages_count:,}",
-                               style={'margin': '5px 0 0 0', 'font-weight': 'bold', 'color': '#333'})
+                               style={'margin': '3px 0 0 0', 'color': '#333'})
                     ], className="yearly-stats")
                 )
 
@@ -575,7 +575,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                             'border': 'none',
                             'padding': '8px 16px',
                             'border-radius': '6px',
-                            'margin-top': '10px',
+                            'margin-top': '0px',
                             'cursor': 'pointer'
                         }
                     )
@@ -583,13 +583,13 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     # Show "Friend Request Sent" (disabled)
                     friend_request_section = html.Div([
                         html.Span("Friend Request Sent",
-                                  style={'color': '#6c757d', 'font-weight': 'bold', 'margin-top': '10px', 'display': 'block'})
+                                  style={'color': '#6c757d', 'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
                     ])
                 elif status == 'pending_received':
                     # Show "Respond to Friend Request" message
                     friend_request_section = html.Div([
                         html.Span("This user sent you a friend request. Check your notifications!",
-                                  style={'color': '#007bff', 'font-weight': 'bold', 'margin-top': '10px', 'display': 'block'})
+                                  style={'color': '#007bff', 'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
                     ])
                 else:  # status == 'none' or 'user_not_found'
                     # Show "Send Friend Request" button
@@ -604,7 +604,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                             'border': 'none',
                             'padding': '8px 16px',
                             'border-radius': '6px',
-                            'margin-top': '10px',
+                            'margin-top': '0px',
                             'cursor': 'pointer'
                         }
                     )
@@ -769,7 +769,7 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
                     'border': 'none',
                     'padding': '8px 16px',
                     'border-radius': '6px',
-                    'margin-top': '10px',
+                    'margin-top': '0px',
                     'cursor': 'pointer'
                 }
             )

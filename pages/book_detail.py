@@ -683,10 +683,13 @@ def set_initial_bookshelf_button_state(store_id, session_data):
 # Callback to handle bookshelf button clicks (open modal)
 @callback(
     [Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
-     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
      Output({'type': 'modal-mode', 'book_id': dash.dependencies.MATCH}, 'data'),
-     Output({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True),
+     Output({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH},
+            'value', allow_duplicate=True),
      Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True)],
     Input({'type': 'book-bookshelf-btn',
           'book_id': dash.dependencies.MATCH}, 'n_clicks'),
@@ -707,7 +710,8 @@ def open_bookshelf_modal(n_clicks, session_data, store_id):
     if success and shelf_type == 'completed':
         review_success, message, review = get_user_review(user_id, book_id)
         rating = review.get('rating') if review_success and review else None
-        review_text = review.get('review_text') if review_success and review else ''
+        review_text = review.get(
+            'review_text') if review_success and review else ''
         return True, {'display': 'none'}, {'display': 'block'}, 'edit', rating, review_text
     else:
         return True, {'display': 'block'}, {'display': 'none'}, 'add', None, ''
@@ -725,7 +729,8 @@ def update_save_button_text(mode):
 
 @callback(
     [Output({'type': 'review-removal-confirmation-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'pending-status-change',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
      Output({'type': 'review-removal-modal', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
     Input({'type': 'change-status', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id'),
@@ -1121,8 +1126,10 @@ def cancel_review_removal(n_clicks):
             'data', allow_duplicate=True),
      Output({'type': 'review-removal-confirmation-visible',
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'pending-status-change',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
      Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
     [Input({'type': 'confirm-review-removal',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
@@ -1147,11 +1154,13 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
         # Remove the review and set status to plan-to-read, then show status selection
         review_success, review_message = delete_review(user_id, book_id)
         if review_success:
-            status_success, status_message = update_shelf_status(user_id, book_id, 'plan-to-read')
+            status_success, status_message = update_shelf_status(
+                user_id, book_id, 'plan-to-read')
             if status_success:
                 return (
                     {'display': 'none'},  # confirmation modal
-                    html.Div("Review removed. You can now select a new status.", style={'color': 'blue'}),
+                    html.Div("Review removed. You can now select a new status.", style={
+                             'color': 'blue'}),
                     dash.no_update,  # button
                     dash.no_update,  # modal visible
                     False,
@@ -1162,7 +1171,8 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             else:
                 return (
                     {'display': 'none'},
-                    html.Div(f"Error updating status: {status_message}", style={'color': 'red'}),
+                    html.Div(f"Error updating status: {status_message}", style={
+                             'color': 'red'}),
                     dash.no_update,
                     dash.no_update,
                     False,
@@ -1173,7 +1183,8 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
         else:
             return (
                 {'display': 'none'},
-                html.Div(f"Error removing review: {review_message}", style={'color': 'red'}),
+                html.Div(f"Error removing review: {review_message}", style={
+                         'color': 'red'}),
                 dash.no_update,
                 dash.no_update,
                 False,

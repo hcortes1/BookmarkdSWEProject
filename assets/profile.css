@@ -11,7 +11,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 7px; /* 7px between different things */
     text-align: center;
     max-width: 300px; /* Set maximum width to prevent expansion */
     width: 300px; /* Fixed width for consistency */
@@ -19,7 +19,7 @@
 
 /* Remove gap between username and user info */
 .profile-info #profile-username + #profile-user-info {
-    margin-top: -15px; /* Counteract the gap from flex layout */
+    margin-top: 0px; /* Allow normal spacing between username and user info */
 }
 
 /* Friends section on the left */
@@ -212,6 +212,7 @@
 /* User profile info styles */
 .user-profile-info {
     margin-top: 0px; /* Remove top margin to eliminate gap with username */
+    margin-bottom: 0px; /* Remove bottom margin to eliminate gap with friend request section */
     width: 100%; /* Take full width of parent container */
     word-wrap: break-word; /* Break long words if needed */
     overflow-wrap: break-word; /* Modern alternative for word wrapping */
@@ -220,12 +221,18 @@
 .user-email,
 .user-join-date,
 .user-bio {
-    margin: 5px 0;
+    margin: 3px 0; /* 3px between items that belong together */
     color: #666;
     font-size: 0.9rem;
     word-wrap: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
+}
+
+.user-bio {
+    margin-bottom: 10px; /* Extra spacing between bio and stats */
+    color: #333; /* Make bio more visible with darker color */
+    font-size: 1rem; /* Slightly larger font size */
 }
 
 /* Friend item styles */
@@ -263,7 +270,7 @@
 
 /* Friend request section */
 .friend-request-section {
-    margin-top: 15px;
+    margin-top: 0px;
     width: 100%;
     display: flex;
     justify-content: center;
