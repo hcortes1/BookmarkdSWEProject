@@ -13,10 +13,28 @@ layout = html.Div([
             'color': '#333'
         }),
 
-        # Bookshelf sections
-        html.Div(id='bookshelf-content', children=[
-            # This will be populated by callback based on user session
+        # Tab navigation
+        html.Div([
+            html.Button("Want to Read", id="bookshelf-want-to-read-tab", className="bookshelf-tab active-tab",
+                        style={'margin-right': '5px'}),
+            html.Button("Currently Reading", id="bookshelf-reading-tab", className="bookshelf-tab",
+                        style={'margin-right': '5px'}),
+            html.Button("Completed", id="bookshelf-completed-tab", className="bookshelf-tab")
+        ], style={
+            'display': 'flex',
+            'justify-content': 'center',
+            'margin-bottom': '30px',
+            'border-bottom': '1px solid #ddd',
+            'padding-bottom': '10px'
+        }),
+
+        # Tab content
+        html.Div(id='bookshelf-tab-content', children=[
+            # This will be populated by callback based on active tab
         ]),
+
+        # Store for active tab
+        dcc.Store(id='bookshelf-active-tab', data='want-to-read'),
 
         # Store for refresh trigger
         dcc.Store(id='bookshelf-refresh-trigger', data=0),
@@ -177,15 +195,45 @@ def create_book_card(book, show_status_buttons=True):
     })
 
 
-# Callback to load bookshelf content
+# Callback to handle tab switching
 @callback(
-    Output('bookshelf-content', 'children'),
+    [Output('bookshelf-want-to-read-tab', 'className'),
+     Output('bookshelf-reading-tab', 'className'),
+     Output('bookshelf-completed-tab', 'className'),
+     Output('bookshelf-active-tab', 'data')],
+    [Input('bookshelf-want-to-read-tab', 'n_clicks'),
+     Input('bookshelf-reading-tab', 'n_clicks'),
+     Input('bookshelf-completed-tab', 'n_clicks')],
+    prevent_initial_call=True
+)
+def update_bookshelf_tabs(want_to_read_clicks, reading_clicks, completed_clicks):
+    """Handle tab switching for bookshelf"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+    
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if button_id == 'bookshelf-want-to-read-tab':
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+    elif button_id == 'bookshelf-reading-tab':
+        return 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'reading'
+    elif button_id == 'bookshelf-completed-tab':
+        return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'completed'
+    
+    return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+
+
+# Callback to load bookshelf tab content
+@callback(
+    Output('bookshelf-tab-content', 'children'),
     [Input('user-session', 'data'),
-     Input('bookshelf-refresh-trigger', 'data')],
+     Input('bookshelf-refresh-trigger', 'data'),
+     Input('bookshelf-active-tab', 'data')],
     prevent_initial_call=False
 )
-def load_bookshelf_content(session_data, refresh_trigger):
-    """Load and display user's bookshelf"""
+def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
+    """Load and display user's bookshelf based on active tab"""
     if not session_data or not session_data.get('logged_in'):
         return html.Div([
             html.P("Please log in to view your bookshelf.",
@@ -201,63 +249,52 @@ def load_bookshelf_content(session_data, refresh_trigger):
                    style={'text-align': 'center', 'color': 'red', 'margin-top': '50px'})
         ])
 
-    if not any(bookshelf.values()):
+    # Map active tab to shelf type
+    shelf_mapping = {
+        'want-to-read': 'to_read',
+        'reading': 'reading', 
+        'completed': 'finished'
+    }
+    
+    shelf_type = shelf_mapping.get(active_tab, 'to_read')
+    books = bookshelf.get(shelf_type, [])
+    
+    # Define tab titles and colors
+    tab_info = {
+        'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
+        'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
+        'completed': {'title': 'Completed', 'color': '#28a745'}
+    }
+    
+    current_tab_info = tab_info.get(active_tab, tab_info['want-to-read'])
+    
+    if not books:
+        empty_messages = {
+            'want-to-read': "You haven't added any books to your 'Want to Read' list yet. Start adding books from the book detail pages!",
+            'reading': "You're not currently reading any books. Mark a book as 'Currently Reading' to see it here!",
+            'completed': "You haven't finished any books yet. Complete your reading and mark books as 'Finished' to see them here!"
+        }
+        
         return html.Div([
-            html.P("Your bookshelf is empty. Start adding books from the book detail pages!",
+            html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
                    style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
         ])
 
-    sections = []
+    return html.Div([
+        html.H2(f"{current_tab_info['title']} ({len(books)})", style={
+            'color': current_tab_info['color'],
+            'margin-bottom': '20px',
+            'border-bottom': f"2px solid {current_tab_info['color']}",
+            'padding-bottom': '10px'
+        }),
+        html.Div([
+            create_book_card(book) for book in books
+        ])
+    ])
 
-    # To Read section
-    if bookshelf['to_read']:
-        sections.append(
-            html.Div([
-                html.H2(f"Want to Read ({len(bookshelf['to_read'])})", style={
-                    'color': '#17a2b8',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #17a2b8',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['to_read']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
 
-    # Currently Reading section
-    if bookshelf['reading']:
-        sections.append(
-            html.Div([
-                html.H2(f"Currently Reading ({len(bookshelf['reading'])})", style={
-                    'color': '#ffc107',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #ffc107',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['reading']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
-
-    # Finished section
-    if bookshelf['finished']:
-        sections.append(
-            html.Div([
-                html.H2(f"Finished ({len(bookshelf['finished'])})", style={
-                    'color': '#28a745',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #28a745',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['finished']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
-
-    return sections
+# Original callback modified to work with new layout
+# (Keeping this for backwards compatibility if needed, but it's now replaced by load_bookshelf_tab_content)
 
 
 # Callback to show confirmation modal
@@ -267,10 +304,10 @@ def load_bookshelf_content(session_data, refresh_trigger):
      Output('remove-confirmation-text', 'children')],
     Input({'type': 'remove-book-btn', 'book_id': dash.dependencies.ALL}, 'n_clicks'),
     [State('user-session', 'data'),
-     State('bookshelf-content', 'children')],
+     State('bookshelf-tab-content', 'children')],
     prevent_initial_call=True
 )
-def show_remove_confirmation(remove_clicks, session_data, bookshelf_content):
+def show_remove_confirmation(remove_clicks, session_data, tab_content):
     """Show confirmation modal when remove button is clicked"""
     ctx = dash.callback_context
     if not ctx.triggered or not any(remove_clicks or []) or not session_data or not session_data.get('logged_in'):

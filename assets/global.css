@@ -36,3 +36,30 @@ body, html {
   background: rgba(220, 53, 69, 0.2) !important;
   transform: scale(1.1);
 }
+
+/* Bookshelf tab styles */
+.bookshelf-tab {
+  padding: 12px 24px;
+  margin: 0 2px;
+  border: none;
+  background: #f8f9fa;
+  color: #666;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.bookshelf-tab:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.bookshelf-tab.active-tab {
+  background: white;
+  color: #007bff;
+  border-bottom: 3px solid #007bff;
+  font-weight: 600;
+}
