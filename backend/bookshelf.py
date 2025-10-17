@@ -53,7 +53,7 @@ def get_user_bookshelf(user_id):
                     SELECT 
                         bs.shelf_id, bs.shelf_type, bs.added_at,
                         b.book_id, b.title, b.author_id, b.cover_url, b.genre,
-                        b.average_rating, b.rating_count,
+                        b.average_rating, b.rating_count, b.page_count,
                         EXTRACT(YEAR FROM b.release_date) as release_year,
                         a.name as author_name,
                         r.rating as user_rating, r.review_text, r.created_at as review_date
@@ -168,3 +168,44 @@ def update_shelf_status(user_id, book_id, new_status):
     except Error as e:
         print(f"Error updating shelf status: {e}")
         return False, f"Error updating shelf status: {e}"
+
+
+def get_yearly_reading_stats(user_id, year=None):
+    """Get reading statistics for a specific year (defaults to current year)"""
+    try:
+        from datetime import datetime
+        if year is None:
+            year = datetime.now().year
+            
+        with get_conn() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                query = """
+                    SELECT 
+                        COUNT(*) as books_read,
+                        COALESCE(SUM(b.page_count), 0) as pages_read
+                    FROM bookshelf bs
+                    JOIN books b ON bs.book_id = b.book_id
+                    WHERE bs.user_id = %s 
+                    AND bs.shelf_type = 'completed'
+                    AND EXTRACT(YEAR FROM bs.added_at) = %s
+                """
+                cursor.execute(query, (user_id, year))
+                result = cursor.fetchone()
+                
+                if result:
+                    return True, "Stats retrieved successfully", {
+                        'books_read': result['books_read'] or 0,
+                        'pages_read': result['pages_read'] or 0
+                    }
+                else:
+                    return True, "No data found", {
+                        'books_read': 0,
+                        'pages_read': 0
+                    }
+
+    except Error as e:
+        print(f"Error getting yearly reading stats: {e}")
+        return False, f"Error getting yearly reading stats: {e}", {
+            'books_read': 0,
+            'pages_read': 0
+        }

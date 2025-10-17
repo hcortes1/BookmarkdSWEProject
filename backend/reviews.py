@@ -153,3 +153,31 @@ def has_user_reviewed(user_id, book_id):
     except Error as e:
         print(f"Error checking if user reviewed: {e}")
         return False
+
+
+def get_user_reviews(user_id, limit=20, offset=0):
+    """Get all reviews by a specific user with book details"""
+    try:
+        with get_conn() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                query = """
+                    SELECT r.review_id, r.rating, r.review_text, r.created_at,
+                           b.book_id, b.title, b.cover_url,
+                           a.name as author_name,
+                           COALESCE(u.display_name, u.username) as reviewer_name
+                    FROM reviews r
+                    JOIN books b ON r.book_id = b.book_id
+                    LEFT JOIN authors a ON b.author_id = a.author_id
+                    JOIN users u ON r.user_id = u.user_id
+                    WHERE r.user_id = %s
+                    ORDER BY r.created_at DESC
+                    LIMIT %s OFFSET %s
+                """
+                cursor.execute(query, (user_id, limit, offset))
+                reviews = cursor.fetchall()
+                
+                return [dict(review) for review in reviews]
+
+    except Error as e:
+        print(f"Error getting user reviews: {e}")
+        return []
