@@ -101,6 +101,19 @@ def layout(book_id=None, **kwargs):
                             ) if book_data.get('author_id') else book_data.get('author_name', 'Unknown Author')
                         ], className="book-author"),
 
+                        # Rating information
+                        html.Div([
+                            html.Strong("Rating: "),
+                            html.Span(f"{book_data.get('average_rating', 0):.1f}/5.0 ({book_data.get('rating_count', 0)})",
+                                      style={
+                                          'font-weight': 'bold',
+                                          'color': '#007bff'
+                                      })
+                        ], className="book-info") if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Div([
+                            html.Strong("Rating: "),
+                            html.Span("No ratings yet", style={'color': '#666'})
+                        ], className="book-info"),
+
                         html.Div([
                             html.Strong("Genre: "),
                             html.Span(book_data.get('genre')
@@ -380,7 +393,7 @@ def get_book_details(book_id: int):
                        EXTRACT(YEAR FROM b.release_date) as release_year,
                        b.description, b.cover_url, b.author_id,
                        COALESCE(b.language, 'en') as language, 
-                       b.page_count,
+                       b.page_count, b.average_rating, b.rating_count,
                        a.name as author_name, a.bio as author_bio
                 FROM books b
                 LEFT JOIN authors a ON b.author_id = a.author_id

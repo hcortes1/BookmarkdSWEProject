@@ -333,17 +333,19 @@ def handle_confirmed_removal(confirm_clicks, session_data, book_id, current_trig
         return dash.no_update, dash.no_update
 
     user_id = session_data.get('user_id')
-    
+
     # First check what shelf type this book is on
-    shelf_success, shelf_message, shelf_type = bookshelf_backend.get_book_shelf_status(user_id, book_id)
-    
+    shelf_success, shelf_message, shelf_type = bookshelf_backend.get_book_shelf_status(
+        user_id, book_id)
+
     # If the book is on the "completed" shelf (finished), also delete the review
     if shelf_success and shelf_type == 'completed':
         # Delete the review first (this will automatically update book ratings via triggers)
-        review_success, review_message = reviews_backend.delete_review(user_id, book_id)
+        review_success, review_message = reviews_backend.delete_review(
+            user_id, book_id)
         # Note: We don't need to check review_success because the review might not exist
         # and that's okay - we still want to remove the book from bookshelf
-    
+
     # Remove the book from bookshelf
     success, message = bookshelf_backend.remove_from_bookshelf(
         user_id, book_id)

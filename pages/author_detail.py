@@ -273,6 +273,40 @@ def create_book_card(book: Dict[str, Any], author_id: int):
 
     # Create href for book details
     href = f"/book/{book['book_id']}"
+    
+    # Format rating information
+    rating_info = []
+    average_rating = book.get('average_rating')
+    rating_count = book.get('rating_count', 0)
+    
+    if average_rating and average_rating > 0 and rating_count > 0:
+        # Create rating display in format: average/5.0 (count)
+        rating_info.append(
+            html.Div(
+                f"{average_rating:.1f}/5.0 ({rating_count})",
+                style={
+                    'text-align': 'center',
+                    'margin': '5px 0',
+                    'font-size': '12px',
+                    'font-weight': 'bold',
+                    'color': '#007bff'
+                }
+            )
+        )
+    
+    # Format release year
+    release_year = book.get('release_year')
+    year_info = None
+    if release_year:
+        year_info = html.Div(
+            str(int(release_year)),
+            style={
+                'text-align': 'center',
+                'color': '#888',
+                'font-size': '12px',
+                'margin': '5px 0'
+            }
+        )
 
     return html.Div([
         dcc.Link([
@@ -288,16 +322,19 @@ def create_book_card(book: Dict[str, Any], author_id: int):
             html.Div([
                 html.H4(book['title'], className="book-card-title", style={
                     'font-size': '14px',
-                    'margin': '10px 0 0 0',  # Only top margin, no bottom margin
-                    'padding': '0',  # Explicitly set padding to 0
+                    'margin': '10px 0 5px 0',
+                    'padding': '0',
                     'line-height': '1.2',
                     'font-weight': 'bold',
                     'color': '#333',
                     'text-align': 'center',
-                    # Remove height constraint and line clamping to show full title
                     'word-wrap': 'break-word',
                     'white-space': 'normal'
-                })
+                }),
+                # Rating information
+                *rating_info,
+                # Release year
+                year_info
             ])
         ], href=href, style={'text-decoration': 'none', 'color': 'inherit'})
     ], className="book-card", style={
@@ -307,8 +344,7 @@ def create_book_card(book: Dict[str, Any], author_id: int):
         'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
         'transition': 'transform 0.2s ease',
         'cursor': 'pointer',
-        # Use min-height instead of fixed height to accommodate long titles
-        'min-height': '280px',
+        'min-height': '320px',  # Increased to accommodate rating and year info
         'display': 'flex',
         'flex-direction': 'column'
     })
@@ -332,17 +368,22 @@ def get_author_details(author_id: int):
 
 
 def get_author_books(author_id: int):
-    """Get books by this author, sorted by title (no ratings)"""
+    """Get books by this author, sorted by average rating then release date"""
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             sql = """
-                SELECT book_id, title, isbn, genre, release_date as publication_year, 
+                SELECT book_id, title, isbn, genre, release_date, 
+                       EXTRACT(YEAR FROM release_date) as release_year,
                        description, cover_url, 
                        COALESCE(language, 'en') as language, 
-                       page_count
+                       page_count, average_rating, rating_count
                 FROM books
                 WHERE author_id = %s
                 ORDER BY 
+                    CASE 
+                        WHEN average_rating IS NULL OR average_rating = 0 THEN 0 
+                        ELSE average_rating 
+                    END DESC,
                     COALESCE(release_date, '1900-01-01') DESC, 
                     title ASC
             """
