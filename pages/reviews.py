@@ -37,7 +37,7 @@ def layout(book_id=None, **kwargs):
                             style={
                                 'width': '100px',
                                 'height': '150px',
-                                'object-fit': 'cover',
+                                'object-fit': 'contain',
                                 'border-radius': '8px',
                                 'margin-right': '20px'
                             }

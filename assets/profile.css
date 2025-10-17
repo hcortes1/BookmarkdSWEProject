@@ -156,7 +156,7 @@
 .favorite-item-image {
     width: 80px;
     height: 100px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 6px;
     margin-bottom: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);

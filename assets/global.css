@@ -37,6 +37,20 @@ body, html {
   transform: scale(1.1);
 }
 
+/* Bookshelf grid styles */
+.bookshelf-book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.bookshelf-book-card:hover .bookshelf-remove-btn {
+  opacity: 1;
+}
+
+.bookshelf-book-card:hover img {
+  transform: scale(1.02);
+}
+
 /* Bookshelf tab styles */
 .bookshelf-tab {
   padding: 12px 24px;

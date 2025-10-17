@@ -77,7 +77,7 @@ def layout(book_id=None, **kwargs):
                             style={
                                 'width': '200px',
                                 'height': '300px',
-                                'object-fit': 'cover',
+                                'object-fit': 'contain',
                                 'border-radius': '8px',
                                 'box-shadow': '0 4px 12px rgba(0,0,0,0.15)'
                             }
@@ -540,7 +540,7 @@ def populate_other_editions(nav_data):
                             style={
                                 'width': '60px',
                                 'height': '90px',
-                                'object-fit': 'cover',
+                                'object-fit': 'contain',
                                 'border-radius': '4px',
                                 'margin-right': '15px'
                             }

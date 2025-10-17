@@ -276,7 +276,7 @@ def handle_search(search_value, search_type):
                         style={
                             'width': '30px',
                             'height': '40px',
-                            'object-fit': 'cover',
+                            'object-fit': 'contain',
                             'margin-right': '10px',
                             'border-radius': '2px'
                         }

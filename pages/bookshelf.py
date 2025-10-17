@@ -19,7 +19,8 @@ layout = html.Div([
                         style={'margin-right': '5px'}),
             html.Button("Currently Reading", id="bookshelf-reading-tab", className="bookshelf-tab",
                         style={'margin-right': '5px'}),
-            html.Button("Completed", id="bookshelf-completed-tab", className="bookshelf-tab")
+            html.Button("Completed", id="bookshelf-completed-tab",
+                        className="bookshelf-tab")
         ], style={
             'display': 'flex',
             'justify-content': 'center',
@@ -87,22 +88,22 @@ layout = html.Div([
 
 
 def create_book_card(book, show_status_buttons=True):
-    """Create a book card component"""
+    """Create a book card component for grid bookshelf view"""
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
                     id={'type': 'remove-book-btn', 'book_id': book['book_id']},
                     style={
                         'position': 'absolute',
-                        'top': '8px',
-                        'right': '8px',
-                        'width': '24px',
-                        'height': '24px',
+                        'top': '5px',
+                        'right': '5px',
+                        'width': '20px',
+                        'height': '20px',
                         'border': 'none',
                         'border-radius': '50%',
-                        'background': 'rgba(220, 53, 69, 0.1)',
-                        'color': '#dc3545',
-                        'font-size': '16px',
+                        'background': 'rgba(220, 53, 69, 0.9)',
+                        'color': 'white',
+                        'font-size': '12px',
                         'font-weight': 'bold',
                         'cursor': 'pointer',
                         'display': 'flex',
@@ -110,74 +111,65 @@ def create_book_card(book, show_status_buttons=True):
                         'justify-content': 'center',
                         'z-index': '10',
                         'transition': 'all 0.2s ease',
-                        'opacity': '0.7'
+                        'opacity': '0',
+                        'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
                     },
-                    className='remove-btn-hover',
+                    className='bookshelf-remove-btn',
                     title="Remove from bookshelf"
                     ) if show_status_buttons else html.Div(),
 
         # Wrap entire card content in a link
         dcc.Link([
-            # Book cover and info
+            # Book cover - prominent display
             html.Div([
                 html.Img(
-                    src=book.get(
-                        'cover_url') or '/assets/svg/default-book.svg',
+                    src=book.get('cover_url') or '/assets/svg/default-book.svg',
                     style={
-                        'width': '80px',
-                        'height': '120px',
-                        'object-fit': 'cover',
+                        'width': '100%',
+                        'height': '180px',
+                        'object-fit': 'contain',
                         'border-radius': '6px',
-                        'margin-right': '15px'
+                        'box-shadow': '0 4px 8px rgba(0,0,0,0.15)',
+                        'transition': 'transform 0.2s ease',
+                        'background-color': '#f8f9fa'
                     }
-                ),
+                )
+            ], style={'margin-bottom': '10px'}),
+            
+            # Book info - compact
+            html.Div([
+                html.H4(book['title'], style={
+                    'margin': '0 0 5px 0',
+                    'font-size': '14px',
+                    'color': '#333',
+                    'font-weight': '600',
+                    'line-height': '1.2',
+                    'height': '2.4em',
+                    'overflow': 'hidden',
+                    'display': '-webkit-box',
+                    '-webkit-line-clamp': '2',
+                    '-webkit-box-orient': 'vertical'
+                }),
+                html.P(book.get('author_name', 'Unknown Author'), style={
+                    'margin': '0 0 8px 0',
+                    'font-size': '12px',
+                    'color': '#666',
+                    'white-space': 'nowrap',
+                    'overflow': 'hidden',
+                    'text-overflow': 'ellipsis'
+                }),
+                # Show user rating if exists - X.X/5.0 format
                 html.Div([
-                    html.H4(book['title'], style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '16px',
-                        'color': '#007bff'
-                    }),
-                    html.P(f"by {book.get('author_name', 'Unknown Author')}", style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '14px',
-                        'color': '#666'
-                    }),
-                    html.P(f"Genre: {book.get('genre', 'Unknown')}", style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '12px',
-                        'color': '#888'
-                    }),
-                    # Show user rating if exists
-                    html.Div([
-                        html.Span("Your rating: ", style={
-                                  'font-size': '12px', 'color': '#666'}),
-                        html.Span(f"{book['user_rating']}/5.0" if book.get('user_rating') else "Not rated",
-                                  style={'font-size': '12px', 'color': '#007bff', 'font-weight': 'bold'})
-                    ]) if book.get('user_rating') else html.Div(),
-                    # Show review text if exists
-                    html.Div([
-                        html.Span("Your review: ", style={
-                                  'font-size': '11px', 'color': '#666'}),
-                        html.P(book.get('review_text', ''),
-                               style={
-                                   'font-size': '11px',
-                                   'color': '#555',
-                                   'margin': '2px 0 0 0',
-                                   'line-height': '1.3',
-                                   'font-style': 'italic'
-                        })
-                    ]) if book.get('review_text') and book.get('review_text').strip() else html.Div(),
-                    html.P(f"Added: {book['added_at'].strftime('%m/%d/%Y') if book.get('added_at') else 'Unknown'}",
-                           style={
-                        'margin': '8px 0 0 0',
-                        'font-size': '11px',
-                        'color': '#999'
-                    })
-                ], style={'flex': '1'})
-            ], style={
-                'display': 'flex',
-                'align-items': 'flex-start'
-            })
+                    html.Span(f"{book.get('user_rating', 0):.1f}/5.0", 
+                             style={'font-size': '12px', 'color': '#ffc107', 'font-weight': 'bold'}) if book.get('user_rating') else
+                    html.Span("Not rated", style={'font-size': '11px', 'color': '#999'})
+                ], style={'margin-bottom': '5px'}),
+                # Show if has review
+                html.Div([
+                    html.Span("📝", style={'font-size': '12px', 'margin-right': '3px'}),
+                    html.Span("Has review", style={'font-size': '10px', 'color': '#28a745'})
+                ]) if book.get('review_text') and book.get('review_text').strip() else html.Div()
+            ])
         ], href=f"/book/{book['book_id']}", style={
             'text-decoration': 'none',
             'color': 'inherit',
@@ -187,12 +179,13 @@ def create_book_card(book, show_status_buttons=True):
     ], style={
         'position': 'relative',
         'background': 'white',
-        'padding': '20px',
+        'padding': '15px',
         'border-radius': '8px',
-        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-        'margin-bottom': '15px',
-        'transition': 'box-shadow 0.2s ease'
-    })
+        'box-shadow': '0 2px 6px rgba(0,0,0,0.1)',
+        'transition': 'all 0.2s ease',
+        'height': '300px',
+        'overflow': 'hidden'
+    }, className='bookshelf-book-card')
 
 
 # Callback to handle tab switching
@@ -211,16 +204,16 @@ def update_bookshelf_tabs(want_to_read_clicks, reading_clicks, completed_clicks)
     ctx = dash.callback_context
     if not ctx.triggered:
         return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
-    
+
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    
+
     if button_id == 'bookshelf-want-to-read-tab':
         return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
     elif button_id == 'bookshelf-reading-tab':
         return 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'reading'
     elif button_id == 'bookshelf-completed-tab':
         return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'completed'
-    
+
     return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
 
 
@@ -252,32 +245,51 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
     # Map active tab to shelf type
     shelf_mapping = {
         'want-to-read': 'to_read',
-        'reading': 'reading', 
+        'reading': 'reading',
         'completed': 'finished'
     }
-    
+
     shelf_type = shelf_mapping.get(active_tab, 'to_read')
     books = bookshelf.get(shelf_type, [])
-    
+
     # Define tab titles and colors
     tab_info = {
         'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
         'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
         'completed': {'title': 'Completed', 'color': '#28a745'}
     }
-    
+
     current_tab_info = tab_info.get(active_tab, tab_info['want-to-read'])
-    
+
     if not books:
         empty_messages = {
-            'want-to-read': "You haven't added any books to your 'Want to Read' list yet. Start adding books from the book detail pages!",
-            'reading': "You're not currently reading any books. Mark a book as 'Currently Reading' to see it here!",
-            'completed': "You haven't finished any books yet. Complete your reading and mark books as 'Finished' to see them here!"
+            'want-to-read': "Your 'Want to Read' shelf is empty. Start building your reading list by adding books from the book detail pages!",
+            'reading': "Your reading shelf is empty. Mark a book as 'Currently Reading' to see it here!",
+            'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!"
         }
-        
+
         return html.Div([
-            html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
-                   style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
+            html.Div([
+                html.Div("📚", style={
+                    'font-size': '4rem',
+                    'margin-bottom': '20px',
+                    'opacity': '0.3'
+                }),
+                html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
+                       style={
+                           'text-align': 'center', 
+                           'color': '#666', 
+                           'font-size': '16px',
+                           'line-height': '1.5',
+                           'max-width': '400px'
+                       })
+            ], style={
+                'display': 'flex',
+                'flex-direction': 'column',
+                'align-items': 'center',
+                'justify-content': 'center',
+                'margin-top': '80px'
+            })
         ])
 
     return html.Div([
@@ -289,7 +301,12 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         }),
         html.Div([
             create_book_card(book) for book in books
-        ])
+        ], style={
+            'display': 'grid',
+            'grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))',
+            'gap': '20px',
+            'padding': '10px 0'
+        })
     ])
 
 

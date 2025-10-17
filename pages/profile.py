@@ -54,8 +54,9 @@ def create_reviews_content(user_data, is_own_profile):
                             style={
                                 'width': '60px',
                                 'height': '90px',
-                                'object-fit': 'cover',
-                                'border-radius': '5px'
+                                'object-fit': 'contain',
+                                'border-radius': '5px',
+                                'background-color': '#f8f9fa'
                             }
                         )
                     ], style={'margin-right': '15px'}),
@@ -171,11 +172,12 @@ def create_completed_books_content(user_data, is_own_profile):
                         style={
                             'width': '120px',
                             'height': '180px',
-                            'object-fit': 'cover',
+                            'object-fit': 'contain',
                             'border-radius': '8px',
                             'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
                             'transition': 'transform 0.2s',
-                            'display': 'block'
+                            'display': 'block',
+                            'background-color': '#f8f9fa'
                         }
                     )
                 ], href=f"/book/{book.get('book_id')}", style={'text-decoration': 'none'}),
