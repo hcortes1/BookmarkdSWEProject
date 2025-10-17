@@ -37,7 +37,7 @@ def layout(book_id=None, **kwargs):
                             style={
                                 'width': '100px',
                                 'height': '150px',
-                                'object-fit': 'cover',
+                                'object-fit': 'contain',
                                 'border-radius': '8px',
                                 'margin-right': '20px'
                             }
@@ -80,10 +80,8 @@ def layout(book_id=None, **kwargs):
                                 html.Strong("Overall Rating: "),
                                 html.Span(
                                     f"{book_data.get('average_rating', 0):.1f}/5.0 ({book_data.get('rating_count', 0)} reviews)",
-                                    style={
-                                        'font-weight': 'bold',
-                                        'color': '#007bff'
-                                    }
+                                    style={'font-weight': 'bold'},
+                                    className='rating-color'
                                 ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 else html.Span(
                                     "No ratings yet",
                                     style={'color': '#666'}
@@ -96,12 +94,11 @@ def layout(book_id=None, **kwargs):
                     ], style={
                         'display': 'flex',
                         'align-items': 'flex-start',
-                        'background': 'white',
                         'padding': '20px',
                         'border-radius': '12px',
                         'box-shadow': '0 4px 12px rgba(0,0,0,0.1)',
                         'margin-bottom': '30px'
-                    })
+                    }, className='secondary-bg')
                 ]),
 
                 # Reviews section
@@ -129,11 +126,10 @@ def layout(book_id=None, **kwargs):
                               data={'current_page': 1, 'per_page': 10})
 
                 ], style={
-                    'background': 'white',
                     'padding': '20px',
                     'border-radius': '12px',
                     'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
-                })
+                }, className='secondary-bg')
 
             ], style={
                 'max-width': '800px',
@@ -219,10 +215,9 @@ def create_review_card(review: Dict[str, Any]):
                 ),
                 html.Div([
                     html.Span(f"{rating}/5.0", style={
-                        'color': '#007bff',
                         'font-weight': 'bold',
                         'margin-right': '10px'
-                    }),
+                    }, className='rating-color'),
                     html.Span(formatted_date, style={
                         'color': '#888',
                         'font-size': '14px'

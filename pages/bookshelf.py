@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State, callback
 import backend.bookshelf as bookshelf_backend
 import backend.reviews as reviews_backend
+from backend.favorites import is_book_favorited
 
 dash.register_page(__name__, path='/profile/bookshelf')
 
@@ -13,10 +14,29 @@ layout = html.Div([
             'color': '#333'
         }),
 
-        # Bookshelf sections
-        html.Div(id='bookshelf-content', children=[
-            # This will be populated by callback based on user session
+        # Tab navigation
+        html.Div([
+            html.Button("Want to Read", id="bookshelf-want-to-read-tab", className="bookshelf-tab active-tab",
+                        style={'margin-right': '5px'}),
+            html.Button("Currently Reading", id="bookshelf-reading-tab", className="bookshelf-tab",
+                        style={'margin-right': '5px'}),
+            html.Button("Completed", id="bookshelf-completed-tab",
+                        className="bookshelf-tab")
+        ], style={
+            'display': 'flex',
+            'justify-content': 'center',
+            'margin-bottom': '30px',
+            'border-bottom': '1px solid #ddd',
+            'padding-bottom': '10px'
+        }),
+
+        # Tab content
+        html.Div(id='bookshelf-tab-content', children=[
+            # This will be populated by callback based on active tab
         ]),
+
+        # Store for active tab
+        dcc.Store(id='bookshelf-active-tab', data='want-to-read'),
 
         # Store for refresh trigger
         dcc.Store(id='bookshelf-refresh-trigger', data=0),
@@ -57,34 +77,44 @@ layout = html.Div([
                             })
             ], style={'text-align': 'right'})
         ], style={
-            'background': 'white',
             'padding': '25px',
             'border-radius': '8px',
             'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
             'max-width': '400px',
             'width': '90%'
-        })
+        }, className='secondary-bg')
     ], id='remove-confirmation-modal', style={'display': 'none'})
 ])
 
 
-def create_book_card(book, show_status_buttons=True):
-    """Create a book card component"""
+def create_book_card(book, show_status_buttons=True, reading_status=None, user_id=None):
+    """Create a book card component for grid bookshelf view"""
+    
+    # Check if the book is favorited
+    is_favorited = False
+    if user_id and book.get('book_id'):
+        try:
+            is_favorited = is_book_favorited(user_id, book['book_id'])
+        except:
+            is_favorited = False
+    
+    # Determine border styling based on favorite status
+    border_style = '3px solid #007bff' if is_favorited else 'none'
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
                     id={'type': 'remove-book-btn', 'book_id': book['book_id']},
                     style={
                         'position': 'absolute',
-                        'top': '8px',
-                        'right': '8px',
-                        'width': '24px',
-                        'height': '24px',
+                        'top': '5px',
+                        'right': '5px',
+                        'width': '20px',
+                        'height': '20px',
                         'border': 'none',
                         'border-radius': '50%',
-                        'background': 'rgba(220, 53, 69, 0.1)',
-                        'color': '#dc3545',
-                        'font-size': '16px',
+                        'background': 'rgba(220, 53, 69, 0.9)',
+                        'color': 'white',
+                        'font-size': '12px',
                         'font-weight': 'bold',
                         'cursor': 'pointer',
                         'display': 'flex',
@@ -92,74 +122,100 @@ def create_book_card(book, show_status_buttons=True):
                         'justify-content': 'center',
                         'z-index': '10',
                         'transition': 'all 0.2s ease',
-                        'opacity': '0.7'
+                        'opacity': '0',
+                        'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
                     },
-                    className='remove-btn-hover',
+                    className='bookshelf-remove-btn',
                     title="Remove from bookshelf"
                     ) if show_status_buttons else html.Div(),
 
         # Wrap entire card content in a link
         dcc.Link([
-            # Book cover and info
+            # Book cover - prominent display
             html.Div([
                 html.Img(
                     src=book.get(
                         'cover_url') or '/assets/svg/default-book.svg',
                     style={
-                        'width': '80px',
-                        'height': '120px',
-                        'object-fit': 'cover',
-                        'border-radius': '6px',
-                        'margin-right': '15px'
+                        'width': '120px',
+                        'height': '180px',
+                        'object-fit': 'contain',
+                        'border-radius': '8px',
+                        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
+                        'transition': 'transform 0.2s',
+                        'display': 'block',
+                        'background-color': '#f8f9fa',
+                        'margin': '0 auto'  # Center the image horizontally
                     }
-                ),
+                )
+            ], style={'margin-bottom': '5px', 'text-align': 'center', 'display': 'flex', 'justify-content': 'center'}),
+
+            # Book info - compact and centered
+            html.Div([
+                html.H4(book['title'], style={
+                    'margin': '0 0 0 0',  # Remove bottom margin to eliminate gap
+                    'font-size': '14px',
+                    'color': '#333',
+                    'font-weight': '600',
+                    'line-height': '1.2',
+                    'height': '2.4em',
+                    'overflow': 'hidden',
+                    'display': '-webkit-box',
+                    '-webkit-line-clamp': '2',
+                    '-webkit-box-orient': 'vertical',
+                    'text-align': 'center'
+                }),
+                html.P(book.get('author_name', 'Unknown Author'), style={
+                    'margin': '1px 0 3px 0',  # Further reduced margins
+                    'font-size': '12px',
+                    'color': '#666',
+                    'white-space': 'nowrap',
+                    'overflow': 'hidden',
+                    'text-overflow': 'ellipsis',
+                    'text-align': 'center'
+                }),
+                # Display different info based on reading status
                 html.Div([
-                    html.H4(book['title'], style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '16px',
-                        'color': '#007bff'
-                    }),
-                    html.P(f"by {book.get('author_name', 'Unknown Author')}", style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '14px',
-                        'color': '#666'
-                    }),
-                    html.P(f"Genre: {book.get('genre', 'Unknown')}", style={
-                        'margin': '0 0 8px 0',
-                        'font-size': '12px',
-                        'color': '#888'
-                    }),
-                    # Show user rating if exists
+                    # For completed books: show rating if exists, plus date added
                     html.Div([
-                        html.Span("Your rating: ", style={
-                                  'font-size': '12px', 'color': '#666'}),
-                        html.Span(f"{book['user_rating']}/5.0" if book.get('user_rating') else "Not rated",
-                                  style={'font-size': '12px', 'color': '#007bff', 'font-weight': 'bold'})
-                    ]) if book.get('user_rating') else html.Div(),
-                    # Show review text if exists
+                        html.Div([
+                            html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
+                                      style={'font-size': '11px',
+                                             'font-weight': 'bold'},
+                                      className='rating-color') if book.get('user_rating') else
+                            html.Span("Not rated", style={
+                                      'font-size': '10px', 'color': '#999'})
+                        ], style={'margin-bottom': '1px', 'text-align': 'center'}),
+                        # Date added for completed books
+                        html.Div([
+                            html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                            html.Span(
+                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                                else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
+                                else 'Unknown date',
+                                style={'font-size': '9px', 'color': '#666'}
+                            )
+                        ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                    ]) if reading_status == 'finished' else
+                    # For want-to-read and currently reading: only show date added
                     html.Div([
-                        html.Span("Your review: ", style={
-                                  'font-size': '11px', 'color': '#666'}),
-                        html.P(book.get('review_text', ''),
-                               style={
-                                   'font-size': '11px',
-                                   'color': '#555',
-                                   'margin': '2px 0 0 0',
-                                   'line-height': '1.3',
-                                   'font-style': 'italic'
-                        })
-                    ]) if book.get('review_text') and book.get('review_text').strip() else html.Div(),
-                    html.P(f"Added: {book['added_at'].strftime('%m/%d/%Y') if book.get('added_at') else 'Unknown'}",
-                           style={
-                        'margin': '8px 0 0 0',
-                        'font-size': '11px',
-                        'color': '#999'
-                    })
-                ], style={'flex': '1'})
-            ], style={
-                'display': 'flex',
-                'align-items': 'flex-start'
-            })
+                        html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                        html.Span(
+                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                            else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
+                            else 'Unknown date',
+                            style={'font-size': '9px', 'color': '#666'}
+                        )
+                    ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                ]),
+                # Show if has review
+                html.Div([
+                    html.Span(
+                        "📝", style={'font-size': '12px', 'margin-right': '3px'}),
+                    html.Span("Has review", style={
+                              'font-size': '10px', 'color': '#28a745'})
+                ], style={'text-align': 'center'}) if book.get('review_text') and book.get('review_text').strip() else html.Div()
+            ])
         ], href=f"/book/{book['book_id']}", style={
             'text-decoration': 'none',
             'color': 'inherit',
@@ -168,24 +224,60 @@ def create_book_card(book, show_status_buttons=True):
 
     ], style={
         'position': 'relative',
-        'background': 'white',
-        'padding': '20px',
+        'display': 'flex',
+        'flex-direction': 'column',
+        'align-items': 'center',
+        'padding': '10px',  # Reduced padding from 15px to 10px
         'border-radius': '8px',
-        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-        'margin-bottom': '15px',
-        'transition': 'box-shadow 0.2s ease'
-    })
+        'box-shadow': '0 2px 6px rgba(0,0,0,0.1)',
+        'transition': 'all 0.2s ease',
+        'height': '300px',
+        'overflow': 'hidden',
+        'width': '160px',  # Fixed width to prevent cards from being too wide
+        'margin': '0 auto',  # Center the card
+        'border': border_style  # Add favorite border if applicable
+    }, className='bookshelf-book-card secondary-bg')
 
 
-# Callback to load bookshelf content
+# Callback to handle tab switching
 @callback(
-    Output('bookshelf-content', 'children'),
+    [Output('bookshelf-want-to-read-tab', 'className'),
+     Output('bookshelf-reading-tab', 'className'),
+     Output('bookshelf-completed-tab', 'className'),
+     Output('bookshelf-active-tab', 'data')],
+    [Input('bookshelf-want-to-read-tab', 'n_clicks'),
+     Input('bookshelf-reading-tab', 'n_clicks'),
+     Input('bookshelf-completed-tab', 'n_clicks')],
+    prevent_initial_call=True
+)
+def update_bookshelf_tabs(want_to_read_clicks, reading_clicks, completed_clicks):
+    """Handle tab switching for bookshelf"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == 'bookshelf-want-to-read-tab':
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+    elif button_id == 'bookshelf-reading-tab':
+        return 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'reading'
+    elif button_id == 'bookshelf-completed-tab':
+        return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'completed'
+
+    return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+
+
+# Callback to load bookshelf tab content
+@callback(
+    Output('bookshelf-tab-content', 'children'),
     [Input('user-session', 'data'),
-     Input('bookshelf-refresh-trigger', 'data')],
+     Input('bookshelf-refresh-trigger', 'data'),
+     Input('bookshelf-active-tab', 'data')],
     prevent_initial_call=False
 )
-def load_bookshelf_content(session_data, refresh_trigger):
-    """Load and display user's bookshelf"""
+def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
+    """Load and display user's bookshelf based on active tab"""
     if not session_data or not session_data.get('logged_in'):
         return html.Div([
             html.P("Please log in to view your bookshelf.",
@@ -201,63 +293,70 @@ def load_bookshelf_content(session_data, refresh_trigger):
                    style={'text-align': 'center', 'color': 'red', 'margin-top': '50px'})
         ])
 
-    if not any(bookshelf.values()):
+    # Map active tab to shelf type
+    shelf_mapping = {
+        'want-to-read': 'to_read',
+        'reading': 'reading',
+        'completed': 'finished'
+    }
+
+    shelf_type = shelf_mapping.get(active_tab, 'to_read')
+    books = bookshelf.get(shelf_type, [])
+
+    # Define tab titles and colors
+    tab_info = {
+        'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
+        'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
+        'completed': {'title': 'Completed', 'color': '#28a745'}
+    }
+
+    current_tab_info = tab_info.get(active_tab, tab_info['want-to-read'])
+
+    if not books:
+        empty_messages = {
+            'want-to-read': "Your 'Want to Read' shelf is empty. Start building your reading list by adding books from the book detail pages!",
+            'reading': "Your reading shelf is empty. Mark a book as 'Currently Reading' to see it here!",
+            'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!"
+        }
+
         return html.Div([
-            html.P("Your bookshelf is empty. Start adding books from the book detail pages!",
-                   style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
+            html.Div([
+                html.Div("📚", style={
+                    'font-size': '4rem',
+                    'margin-bottom': '20px',
+                    'opacity': '0.3'
+                }),
+                html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
+                       style={
+                           'text-align': 'center',
+                           'color': '#666',
+                           'font-size': '16px',
+                           'line-height': '1.5',
+                           'max-width': '400px'
+                })
+            ], style={
+                'display': 'flex',
+                'flex-direction': 'column',
+                'align-items': 'center',
+                'justify-content': 'center',
+                'margin-top': '80px'
+            })
         ])
 
-    sections = []
+    return html.Div([
+        html.Div([
+            create_book_card(book, reading_status=shelf_type, user_id=user_id) for book in books
+        ], style={
+            'display': 'grid',
+            'grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))',
+            'gap': '20px',
+            'padding': '10px 0'
+        })
+    ])
 
-    # To Read section
-    if bookshelf['to_read']:
-        sections.append(
-            html.Div([
-                html.H2(f"Want to Read ({len(bookshelf['to_read'])})", style={
-                    'color': '#17a2b8',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #17a2b8',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['to_read']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
 
-    # Currently Reading section
-    if bookshelf['reading']:
-        sections.append(
-            html.Div([
-                html.H2(f"Currently Reading ({len(bookshelf['reading'])})", style={
-                    'color': '#ffc107',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #ffc107',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['reading']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
-
-    # Finished section
-    if bookshelf['finished']:
-        sections.append(
-            html.Div([
-                html.H2(f"Finished ({len(bookshelf['finished'])})", style={
-                    'color': '#28a745',
-                    'margin-bottom': '20px',
-                    'border-bottom': '2px solid #28a745',
-                    'padding-bottom': '10px'
-                }),
-                html.Div([
-                    create_book_card(book) for book in bookshelf['finished']
-                ])
-            ], style={'margin-bottom': '40px'})
-        )
-
-    return sections
+# Original callback modified to work with new layout
+# (Keeping this for backwards compatibility if needed, but it's now replaced by load_bookshelf_tab_content)
 
 
 # Callback to show confirmation modal
@@ -267,10 +366,10 @@ def load_bookshelf_content(session_data, refresh_trigger):
      Output('remove-confirmation-text', 'children')],
     Input({'type': 'remove-book-btn', 'book_id': dash.dependencies.ALL}, 'n_clicks'),
     [State('user-session', 'data'),
-     State('bookshelf-content', 'children')],
+     State('bookshelf-tab-content', 'children')],
     prevent_initial_call=True
 )
-def show_remove_confirmation(remove_clicks, session_data, bookshelf_content):
+def show_remove_confirmation(remove_clicks, session_data, tab_content):
     """Show confirmation modal when remove button is clicked"""
     ctx = dash.callback_context
     if not ctx.triggered or not any(remove_clicks or []) or not session_data or not session_data.get('logged_in'):

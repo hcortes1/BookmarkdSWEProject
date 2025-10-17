@@ -31,6 +31,15 @@ app.layout = html.Div([
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
             html.Div(className="nav-left", children=[
+                dcc.Link([
+                    html.Span("Bookmarkd", className="brand-name", style={
+                        'font-size': '24px',
+                        'font-weight': 'bold',
+                        'color': '#007bff',
+                        'margin-right': '30px',
+                        'text-decoration': 'none'
+                    })
+                ], href='/', className='brand-link', style={'text-decoration': 'none'}),
                 dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon',
                          alt='home'), href='/', className='nav-link'),
                 dcc.Link('Trending', href='/trending', className='nav-link'),
@@ -276,7 +285,7 @@ def handle_search(search_value, search_type):
                         style={
                             'width': '30px',
                             'height': '40px',
-                            'object-fit': 'cover',
+                            'object-fit': 'contain',
                             'margin-right': '10px',
                             'border-radius': '2px'
                         }

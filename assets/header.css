@@ -24,6 +24,23 @@
   align-items: center;
 }
 
+.brand-link {
+  margin-right: 20px;
+}
+
+.brand-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
+  margin-right: 30px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.brand-name:hover {
+  color: #0056b3;
+}
+
 .nav-link {
   color: #dfe6ea;
   text-decoration: none;
