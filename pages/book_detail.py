@@ -228,6 +228,8 @@ def layout(book_id=None, **kwargs):
                           'book_id': book_id}, data=False),
                 dcc.Store(id={'type': 'pending-status-change',
                           'book_id': book_id}, data=None),
+                dcc.Store(id={'type': 'modal-mode',
+                          'book_id': book_id}, data='add'),
 
                 # Bookshelf overlay modal
                 html.Div([
@@ -351,6 +353,20 @@ def layout(book_id=None, **kwargs):
                                                     'padding': '12px',
                                                     'background': '#28a745',
                                                     'color': 'white',
+                                                    'border': 'none',
+                                                    'border-radius': '5px',
+                                                    'cursor': 'pointer',
+                                                    'font-size': '14px'
+                                                }),
+                                    html.Button("Change Status",
+                                                id={'type': 'change-status',
+                                                    'book_id': book_id},
+                                                style={
+                                                    'margin-top': '10px',
+                                                    'width': '100%',
+                                                    'padding': '12px',
+                                                    'background': '#ffc107',
+                                                    'color': 'black',
                                                     'border': 'none',
                                                     'border-radius': '5px',
                                                     'cursor': 'pointer',
@@ -666,21 +682,60 @@ def set_initial_bookshelf_button_state(store_id, session_data):
 
 # Callback to handle bookshelf button clicks (open modal)
 @callback(
-    Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
+    [Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'modal-mode', 'book_id': dash.dependencies.MATCH}, 'data'),
+     Output({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True),
+     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True)],
     Input({'type': 'book-bookshelf-btn',
           'book_id': dash.dependencies.MATCH}, 'n_clicks'),
-    State('user-session', 'data'),
+    [State('user-session', 'data'),
+     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
     prevent_initial_call=True
 )
-def open_bookshelf_modal(n_clicks, session_data):
+def open_bookshelf_modal(n_clicks, session_data, store_id):
     """Open bookshelf modal when button is clicked"""
-    if not n_clicks:
-        return dash.no_update
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    if not session_data or not session_data.get('logged_in'):
-        return dash.no_update
+    user_id = session_data.get('user_id')
+    book_id = store_id['book_id']
 
-    return True
+    success, message, shelf_type = get_book_shelf_status(user_id, book_id)
+
+    if success and shelf_type == 'completed':
+        review_success, message, review = get_user_review(user_id, book_id)
+        rating = review.get('rating') if review_success and review else None
+        review_text = review.get('review_text') if review_success and review else ''
+        return True, {'display': 'none'}, {'display': 'block'}, 'edit', rating, review_text
+    else:
+        return True, {'display': 'block'}, {'display': 'none'}, 'add', None, ''
+
+
+@callback(
+    Output({'type': 'save-review', 'book_id': dash.dependencies.MATCH}, 'children'),
+    Input({'type': 'modal-mode', 'book_id': dash.dependencies.MATCH}, 'data')
+)
+def update_save_button_text(mode):
+    if mode == 'edit':
+        return "Update Review"
+    return "Save Review & Mark as Finished"
+
+
+@callback(
+    [Output({'type': 'review-removal-confirmation-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'review-removal-modal', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
+    Input({'type': 'change-status', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id'),
+    prevent_initial_call=True
+)
+def handle_change_status_click(n_clicks, store_id):
+    if n_clicks:
+        book_id = store_id['book_id']
+        return True, {'action': 'change_status', 'book_id': book_id}, {'display': 'block'}
+    return dash.no_update, dash.no_update, dash.no_update
 
 
 # Callback to update modal visibility based on store
@@ -715,8 +770,8 @@ def update_modal_visibility(is_visible):
 @callback(
     [Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
      Output({'type': 'status-selection',
-            'book_id': dash.dependencies.MATCH}, 'style'),
-     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style')],
+            'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
     Input({'type': 'close-bookshelf-modal',
           'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     prevent_initial_call=True
@@ -841,15 +896,16 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
      Output({'type': 'modal-visible', 'book_id': dash.dependencies.MATCH},
             'data', allow_duplicate=True),
      Output({'type': 'rating-dropdown',
-            'book_id': dash.dependencies.MATCH}, 'value'),
-     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value')],
+            'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True),
+     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True)],
     Input({'type': 'save-review', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     [State({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value'),
      State({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value'),
-     State('user-session', 'data')],
+     State('user-session', 'data'),
+     State({'type': 'modal-mode', 'book_id': dash.dependencies.MATCH}, 'data')],
     prevent_initial_call=True
 )
-def handle_review_submission(n_clicks, rating, review_text, session_data):
+def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
     """Handle review submission and mark book as finished"""
     if not n_clicks or not session_data or not session_data.get('logged_in'):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -870,21 +926,24 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
     book_id = eval(trigger_id)['book_id']
     user_id = session_data.get('user_id')
 
+    feedback_text = "Review updated successfully!" if mode == 'edit' else "Review saved and book marked as finished!"
+
     # Save review and add to bookshelf in single operation
     try:
-        # First add to bookshelf
-        shelf_success, shelf_message = add_to_bookshelf(
-            user_id, book_id, 'completed')
+        if mode == 'add':
+            # First add to bookshelf
+            shelf_success, shelf_message = add_to_bookshelf(
+                user_id, book_id, 'completed')
 
-        if not shelf_success:
-            return (
-                html.Div(f"Error updating bookshelf: {shelf_message}", style={
-                         'color': 'red'}),
-                dash.no_update,
-                dash.no_update,
-                dash.no_update,
-                dash.no_update
-            )
+            if not shelf_success:
+                return (
+                    html.Div(f"Error updating bookshelf: {shelf_message}", style={
+                             'color': 'red'}),
+                    dash.no_update,
+                    dash.no_update,
+                    dash.no_update,
+                    dash.no_update
+                )
 
         # Then save review
         review_success, review_message = create_or_update_review(
@@ -901,8 +960,7 @@ def handle_review_submission(n_clicks, rating, review_text, session_data):
             )
 
         return (
-            html.Div("Review saved and book marked as finished!",
-                     style={'color': 'green'}),
+            html.Div(feedback_text, style={'color': 'green'}),
             "📚 Manage: Finished",
             False,  # Close modal
             None,  # Clear rating
@@ -1063,7 +1121,9 @@ def cancel_review_removal(n_clicks):
             'data', allow_duplicate=True),
      Output({'type': 'review-removal-confirmation-visible',
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
+     Output({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
     [Input({'type': 'confirm-review-removal',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
     [State({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data'),
@@ -1073,14 +1133,57 @@ def cancel_review_removal(n_clicks):
 def confirm_review_removal(n_clicks, pending_change, session_data):
     """Confirm the review removal and proceed with status change"""
     if not n_clicks or not pending_change or not session_data or not session_data.get('logged_in'):
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     book_id = pending_change.get('book_id')
     new_status = pending_change.get('new_status')
     user_id = session_data.get('user_id')
 
+    # Import needed functions
+    from backend.bookshelf import update_shelf_status
+    from backend.reviews import delete_review
+
+    if pending_change.get('action') == 'change_status':
+        # Remove the review and set status to plan-to-read, then show status selection
+        review_success, review_message = delete_review(user_id, book_id)
+        if review_success:
+            status_success, status_message = update_shelf_status(user_id, book_id, 'plan-to-read')
+            if status_success:
+                return (
+                    {'display': 'none'},  # confirmation modal
+                    html.Div("Review removed. You can now select a new status.", style={'color': 'blue'}),
+                    dash.no_update,  # button
+                    dash.no_update,  # modal visible
+                    False,
+                    {},
+                    {'display': 'block'},  # status selection
+                    {'display': 'none'}   # review form
+                )
+            else:
+                return (
+                    {'display': 'none'},
+                    html.Div(f"Error updating status: {status_message}", style={'color': 'red'}),
+                    dash.no_update,
+                    dash.no_update,
+                    False,
+                    {},
+                    dash.no_update,
+                    dash.no_update
+                )
+        else:
+            return (
+                {'display': 'none'},
+                html.Div(f"Error removing review: {review_message}", style={'color': 'red'}),
+                dash.no_update,
+                dash.no_update,
+                False,
+                {},
+                dash.no_update,
+                dash.no_update
+            )
+
     if not book_id or not new_status:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Import needed functions
     from backend.bookshelf import update_shelf_status
@@ -1107,7 +1210,9 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             f"📚 Manage: {status_text}",
             False,  # Close main modal
             False,  # Mark confirmation as not visible
-            {}  # Clear pending change
+            {},  # Clear pending change
+            dash.no_update,  # status selection
+            dash.no_update   # review form
         )
     else:
         error_msg = f"Error: {review_message if not review_success else status_message}"
@@ -1117,5 +1222,7 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             dash.no_update,
             dash.no_update,
             False,  # Mark confirmation as not visible
-            {}  # Clear pending change
+            {},  # Clear pending change
+            dash.no_update,
+            dash.no_update
         )
