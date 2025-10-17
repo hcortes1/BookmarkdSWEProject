@@ -48,10 +48,117 @@
   justify-content: center;
 }
 
-.search-input {
+.search-container {
+  position: relative;
   width: 60%;
   max-width: 520px;
   min-width: 180px;
+}
+
+.search-type-dropdown .Select-control {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 18px !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  height: 36px !important;
+}
+
+.search-type-dropdown .Select-value-label {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.search-type-dropdown .Select-arrow {
+  border-color: rgba(255, 255, 255, 0.7) transparent transparent !important;
+}
+
+.search-type-dropdown .Select-menu-outer {
+  background: white !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  z-index: 1002 !important;
+}
+
+.search-type-dropdown .Select-menu {
+  background: white !important;
+  color: #333 !important;
+}
+
+/* Modern Dash dropdown menu styling */
+.search-type-dropdown .dropdown-menu {
+  background: white !important;
+  color: #333 !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.search-type-dropdown .Select-option {
+  color: #333 !important;
+  padding: 8px 12px !important;
+}
+
+.search-type-dropdown .Select-option:hover {
+  background-color: #f8f9fa !important;
+  color: #333 !important;
+}
+
+.search-type-dropdown .Select-option.is-focused {
+  background-color: #e9ecef !important;
+  color: #333 !important;
+}
+
+/* Additional selectors for Dash dropdown */
+.search-type-dropdown .dropdown-option {
+  color: #333 !important;
+}
+
+.search-type-dropdown .dropdown-option:hover {
+  color: #333 !important;
+  background-color: #f8f9fa !important;
+}
+
+/* More specific selectors for modern Dash versions */
+.search-type-dropdown div[role="option"] {
+  color: #333 !important;
+}
+
+.search-type-dropdown div[role="option"]:hover {
+  color: #333 !important;
+  background-color: #f8f9fa !important;
+}
+
+.search-type-dropdown .dash-dropdown-option {
+  color: #333 !important;
+}
+
+.search-type-dropdown .dash-dropdown-option:hover {
+  color: #333 !important;
+  background-color: #f8f9fa !important;
+}
+
+/* Global dropdown text color fix */
+.search-type-dropdown * {
+  color: inherit;
+}
+
+.search-type-dropdown [data-dash-is-loading="true"] {
+  color: #333 !important;
+}
+
+/* Ensure all dropdown text is visible */
+.search-type-dropdown .dropdown-content {
+  background: white !important;
+}
+
+.search-type-dropdown .dropdown-content * {
+  color: #333 !important;
+}
+
+.search-input {
+  width: 100%;
   padding: 8px 12px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -62,6 +169,102 @@
 }
 .search-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1001;
+  margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-container:focus-within .search-results {
+  display: block !important;
+}
+
+.search-user-link {
+  display: block;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.search-user-link:last-child {
+  border-bottom: none;
+}
+
+.search-user-link:hover {
+  background-color: #f8f9fa;
+}
+
+.search-user-item {
+  display: flex;
+  align-items: center;
+  color: #333;
+}
+
+.search-username {
+  font-weight: 500;
+}
+
+.search-no-results,
+.search-error {
+  padding: 12px 16px;
+  color: #666;
+  font-style: italic;
+}
+
+/* New search result styles for books and authors */
+.search-section-header {
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.search-separator {
+  margin: 0;
+  border: none;
+  border-top: 1px solid #e9ecef;
+}
+
+.search-book-item,
+.search-author-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.search-book-item:hover,
+.search-author-item:hover {
+  background-color: #f8f9fa;
+}
+
+.search-book-title,
+.search-author-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.search-book-author,
+.search-author-works {
+  font-size: 12px;
+  color: #666;
 }
 
 .nav-right {
@@ -171,4 +374,115 @@
 
 .logout-item:hover {
   background-color: #fff5f5 !important;
+}
+
+/* Notifications styles */
+.notifications-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notifications-img {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  display: block;
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 18px;
+  font-weight: bold;
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 350px;
+    max-width: 400px;
+    margin-top: 2px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+    pointer-events: auto;
+    padding: 8px 0;
+}.notifications-container:hover .notifications-dropdown,
+.notifications-dropdown:hover {
+  display: block !important;
+  pointer-events: auto;
+}
+
+.notifications-container:focus-within .notifications-dropdown {
+  display: block !important;
+  pointer-events: auto;
+}
+
+.notifications-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: transparent;
+}
+
+.notification-item {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-accept:hover {
+    background: #218838 !important;
+}
+
+.btn-decline:hover {
+    background: #c82333 !important;
+}
+
+.no-notifications,
+.notification-error {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.notification-status-message {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+.notification-status-accepted {
+    border-left: 4px solid #28a745;
+}
+
+.notification-status-declined {
+    border-left: 4px solid #dc3545;
 }

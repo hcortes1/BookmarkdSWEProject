@@ -52,7 +52,33 @@ layout = html.Div([
                         style={'width': '100%'}
                     )
                 ]),
-                html.Div(id='email-feedback')
+                html.Div(id='email-feedback'),
+
+                # Display Name Section
+                html.H3("Display Name", style={'margin-top': '20px'}),
+                dcc.Input(
+                    id='edit-display-name-input',
+                    type='text',
+                    placeholder='Enter display name',
+                    className='form-input',
+                    style={'width': '100%', 'margin-bottom': '10px'}
+                ),
+                html.Div([
+                    html.Button(
+                        "Update",
+                        id="update-display-name-button",
+                        className='btn-success',
+                        style={'width': '48%', 'margin-right': '4%'}
+                    ),
+                    html.Button(
+                        "Remove",
+                        id="remove-display-name-button",
+                        className='btn-danger',
+                        style={'width': '48%'}
+                    )
+                ]),
+                html.Div(id='display-name-feedback',
+                         style={'margin-top': '10px'})
             ], className='column'),
 
             # Password editing (right column)
@@ -89,7 +115,24 @@ layout = html.Div([
                 ]),
                 html.Div(id='password-feedback')
             ], className='column'),
-        ], className='two-column-container')
+        ], className='two-column-container'),
+
+        # Bio section (below the two-column layout)
+        html.H3("Bio", style={'margin-top': '30px'}),
+        dcc.Textarea(
+            id='edit-bio-input',
+            placeholder='Tell others about yourself...',
+            className='form-input',
+            style={'width': '100%', 'height': '100px',
+                   'margin-bottom': '10px', 'resize': 'vertical'}
+        ),
+        html.Button(
+            "Update",
+            id="update-bio-button",
+            className='btn-success',
+            style={'width': '200px'}
+        ),
+        html.Div(id='bio-feedback', style={'margin-top': '10px'})
     ], className='settings-card'),
 
     # Profile Picture section
@@ -154,6 +197,17 @@ layout = html.Div([
         ], style={'text-align': 'center'})
     ], className='settings-card')
 ], className="settings-page")
+
+
+# Callback to enable/disable delete account button based on confirmation checkbox
+@callback(
+    Output('delete-account-button', 'disabled'),
+    Input('delete-confirmation', 'value'),
+    prevent_initial_call=False
+)
+def toggle_delete_button(confirmation_value):
+    # Enable button only if checkbox is checked
+    return 'confirmed' not in (confirmation_value or [])
 
 
 @callback(
@@ -501,3 +555,125 @@ def update_email_placeholder(session_data):
     if session_data and session_data.get('logged_in') and session_data.get('email'):
         return f"Current: {session_data['email']}"
     return "Enter new email"
+
+
+# Callback to update display name
+@callback(
+    [Output('display-name-feedback', 'children'),
+     Output('edit-display-name-input', 'value')],
+    [Input('update-display-name-button', 'n_clicks'),
+     Input('remove-display-name-button', 'n_clicks')],
+    [State('edit-display-name-input', 'value'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def handle_display_name_actions(update_clicks, remove_clicks, new_display_name, session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update
+
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    try:
+        import backend.profile as profile_backend
+
+        if button_id == 'update-display-name-button':
+            if not update_clicks:
+                return dash.no_update, dash.no_update
+
+            if not new_display_name or not new_display_name.strip():
+                return html.Div("Display name cannot be empty", style={'color': 'red'}), dash.no_update
+
+            result = profile_backend.update_user_profile(
+                user_id=str(session_data['user_id']),
+                display_name=new_display_name.strip()
+            )
+
+            if result.get('success'):
+                return html.Div("Display name updated successfully!", style={'color': 'green'}), ""
+            else:
+                error_msg = result.get(
+                    'error', result.get('message', 'Unknown error'))
+                return html.Div(f"Error updating display name: {error_msg}", style={'color': 'red'}), dash.no_update
+
+        elif button_id == 'remove-display-name-button':
+            if not remove_clicks:
+                return dash.no_update, dash.no_update
+
+            # Set display name to empty string to remove it
+            result = profile_backend.update_user_profile(
+                user_id=str(session_data['user_id']),
+                display_name=""
+            )
+
+            if result.get('success'):
+                return html.Div("Display name removed successfully!", style={'color': 'green'}), ""
+            else:
+                error_msg = result.get(
+                    'error', result.get('message', 'Unknown error'))
+                return html.Div(f"Error removing display name: {error_msg}", style={'color': 'red'}), dash.no_update
+
+    except Exception as e:
+        return html.Div(f"Error updating display name: {str(e)}", style={'color': 'red'}), dash.no_update
+
+    return dash.no_update, dash.no_update
+
+
+# Callback to update bio
+@callback(
+    [Output('bio-feedback', 'children'),
+     Output('edit-bio-input', 'value')],
+    Input('update-bio-button', 'n_clicks'),
+    [State('edit-bio-input', 'value'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def update_bio(n_clicks, new_bio, session_data):
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update
+
+    try:
+        import backend.profile as profile_backend
+        result = profile_backend.update_user_profile(
+            user_id=str(session_data['user_id']),
+            bio=new_bio.strip() if new_bio else ""
+        )
+
+        if result.get('success'):
+            return html.Div("Bio updated successfully!", style={'color': 'green'}), ""
+        else:
+            return html.Div(f"Error: {result.get('message', 'Unknown error')}", style={'color': 'red'}), dash.no_update
+
+    except Exception as e:
+        return html.Div(f"Error updating bio: {str(e)}", style={'color': 'red'}), dash.no_update
+
+
+# Callback to load current display name and bio
+@callback(
+    [Output('edit-display-name-input', 'placeholder'),
+     Output('edit-bio-input', 'placeholder')],
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def update_profile_placeholders(session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return "Enter display name", "Tell others about yourself..."
+
+    try:
+        import backend.profile as profile_backend
+        user_data = profile_backend.get_user_profile_by_username(
+            session_data.get('username'))
+
+        if user_data:
+            display_name_placeholder = f"Current: {user_data.get('display_name', 'Not set')}"
+            bio_placeholder = f"Current: {user_data.get('bio', 'No bio set')}" if user_data.get(
+                'bio') else "Tell others about yourself..."
+            return display_name_placeholder, bio_placeholder
+        else:
+            return "Enter display name", "Tell others about yourself..."
+
+    except Exception as e:
+        return "Enter display name", "Tell others about yourself..."
