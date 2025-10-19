@@ -3,3 +3,4 @@ python-dotenv
 psycopg2
 supabase
 requests
+google-generativeai

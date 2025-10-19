@@ -335,7 +335,14 @@ def create_book_card(book: Dict[str, Any], author_id: int):
                     'color': '#333',
                     'text-align': 'center',
                     'word-wrap': 'break-word',
-                    'white-space': 'normal'
+                    'word-break': 'break-word',
+                    'overflow-wrap': 'break-word',
+                    'overflow': 'hidden',
+                    'display': '-webkit-box',
+                    '-webkit-line-clamp': '2',
+                    '-webkit-box-orient': 'vertical',
+                    'height': '2.4em',
+                    'max-width': '100%'
                 }),
                 # Rating information
                 *rating_info,

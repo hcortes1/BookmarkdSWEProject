@@ -89,7 +89,7 @@ layout = html.Div([
 
 def create_book_card(book, show_status_buttons=True, reading_status=None, user_id=None):
     """Create a book card component for grid bookshelf view"""
-    
+
     # Check if the book is favorited
     is_favorited = False
     if user_id and book.get('book_id'):
@@ -97,7 +97,7 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
             is_favorited = is_book_favorited(user_id, book['book_id'])
         except:
             is_favorited = False
-    
+
     # Determine border styling based on favorite status
     border_style = '3px solid #007bff' if is_favorited else 'none'
     return html.Div([
@@ -112,7 +112,7 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                         'height': '20px',
                         'border': 'none',
                         'border-radius': '50%',
-                        'background': 'rgba(220, 53, 69, 0.9)',
+                        'background': 'rgba(128, 128, 128, 0.7)',
                         'color': 'white',
                         'font-size': '12px',
                         'font-weight': 'bold',
@@ -122,7 +122,6 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                         'justify-content': 'center',
                         'z-index': '10',
                         'transition': 'all 0.2s ease',
-                        'opacity': '0',
                         'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
                     },
                     className='bookshelf-remove-btn',
@@ -188,9 +187,10 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                         ], style={'margin-bottom': '1px', 'text-align': 'center'}),
                         # Date added for completed books
                         html.Div([
-                            html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                            html.Span("Added: ", style={
+                                      'font-size': '9px', 'color': '#888'}),
                             html.Span(
-                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
                                 else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
                                 else 'Unknown date',
                                 style={'font-size': '9px', 'color': '#666'}
@@ -199,9 +199,10 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                     ]) if reading_status == 'finished' else
                     # For want-to-read and currently reading: only show date added
                     html.Div([
-                        html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                        html.Span("Added: ", style={
+                                  'font-size': '9px', 'color': '#888'}),
                         html.Span(
-                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
                             else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
                             else 'Unknown date',
                             style={'font-size': '9px', 'color': '#666'}
