@@ -229,9 +229,11 @@ def layout(author_id=None, **kwargs):
                         ])
                     ], style={'margin-bottom': '20px'}),
                     dcc.Loading(
-                        id={'type': 'author-books-loading', 'author_id': author_id},
+                        id={'type': 'author-books-loading',
+                            'author_id': author_id},
                         children=[html.Div(
-                            id={'type': 'author-books-grid', 'author_id': author_id},
+                            id={'type': 'author-books-grid',
+                                'author_id': author_id},
                             children=[
                                 # Show first 80 books initially
                                 create_book_card(book, author_id) for book in books[:80]
