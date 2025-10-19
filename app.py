@@ -1,6 +1,7 @@
 import dash
 from dash import Dash, html, dcc, Input, Output, State
 from argparse import ArgumentParser
+import time
 import backend.settings as settings_backend
 import backend.profile as profile_backend
 import backend.friends as friends_backend
@@ -81,7 +82,11 @@ app.layout = html.Div([
         ])
     ]),
 
-    dash.page_container
+    dcc.Loading(
+        id="page-loading",
+        children=[dash.page_container],
+        type="default"
+    )
 ])
 
 

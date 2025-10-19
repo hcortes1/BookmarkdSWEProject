@@ -6,6 +6,7 @@ from backend.db import get_conn
 from backend.favorites import is_author_favorited, toggle_author_favorite
 from urllib.parse import unquote, parse_qs
 from typing import Dict, Any
+import time
 
 dash.register_page(__name__, path_template="/author/<author_id>")
 
@@ -121,6 +122,7 @@ def layout(author_id=None, **kwargs):
         # Get author's books with error handling
         try:
             books = get_author_books(author_id)
+            time.sleep(0.6)
         except Exception as e:
             print(f"Error getting author books: {e}")
             books = []
@@ -226,20 +228,24 @@ def layout(author_id=None, **kwargs):
                                 books), author_id) if len(books) > 0 else [html.P("No books to display.")])
                         ])
                     ], style={'margin-bottom': '20px'}),
-                    html.Div(
-                        id={'type': 'author-books-grid', 'author_id': author_id},
-                        children=[
-                            # Show first 80 books initially
-                            create_book_card(book, author_id) for book in books[:80]
-                        ] if books else [html.P("No books found in our database.", className="no-books-message")],
-                        className="books-grid",
-                        style={
-                            'display': 'grid',
-                            # 8 books per row
-                            'grid-template-columns': 'repeat(8, 1fr)',
-                            'gap': '20px',  # Increased gap for better spacing
-                            'margin-top': '20px'
-                        }
+                    dcc.Loading(
+                        id={'type': 'author-books-loading', 'author_id': author_id},
+                        children=[html.Div(
+                            id={'type': 'author-books-grid', 'author_id': author_id},
+                            children=[
+                                # Show first 80 books initially
+                                create_book_card(book, author_id) for book in books[:80]
+                            ] if books else [html.P("No books found in our database.", className="no-books-message")],
+                            className="books-grid",
+                            style={
+                                'display': 'grid',
+                                # 8 books per row
+                                'grid-template-columns': 'repeat(8, 1fr)',
+                                'gap': '20px',  # Increased gap for better spacing
+                                'margin-top': '20px'
+                            }
+                        )],
+                        type="default"
                     ),
                     html.Div(id={'type': 'author-books-pagination-bottom', 'author_id': author_id}, children=[
                         # Initial pagination controls
@@ -581,4 +587,5 @@ def handle_pagination_click(clicks_list, page_data):
     pagination_controls = create_pagination_controls(
         new_page, total_pages, total_books, author_id)
 
+    time.sleep(0.6)
     return updated_page_data, book_cards, pagination_controls, pagination_controls
