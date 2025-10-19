@@ -1,8 +1,7 @@
 # pages/book_detail.py
 import dash
 from dash import html, dcc, Input, Output, State, callback
-import psycopg2.extras
-from backend.db import get_conn
+from backend.books import get_book_details, get_books_with_same_title
 from backend.favorites import is_book_favorited, toggle_book_favorite
 from backend.bookshelf import get_book_shelf_status, add_to_bookshelf
 from backend.reviews import get_user_review, create_or_update_review
@@ -73,14 +72,7 @@ def layout(book_id=None, **kwargs):
                         html.Img(
                             src=book_data.get(
                                 'cover_url') or '/assets/svg/default-book.svg',
-                            className="book-cover-large",
-                            style={
-                                'width': '200px',
-                                'height': '300px',
-                                'object-fit': 'contain',
-                                'border-radius': '8px',
-                                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)'
-                            }
+                            className="book-cover-large"
                         )
                     ], className="book-cover-container"),
 
@@ -93,11 +85,7 @@ def layout(book_id=None, **kwargs):
                                 book_data.get('author_name', 'Unknown Author'),
                                 href=f"/author/{book_data.get('author_id')}?from_book={book_id}" if book_data.get(
                                     'author_id') else "#",
-                                className="author-link",
-                                style={
-                                    'color': '#007bff',
-                                    'text-decoration': 'none'
-                                }
+                                className="author-link"
                             ) if book_data.get('author_id') else book_data.get('author_name', 'Unknown Author')
                         ], className="book-author"),
 
@@ -107,11 +95,7 @@ def layout(book_id=None, **kwargs):
                             dcc.Link(
                                 f"{book_data.get('average_rating', 0):.1f}/5.0 ({book_data.get('rating_count', 0)})",
                                 href=f"/reviews/{book_id}",
-                                style={
-                                    'font-weight': 'bold',
-                                    'text-decoration': 'none'
-                                },
-                                className='rating-color'
+                                className='rating-color rating-link'
                             ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Span(
                                 "No ratings yet",
                                 style={'color': '#666'}
@@ -163,61 +147,31 @@ def layout(book_id=None, **kwargs):
                             html.Button(
                                 id={'type': 'book-favorite-btn',
                                     'book_id': book_id},
-                                className="favorite-btn",
-                                style={
-                                    'margin-top': '20px',
-                                    'margin-right': '10px',
-                                    'padding': '10px 20px',
-                                    'border': 'none',
-                                    'border-radius': '5px',
-                                    'cursor': 'pointer',
-                                    'font-size': '14px',
-                                    'font-weight': 'bold'
-                                }
+                                className="favorite-btn"
                             ),
                             # Bookshelf button
                             html.Button(
                                 id={'type': 'book-bookshelf-btn',
                                     'book_id': book_id},
-                                className="bookshelf-btn",
-                                style={
-                                    'margin-top': '20px',
-                                    'padding': '10px 20px',
-                                    'border': 'none',
-                                    'border-radius': '5px',
-                                    'cursor': 'pointer',
-                                    'font-size': '14px',
-                                    'font-weight': 'bold',
-                                    'background-color': '#6c757d',
-                                    'color': 'white'
-                                }
+                                className="bookshelf-btn"
                             ),
                             html.Div([
                                 html.Div(
                                     id={'type': 'book-favorite-feedback',
                                         'book_id': book_id},
-                                    style={'margin-top': '10px',
-                                           'font-size': '12px'}
+                                    className="feedback-text"
                                 ),
                                 html.Div(
                                     id={'type': 'book-bookshelf-feedback',
                                         'book_id': book_id},
-                                    style={'margin-top': '10px',
-                                           'font-size': '12px'}
+                                    className="feedback-text"
                                 )
                             ])
                         ], className="action-buttons-section")
 
-                    ], className="book-details", style={'flex': '1', 'margin-left': '30px'})
+                    ], className="book-details")
 
-                ], className="book-detail-container secondary-bg", style={
-                    'display': 'flex',
-                    'max-width': '800px',
-                    'margin': '0 auto',
-                    'padding': '30px',
-                    'border-radius': '12px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
-                }),
+                ], className="book-detail-container secondary-bg"),
 
                 # Store for modal visibility
                 dcc.Store(id={'type': 'modal-visible',
@@ -235,82 +189,35 @@ def layout(book_id=None, **kwargs):
                 html.Div([
                     html.Div([
                         html.Div([
-                            html.H3("Add to Bookshelf", style={
-                                'margin': '0 0 20px 0',
-                                'color': '#333'
-                            }),
+                            html.H3("Add to Bookshelf",
+                                    className="modal-header"),
                             html.Button("×", id={'type': 'close-bookshelf-modal', 'book_id': book_id},
-                                        style={
-                                'position': 'absolute',
-                                'top': '15px',
-                                'right': '15px',
-                                'background': 'none',
-                                'border': 'none',
-                                          'font-size': '24px',
-                                          'cursor': 'pointer',
-                                          'color': '#666'
-                            }),
+                                        className="close-modal-btn"),
 
                             # Status selection
                             html.Div([
-                                html.H4("Choose status:", style={
-                                        'margin-bottom': '15px'}),
+                                html.H4("Choose status:",
+                                        className="modal-subheader"),
                                 html.Div([
                                     html.Button("Want to Read",
                                                 id={'type': 'select-status',
                                                     'book_id': book_id, 'status': 'to_read'},
-                                                className="status-btn",
-                                                style={
-                                                    'display': 'block',
-                                                    'width': '100%',
-                                                    'margin-bottom': '10px',
-                                                    'padding': '12px',
-                                                    'background': '#17a2b8',
-                                                    'color': 'white',
-                                                    'border': 'none',
-                                                    'border-radius': '5px',
-                                                    'cursor': 'pointer',
-                                                    'font-size': '14px'
-                                                }),
+                                                className="status-btn"),
                                     html.Button("Currently Reading",
                                                 id={'type': 'select-status',
                                                     'book_id': book_id, 'status': 'reading'},
-                                                className="status-btn",
-                                                style={
-                                                    'display': 'block',
-                                                    'width': '100%',
-                                                    'margin-bottom': '10px',
-                                                    'padding': '12px',
-                                                    'background': '#ffc107',
-                                                    'color': 'black',
-                                                    'border': 'none',
-                                                    'border-radius': '5px',
-                                                    'cursor': 'pointer',
-                                                    'font-size': '14px'
-                                                }),
+                                                className="status-btn reading"),
                                     html.Button("Mark as Finished",
                                                 id={'type': 'select-status',
                                                     'book_id': book_id, 'status': 'finished'},
-                                                className="status-btn",
-                                                style={
-                                                    'display': 'block',
-                                                    'width': '100%',
-                                                    'margin-bottom': '15px',
-                                                    'padding': '12px',
-                                                    'background': '#28a745',
-                                                    'color': 'white',
-                                                    'border': 'none',
-                                                    'border-radius': '5px',
-                                                    'cursor': 'pointer',
-                                                    'font-size': '14px'
-                                                })
+                                                className="status-btn finished"),
                                 ])
                             ], id={'type': 'status-selection', 'book_id': book_id}),
 
                             # Review form (shown when marking as finished)
                             html.Div([
-                                html.H4("Write a Review", style={
-                                        'margin-bottom': '15px'}),
+                                html.H4("Write a Review",
+                                        className="modal-subheader"),
                                 html.Div([
                                     html.Label("Rating (required):", style={
                                                'display': 'block', 'margin-bottom': '5px'}),
@@ -335,187 +242,59 @@ def layout(book_id=None, **kwargs):
                                         id={'type': 'review-text',
                                             'book_id': book_id},
                                         placeholder="Write your review here...",
-                                        style={
-                                            'width': '100%',
-                                            'height': '100px',
-                                            'margin-bottom': '15px',
-                                            'padding': '10px',
-                                            'border': '1px solid #ddd',
-                                            'border-radius': '5px',
-                                            'resize': 'vertical'
-                                        }
+                                        className="review-textarea"
                                     ),
                                     html.Button("Save Review & Mark as Finished",
                                                 id={'type': 'save-review',
                                                     'book_id': book_id},
-                                                style={
-                                                    'width': '100%',
-                                                    'padding': '12px',
-                                                    'background': '#28a745',
-                                                    'color': 'white',
-                                                    'border': 'none',
-                                                    'border-radius': '5px',
-                                                    'cursor': 'pointer',
-                                                    'font-size': '14px'
-                                                }),
+                                                className="save-review-btn"),
                                     html.Button("Change Status",
                                                 id={'type': 'change-status',
                                                     'book_id': book_id},
-                                                style={
-                                                    'margin-top': '10px',
-                                                    'width': '100%',
-                                                    'padding': '12px',
-                                                    'background': '#ffc107',
-                                                    'color': 'black',
-                                                    'border': 'none',
-                                                    'border-radius': '5px',
-                                                    'cursor': 'pointer',
-                                                    'font-size': '14px'
-                                                })
+                                                className="change-status-btn")
                                 ])
                             ], id={'type': 'review-form', 'book_id': book_id},
                                 style={'display': 'none'}),
 
                             html.Div(id={'type': 'modal-feedback', 'book_id': book_id},
-                                     style={'margin-top': '15px'})
-                        ], style={
-                            'position': 'relative',
-                            'padding': '25px',
-                            'border-radius': '10px',
-                            'box-shadow': '0 4px 20px rgba(0,0,0,0.3)',
-                            'max-width': '400px',
-                            'width': '90%',
-                            'max-height': '80vh',
-                            'overflow-y': 'auto'
-                        }, className='secondary-bg')
-                    ], id={'type': 'modal-overlay', 'book_id': book_id})
+                                     className="modal-feedback")
+                        ], className='secondary-bg modal-content')
+                    ], id={'type': 'modal-overlay', 'book_id': book_id}, className="modal-overlay")
                 ], id={'type': 'bookshelf-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Review removal confirmation modal
                 html.Div([
                     html.Div([
                         html.Div([
-                            html.H3("Remove Review?", style={
-                                'margin': '0 0 20px 0',
-                                'color': '#dc3545'
-                            }),
+                            html.H3(
+                                "Remove Review?", className="modal-header review-removal-header"),
                             html.P("Changing from 'Finished' to another status will remove your rating and review for this book. Are you sure you want to continue?",
-                                   style={
-                                       'margin-bottom': '20px',
-                                       'line-height': '1.5'
-                                   }),
+                                   className="modal-description"),
                             html.Div([
                                 html.Button("Cancel",
                                             id={'type': 'cancel-review-removal',
                                                 'book_id': book_id},
-                                            style={
-                                                'padding': '10px 20px',
-                                                'margin-right': '10px',
-                                                'background': '#6c757d',
-                                                'color': 'white',
-                                                'border': 'none',
-                                                'border-radius': '4px',
-                                                'cursor': 'pointer'
-                                            }),
+                                            className="modal-action-btn"),
                                 html.Button("Continue & Remove Review",
                                             id={'type': 'confirm-review-removal',
                                                 'book_id': book_id},
-                                            style={
-                                                'padding': '10px 20px',
-                                                'background': '#dc3545',
-                                                'color': 'white',
-                                                'border': 'none',
-                                                'border-radius': '4px',
-                                                'cursor': 'pointer'
-                                            })
-                            ], style={'text-align': 'right'})
-                        ], style={
-                            'position': 'relative',
-                            'padding': '25px',
-                            'border-radius': '10px',
-                            'box-shadow': '0 4px 20px rgba(0,0,0,0.3)',
-                            'max-width': '400px',
-                            'width': '90%'
-                        }, className='secondary-bg')
-                    ], style={
-                        'position': 'fixed',
-                        'top': '0',
-                        'left': '0',
-                        'width': '100%',
-                        'height': '100%',
-                        'background': 'rgba(0,0,0,0.5)',
-                        'display': 'flex',
-                        'justify-content': 'center',
-                        'align-items': 'center',
-                        'z-index': '1001'  # Higher than bookshelf modal
-                    })
+                                            className="confirm-btn")
+                            ], className="modal-buttons-right")
+                        ], className='secondary-bg modal-content')
+                    ], className="review-removal-modal")
                 ], id={'type': 'review-removal-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Other editions/versions section
                 html.Div(id='other-editions-section', children=[
                     # This will be populated by a callback
-                ], style={
-                    'max-width': '800px',
-                    'margin': '20px auto 0',
-                })
+                ], className="other-editions-section")
 
-            ], className="page-container", style={
-                'padding': '30px',
-                'background': '#f5f5f5',
-                'min-height': '100vh'
-            })
+            ], className="page-container")
         ])
 
     except Exception as e:
         print(f"Error loading book: {e}")
         return html.Div("Error loading book details", className="error-message")
-
-
-def get_book_details(book_id: int):
-    """Get book details from database including core enhanced fields"""
-    try:
-        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            sql = """
-                SELECT b.book_id, b.title, b.isbn, b.genre, 
-                       EXTRACT(YEAR FROM b.release_date) as release_year,
-                       b.description, b.cover_url, b.author_id,
-                       COALESCE(b.language, 'en') as language, 
-                       b.page_count, b.average_rating, b.rating_count,
-                       a.name as author_name, a.bio as author_bio
-                FROM books b
-                LEFT JOIN authors a ON b.author_id = a.author_id
-                WHERE b.book_id = %s
-            """
-            cur.execute(sql, (book_id,))
-            result = cur.fetchone()
-            return dict(result) if result else None
-    except Exception as e:
-        print(f"Error getting book details: {e}")
-        return None
-
-
-def get_books_with_same_title(book_id: int, title: str):
-    """Get all books with the same title as the current book including core enhanced fields"""
-    try:
-        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            sql = """
-                SELECT b.book_id, b.title, b.isbn, b.genre, 
-                       EXTRACT(YEAR FROM b.release_date) as release_year,
-                       b.description, b.cover_url, b.author_id,
-                       COALESCE(b.language, 'en') as language, 
-                       b.page_count,
-                       a.name as author_name
-                FROM books b
-                LEFT JOIN authors a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) = LOWER(%s) AND b.book_id != %s
-                ORDER BY b.release_date, a.name
-            """
-            cur.execute(sql, (title, book_id))
-            results = cur.fetchall()
-            return [dict(result) for result in results]
-    except Exception as e:
-        print(f"Error getting books with same title: {e}")
-        return []
 
 
 # Callback to populate other editions section
@@ -541,11 +320,7 @@ def populate_other_editions(nav_data):
         return []
 
     return html.Div([
-        html.H3("Other Editions", style={
-            'color': '#333',
-            'margin-bottom': '15px',
-            'font-size': '18px'
-        }),
+        html.H3("Other Editions", className="other-editions-header"),
         html.Div([
             html.Div([
                 dcc.Link([
@@ -553,58 +328,25 @@ def populate_other_editions(nav_data):
                         html.Img(
                             src=book.get(
                                 'cover_url') or '/assets/svg/default-book.svg',
-                            style={
-                                'width': '60px',
-                                'height': '90px',
-                                'object-fit': 'contain',
-                                'border-radius': '4px',
-                                'margin-right': '15px'
-                            }
+                            className="other-editions-image"
                         ),
                         html.Div([
-                            html.H4(book['title'], style={
-                                'margin': '0 0 5px 0',
-                                'font-size': '16px',
-                                'color': '#333'
-                            }),
-                            html.P(f"by {book.get('author_name', 'Unknown Author')}", style={
-                                'margin': '0 0 5px 0',
-                                'font-size': '14px',
-                                'color': '#666'
-                            }),
-                            html.P(f"Published: {str(int(book.get('release_year'))) if book.get('release_year') else 'Unknown'}", style={
-                                'margin': '0 0 5px 0',
-                                'font-size': '12px',
-                                'color': '#888'
-                            }),
-                            html.P(f"ISBN: {book.get('isbn', 'N/A')}", style={
-                                'margin': '0',
-                                'font-size': '12px',
-                                'color': '#888'
-                            }) if book.get('isbn') else None
+                            html.H4(book['title'],
+                                    className="other-editions-title"),
+                            html.P(
+                                f"by {book.get('author_name', 'Unknown Author')}", className="other-editions-author"),
+                            html.P(
+                                f"Published: {str(int(book.get('release_year'))) if book.get('release_year') else 'Unknown'}", className="other-editions-year"),
+                            html.P(f"ISBN: {book.get('isbn', 'N/A')}",
+                                   className="other-editions-isbn") if book.get('isbn') else None
                         ], style={'flex': '1'})
-                    ], style={
-                        'display': 'flex',
-                        'align-items': 'flex-start',
-                        'padding': '15px',
-                        'background': '#f8f9fa',
-                        'border-radius': '8px',
-                        'margin-bottom': '10px',
-                        'transition': 'background-color 0.2s'
-                    })
-                ], href=f"/book/{book['book_id']}", style={
-                    'text-decoration': 'none',
-                    'color': 'inherit'
-                })
+                    ], className="other-editions-item")
+                ], href=f"/book/{book['book_id']}", className="other-editions-item-link")
             ], style={
                 'cursor': 'pointer'
             }) for book in other_books
         ])
-    ], style={
-        'padding': '20px',
-        'border-radius': '12px',
-        'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
-    }, className='secondary-bg')
+    ], className='secondary-bg other-editions-container')
 
 
 # Callback to set initial favorite button state
