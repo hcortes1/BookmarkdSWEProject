@@ -427,6 +427,138 @@ def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
         return None
 
 
+def merge_book_data(books_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Merge information from multiple book records to create the most complete profile"""
+    if not books_data:
+        return {}
+
+    merged = {
+        # Use first title
+        'title': books_data[0].get('title', 'Unknown Title'),
+        'isbn': None,
+        'genre': None,
+        'release_date': None,
+        'description': '',
+        'cover_url': None,
+        'language': 'en',
+        'page_count': None
+    }
+
+    # Collect all ISBNs and pick the best one
+    all_isbns = []
+    for book in books_data:
+        # Check for ISBN-13 first
+        if book.get('isbn_13'):
+            isbn_val = book['isbn_13'][0] if isinstance(
+                book['isbn_13'], list) else book['isbn_13']
+            if isbn_val and isbn_val not in all_isbns:
+                all_isbns.append(isbn_val)
+        # Then ISBN-10
+        elif book.get('isbn_10'):
+            isbn_val = book['isbn_10'][0] if isinstance(
+                book['isbn_10'], list) else book['isbn_10']
+            if isbn_val and isbn_val not in all_isbns:
+                all_isbns.append(isbn_val)
+        # Then general isbn
+        elif book.get('isbn'):
+            isbn_val = book['isbn'][0] if isinstance(
+                book['isbn'], list) else book['isbn']
+            if isbn_val and isbn_val not in all_isbns:
+                all_isbns.append(isbn_val)
+        # Also check existing isbn field
+        elif book.get('isbn') and book['isbn'] not in all_isbns:
+            all_isbns.append(book['isbn'])
+
+    if all_isbns:
+        merged['isbn'] = all_isbns[0]  # Pick first (prioritized by type above)
+
+    # Collect all subjects/genres
+    all_subjects = []
+    for book in books_data:
+        subjects = []
+        if book.get('subjects'):
+            subjects = book['subjects'] if isinstance(
+                book['subjects'], list) else [book['subjects']]
+        elif book.get('genre'):
+            # Split existing genre string back to list
+            genre_str = book['genre']
+            if genre_str:
+                subjects = [g.strip()
+                            for g in genre_str.split(',') if g.strip()]
+
+        for subject in subjects:
+            if subject and subject not in all_subjects:
+                # Filter out unwanted subjects
+                if not any(skip in subject.lower() for skip in [
+                    'nyt:', 'collection', 'open library', 'staff picks', 'protected daisy',
+                    'accessible book', 'lending library', 'in library', 'internet archive',
+                    'overdrive', 'library', 'ebook', 'kindle', 'epub'
+                ]):
+                    all_subjects.append(subject)
+
+    # Take first 5 unique genres
+    if all_subjects:
+        merged['genre'] = ', '.join(all_subjects[:5])
+
+    # Pick best description (longest non-empty)
+    best_description = ''
+    for book in books_data:
+        desc = book.get('description', '').strip()
+        if desc and len(desc) > len(best_description):
+            best_description = desc
+
+    merged['description'] = best_description
+
+    # Pick any cover_url
+    for book in books_data:
+        if book.get('cover_url'):
+            merged['cover_url'] = book['cover_url']
+            break
+
+    # Pick best release_date (most complete/earliest)
+    best_date = None
+    for book in books_data:
+        date_val = book.get('release_date')
+        if date_val:
+            # Parse release date if it's a string
+            if isinstance(date_val, str):
+                try:
+                    # Try to parse as YYYY-MM-DD
+                    if len(date_val) >= 10:
+                        parsed_date = date_val[:10]
+                    else:
+                        # Try to extract year
+                        year_match = re.search(r'\b(\d{4})\b', date_val)
+                        if year_match:
+                            parsed_date = f"{year_match.group(1)}-01-01"
+                        else:
+                            continue
+                except:
+                    continue
+            else:
+                parsed_date = str(date_val)
+
+            # Pick the earliest date or most complete
+            if not best_date or parsed_date < best_date:
+                best_date = parsed_date
+
+    merged['release_date'] = best_date
+
+    # Pick any language (should be consistent)
+    for book in books_data:
+        if book.get('language'):
+            merged['language'] = book['language']
+            break
+
+    # Pick any page_count
+    for book in books_data:
+        if book.get('page_count'):
+            merged['page_count'] = book['page_count']
+            break
+
+    return merged
+
+
 def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optional[int]:
     """Save book with enhanced data to database, ensuring ISBN uniqueness and filtering duplicates"""
     try:
@@ -460,7 +592,7 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             if author_id:
                 # For same author, look for titles that normalize to the same string
                 cur.execute("""
-                    SELECT book_id, title, description, release_date, genre
+                    SELECT book_id, title, isbn, genre, release_date, description, cover_url, language, page_count
                     FROM books 
                     WHERE author_id = %s AND 
                           REGEXP_REPLACE(LOWER(title), '[^a-zA-Z0-9]', '', 'g') = %s
@@ -468,7 +600,7 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             else:
                 # For different/unknown authors, be more strict
                 cur.execute("""
-                    SELECT book_id, title, description, release_date, genre
+                    SELECT book_id, title, isbn, genre, release_date, description, cover_url, language, page_count
                     FROM books 
                     WHERE REGEXP_REPLACE(LOWER(title), '[^a-zA-Z0-9]', '', 'g') = %s
                 """, (normalized_current,))
@@ -478,92 +610,61 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             print(
                 f"DEBUG: Found {len(similar_books)} similar books for '{title}'")
             for book in similar_books:
-                print(f"DEBUG: Similar book: '{book['title']}'")
+                print(
+                    f"DEBUG: Similar book: '{book['title']}' (ID: {book['book_id']})")
 
-            # If we found similar books, apply deduplication logic
+            # If we found similar books, merge all information before deciding what to do
             if similar_books:
-                current_description = book_data.get('description', '').strip()
-                current_release_date = book_data.get('release_date')
-                current_subjects = book_data.get('subjects', [])
-                current_genre_count = len(
-                    [s for s in current_subjects if s]) if current_subjects else 0
+                print(
+                    f"DEBUG: Merging information from {len(similar_books)} similar books")
+
+                # Collect all books data (existing + new) for merging
+                all_books_data = [book_data] + \
+                    [dict(book) for book in similar_books]
+
+                # Merge information to create the most complete profile
+                merged_data = merge_book_data(all_books_data)
+
+                # Update the first existing book with merged data
+                first_existing_book = similar_books[0]
+                book_id_to_update = first_existing_book['book_id']
 
                 print(
-                    f"DEBUG: Current book - description: {bool(current_description)}, release_date: {current_release_date}, genres: {current_genre_count}")
+                    f"DEBUG: Updating book {book_id_to_update} with merged data")
 
-                for similar_book in similar_books:
-                    existing_description = similar_book.get(
-                        'description', '').strip()
-                    existing_release_date = similar_book.get('release_date')
-                    existing_genres = similar_book.get('genre', '').split(
-                        ',') if similar_book.get('genre') else []
-                    existing_genre_count = len(
-                        [g for g in existing_genres if g.strip()]) if existing_genres else 0
+                # Prepare merged data for update
+                merged_isbn = merged_data.get('isbn')
+                merged_genre = merged_data.get('genre')
+                merged_release_date = merged_data.get('release_date')
+                merged_description = merged_data.get('description', '')
+                merged_cover_url = merged_data.get('cover_url')
+                merged_language = merged_data.get('language', 'en')
+                merged_page_count = merged_data.get('page_count')
 
-                    print(
-                        f"DEBUG: Existing book '{similar_book['title']}' - description: {bool(existing_description)}, release_date: {existing_release_date}, genres: {existing_genre_count}")
+                update_sql = """
+                    UPDATE books 
+                    SET isbn = COALESCE(NULLIF(%s, ''), isbn),
+                        genre = COALESCE(NULLIF(%s, ''), genre),
+                        release_date = COALESCE(%s, release_date),
+                        description = COALESCE(NULLIF(%s, ''), description),
+                        cover_url = COALESCE(NULLIF(%s, ''), cover_url),
+                        language = COALESCE(NULLIF(%s, ''), language),
+                        page_count = COALESCE(%s, page_count)
+                    WHERE book_id = %s
+                """
 
-                    # Rule 1: Keep the one with description if only one has it
-                    if current_description and not existing_description:
-                        print(
-                            f"DEBUG: Current book '{title}' has description, existing doesn't - deleting existing book")
-                        # Delete the existing book and continue with saving current
-                        cur.execute(
-                            "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
-                        continue
-                    elif existing_description and not current_description:
-                        print(
-                            f"DEBUG: Existing book '{similar_book['title']}' has description, current doesn't - skipping current")
-                        return None
+                cur.execute(update_sql, (
+                    merged_isbn, merged_genre, merged_release_date, merged_description,
+                    merged_cover_url, merged_language, merged_page_count, book_id_to_update
+                ))
 
-                    # Rule 2: If both or neither have descriptions, keep the older one
-                    if current_release_date and existing_release_date:
-                        if current_release_date > existing_release_date:
-                            print(
-                                f"DEBUG: Existing book '{similar_book['title']}' is older ({existing_release_date} vs {current_release_date}) - skipping current")
-                            return None
-                        elif current_release_date < existing_release_date:
-                            print(
-                                f"DEBUG: Current book '{title}' is older ({current_release_date} vs {existing_release_date}) - deleting existing")
-                            cur.execute(
-                                "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
-                            continue
-                        elif current_release_date == existing_release_date:
-                            # Rule 3: Same release date, keep the one with more genres
-                            if current_genre_count <= existing_genre_count:
-                                print(
-                                    f"DEBUG: Existing book '{similar_book['title']}' has more/same genres ({existing_genre_count} vs {current_genre_count}) - skipping current")
-                                return None
-                            else:
-                                print(
-                                    f"DEBUG: Current book '{title}' has more genres ({current_genre_count} vs {existing_genre_count}) - deleting existing")
-                                cur.execute(
-                                    "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
-                                continue
-                    elif existing_release_date and not current_release_date:
-                        print(
-                            f"DEBUG: Existing book '{similar_book['title']}' has release date, current doesn't - skipping current")
-                        return None
-                    elif current_release_date and not existing_release_date:
-                        print(
-                            f"DEBUG: Current book '{title}' has release date, existing doesn't - deleting existing")
-                        cur.execute(
-                            "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
-                        continue
-                    else:
-                        # Neither has release date, compare genres
-                        if current_genre_count <= existing_genre_count:
-                            print(
-                                f"DEBUG: Existing book '{similar_book['title']}' has more/same genres ({existing_genre_count} vs {current_genre_count}) - skipping current")
-                            return None
-                        else:
-                            print(
-                                f"DEBUG: Current book '{title}' has more genres ({current_genre_count} vs {existing_genre_count}) - deleting existing")
-                            cur.execute(
-                                "DELETE FROM books WHERE book_id = %s", (similar_book['book_id'],))
-                            continue
+                conn.commit()
+                return book_id_to_update
 
-            # Prepare ISBN for uniqueness check
+            # If no similar books found, insert new book
+            print(f"DEBUG: No similar books found, inserting new book")
+
+            # Prepare data for insertion (same logic as before)
             isbn = None
             if book_data.get('isbn_13'):
                 isbn = book_data['isbn_13'][0] if isinstance(
@@ -574,27 +675,6 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             elif book_data.get('isbn'):
                 isbn = book_data['isbn'][0] if isinstance(
                     book_data['isbn'], list) else book_data['isbn']
-
-            # Check if book already exists by ISBN first (if available)
-            existing = None
-            if isbn:
-                cur.execute(
-                    "SELECT book_id FROM books WHERE isbn = %s", (isbn,))
-                existing = cur.fetchone()
-
-            # If no ISBN match, check by title and author
-            if not existing:
-                if author_id:
-                    cur.execute(
-                        "SELECT book_id FROM books WHERE LOWER(title) = LOWER(%s) AND author_id = %s",
-                        (book_data['title'], author_id)
-                    )
-                else:
-                    cur.execute(
-                        "SELECT book_id FROM books WHERE LOWER(title) = LOWER(%s)",
-                        (book_data['title'],)
-                    )
-                existing = cur.fetchone()
 
             subjects = book_data.get('subjects', [])
             # Store all genres as a comma-separated string for database compatibility
@@ -640,46 +720,23 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             language = book_data.get('language', 'en')
             page_count = book_data.get('page_count')
 
-            if existing:
-                print(
-                    f"DEBUG: Updating existing book {existing['book_id']} with enhanced data")
-                update_sql = """
-                    UPDATE books 
-                    SET isbn = COALESCE(NULLIF(%s, ''), isbn),
-                        genre = COALESCE(NULLIF(%s, ''), genre),
-                        release_date = COALESCE(%s, release_date),
-                        description = COALESCE(NULLIF(%s, ''), description),
-                        cover_url = COALESCE(NULLIF(%s, ''), cover_url),
-                        language = COALESCE(NULLIF(%s, ''), language),
-                        page_count = COALESCE(%s, page_count)
-                    WHERE book_id = %s
-                """
+            print(f"DEBUG: Inserting new book with enhanced data")
+            insert_sql = """
+                INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id,
+                                 language, page_count)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING book_id
+            """
 
-                cur.execute(update_sql, (
-                    isbn, genre, release_date, book_data.get(
-                        'description', ''), cover_url,
-                    language, page_count, existing['book_id']
-                ))
-                conn.commit()
-                return existing['book_id']
-            else:
-                print(f"DEBUG: Inserting new book with enhanced data")
-                insert_sql = """
-                    INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id,
-                                     language, page_count)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING book_id
-                """
+            cur.execute(insert_sql, (
+                book_data['title'], isbn, genre, release_date,
+                book_data.get('description', ''), cover_url, author_id,
+                language, page_count
+            ))
 
-                cur.execute(insert_sql, (
-                    book_data['title'], isbn, genre, release_date,
-                    book_data.get('description', ''), cover_url, author_id,
-                    language, page_count
-                ))
-
-                result = cur.fetchone()
-                conn.commit()
-                return result['book_id'] if result else None
+            result = cur.fetchone()
+            conn.commit()
+            return result['book_id'] if result else None
 
     except Exception as e:
         logger.error(f"Error saving enhanced book to database: {e}")
