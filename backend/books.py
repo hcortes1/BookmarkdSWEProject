@@ -1,4 +1,3 @@
-# backend/books.py
 from backend.db import get_conn
 import psycopg2.extras
 
