@@ -4,8 +4,10 @@ from dash import html, dcc, Input, Output, State, callback
 import psycopg2.extras
 from backend.db import get_conn
 from backend.favorites import is_author_favorited, toggle_author_favorite
+from backend.authors import get_author_details, get_author_books
 from urllib.parse import unquote, parse_qs
 from typing import Dict, Any
+import time
 
 dash.register_page(__name__, path_template="/author/<author_id>")
 
@@ -25,8 +27,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
 
     controls.append(
         html.Div(f"Showing {start_book}-{end_book} of {total_books} books",
-                 className="pagination-info",
-                 style={'margin-bottom': '10px', 'text-align': 'center', 'color': '#666'})
+                 className="pagination-info")
     )
 
     # Only show pagination buttons if there are multiple pages
@@ -42,8 +43,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
             html.Button("← Previous",
                         id={'type': 'pagination-btn',
                             'author_id': author_id, 'page': current_page - 1},
-                        className="pagination-btn",
-                        style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        className="pagination-btn")
         )
 
     # Page number buttons (show up to 7 pages around current)
@@ -55,8 +55,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
             html.Button("1",
                         id={'type': 'pagination-btn',
                             'author_id': author_id, 'page': 1},
-                        className="pagination-btn",
-                        style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        className="pagination-btn")
         )
         if start_page > 2:
             buttons.append(html.Span("...", style={'margin': '0 5px'}))
@@ -67,15 +66,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
             html.Button(str(page_num),
                         id={'type': 'pagination-btn',
                             'author_id': author_id, 'page': page_num},
-                        className="pagination-btn",
-                        style={
-                'margin': '0 2px',
-                'padding': '8px 12px',
-                           'cursor': 'pointer',
-                           'background-color': '#007bff' if is_current else '#f8f9fa',
-                           'color': 'white' if is_current else 'black',
-                           'font-weight': 'bold' if is_current else 'normal'
-            })
+                        className=f"pagination-btn{' active' if is_current else ''}")
         )
 
     if end_page < total_pages:
@@ -85,8 +76,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
             html.Button(str(total_pages),
                         id={'type': 'pagination-btn',
                             'author_id': author_id, 'page': total_pages},
-                        className="pagination-btn",
-                        style={'margin': '0 2px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        className="pagination-btn")
         )
 
     # Next button
@@ -95,8 +85,7 @@ def create_pagination_controls(current_page, total_pages, total_books, author_id
             html.Button("Next →",
                         id={'type': 'pagination-btn',
                             'author_id': author_id, 'page': current_page + 1},
-                        className="pagination-btn",
-                        style={'margin': '0 5px', 'padding': '8px 12px', 'cursor': 'pointer'})
+                        className="pagination-btn")
         )
 
     controls.append(
@@ -121,6 +110,7 @@ def layout(author_id=None, **kwargs):
         # Get author's books with error handling
         try:
             books = get_author_books(author_id)
+            time.sleep(0.6)
         except Exception as e:
             print(f"Error getting author books: {e}")
             books = []
@@ -139,14 +129,7 @@ def layout(author_id=None, **kwargs):
                         html.Img(
                             src=author_data.get(
                                 'author_image_url') or '/assets/svg/default-author.svg',
-                            className="author-image-large",
-                            style={
-                                'width': '200px',
-                                'height': '200px',
-                                'object-fit': 'cover',
-                                'border-radius': '50%',
-                                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)'
-                            }
+                            className="author-image-large"
                         )
                     ], className="author-image-container"),
 
@@ -186,35 +169,18 @@ def layout(author_id=None, **kwargs):
                             html.Button(
                                 id={'type': 'author-favorite-btn',
                                     'author_id': author_id},
-                                className="favorite-btn",
-                                style={
-                                    'margin-top': '20px',
-                                    'padding': '10px 20px',
-                                    'border': 'none',
-                                    'border-radius': '5px',
-                                    'cursor': 'pointer',
-                                    'font-size': '14px',
-                                    'font-weight': 'bold'
-                                }
+                                className="favorite-btn"
                             ),
                             html.Div(
                                 id={'type': 'author-favorite-feedback',
                                     'author_id': author_id},
-                                style={'margin-top': '10px',
-                                       'font-size': '12px'}
+                                className="favorite-feedback"
                             )
                         ], className="favorite-section")
 
-                    ], className="author-details", style={'flex': '1', 'margin-left': '30px'})
+                    ], className="author-details")
 
-                ], className="author-detail-container secondary-bg", style={
-                    'display': 'flex',
-                    'max-width': '800px',
-                    'margin': '0 auto',
-                    'padding': '30px',
-                    'border-radius': '12px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
-                }),
+                ], className="author-detail-container secondary-bg"),
 
                 # Author's books section with pagination
                 html.Div([
@@ -226,20 +192,19 @@ def layout(author_id=None, **kwargs):
                                 books), author_id) if len(books) > 0 else [html.P("No books to display.")])
                         ])
                     ], style={'margin-bottom': '20px'}),
-                    html.Div(
-                        id={'type': 'author-books-grid', 'author_id': author_id},
-                        children=[
-                            # Show first 80 books initially
-                            create_book_card(book, author_id) for book in books[:80]
-                        ] if books else [html.P("No books found in our database.", className="no-books-message")],
-                        className="books-grid",
-                        style={
-                            'display': 'grid',
-                            # 8 books per row
-                            'grid-template-columns': 'repeat(8, 1fr)',
-                            'gap': '20px',  # Increased gap for better spacing
-                            'margin-top': '20px'
-                        }
+                    dcc.Loading(
+                        id={'type': 'author-books-loading',
+                            'author_id': author_id},
+                        children=[html.Div(
+                            id={'type': 'author-books-grid',
+                                'author_id': author_id},
+                            children=[
+                                # Show first 80 books initially
+                                create_book_card(book, author_id) for book in books[:80]
+                            ] if books else [html.P("No books found in our database.", className="no-books-message")],
+                            className="books-grid"
+                        )],
+                        type="default"
                     ),
                     html.Div(id={'type': 'author-books-pagination-bottom', 'author_id': author_id}, children=[
                         # Initial pagination controls
@@ -293,11 +258,7 @@ def create_book_card(book: Dict[str, Any], author_id: int):
                     },
                     className='rating-color'
                 )
-            ], style={
-                'text-align': 'center',
-                'margin': '5px 0',
-                'font-size': '12px'
-            })
+            ], className="book-rating")
         )
 
     # Format release year
@@ -306,104 +267,30 @@ def create_book_card(book: Dict[str, Any], author_id: int):
     if release_year:
         year_info = html.Div(
             str(int(release_year)),
-            style={
-                'text-align': 'center',
-                'color': '#888',
-                'font-size': '12px',
-                'margin': '5px 0'
-            }
+            className="book-year"
         )
 
     return html.Div([
         dcc.Link([
             html.Img(
                 src=book.get('cover_url') or '/assets/svg/default-book.svg',
-                style={
-                    'width': '100%',
-                    'height': '200px',
-                    'object-fit': 'contain',
-                    'border-radius': '8px'
-                }
+                className="book-card-image"
             ),
             html.Div([
-                html.H4(book['title'], className="book-card-title", style={
-                    'font-size': '14px',
-                    'margin': '10px 0 5px 0',
-                    'padding': '0',
-                    'line-height': '1.2',
-                    'font-weight': 'bold',
-                    'color': '#333',
-                    'text-align': 'center',
-                    'word-wrap': 'break-word',
-                    'white-space': 'normal'
-                }),
+                html.H4(book['title'], className="book-card-title"),
                 # Rating information
                 *rating_info,
                 # Release year
                 year_info
             ])
         ], href=href, style={'text-decoration': 'none', 'color': 'inherit'})
-    ], className="book-card secondary-bg", style={
-        'border-radius': '10px',
-        'padding': '15px',
-        'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
-        'transition': 'transform 0.2s ease',
-        'cursor': 'pointer',
-        'min-height': '320px',  # Increased to accommodate rating and year info
-        'display': 'flex',
-        'flex-direction': 'column'
-    })
-
-
-def get_author_details(author_id: int):
-    """Get author details from database"""
-    try:
-        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            sql = """
-                SELECT author_id, name, bio, birth_date, death_date, nationality, author_image_url, created_at
-                FROM authors
-                WHERE author_id = %s
-            """
-            cur.execute(sql, (author_id,))
-            result = cur.fetchone()
-            return dict(result) if result else None
-    except Exception as e:
-        print(f"Error getting author details: {e}")
-        return None
-
-
-def get_author_books(author_id: int):
-    """Get books by this author, sorted by average rating then release date"""
-    try:
-        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            sql = """
-                SELECT book_id, title, isbn, genre, release_date, 
-                       EXTRACT(YEAR FROM release_date) as release_year,
-                       description, cover_url, 
-                       COALESCE(language, 'en') as language, 
-                       page_count, average_rating, rating_count
-                FROM books
-                WHERE author_id = %s
-                ORDER BY 
-                    CASE 
-                        WHEN average_rating IS NULL OR average_rating = 0 THEN 0 
-                        ELSE average_rating 
-                    END DESC,
-                    COALESCE(release_date, '1900-01-01') DESC, 
-                    title ASC
-            """
-            cur.execute(sql, (author_id,))
-            results = cur.fetchall()
-            return [dict(result) for result in results]
-    except Exception as e:
-        print(f"Error getting author books: {e}")
-        return []
+    ], className="book-card secondary-bg")
 
 
 # Callback to set initial favorite button state
 @callback(
     [Output({'type': 'author-favorite-btn', 'author_id': dash.dependencies.MATCH}, 'children'),
-     Output({'type': 'author-favorite-btn', 'author_id': dash.dependencies.MATCH}, 'style')],
+     Output({'type': 'author-favorite-btn', 'author_id': dash.dependencies.MATCH}, 'className')],
     [Input({'type': 'author-favorite-store',
            'author_id': dash.dependencies.MATCH}, 'id')],
     [State('user-session', 'data')],
@@ -413,47 +300,23 @@ def set_initial_author_favorite_state(store_id, session_data):
     """Set the initial state of the favorite button"""
     author_id = store_id['author_id']
 
-    # Default styles
-    base_style = {
-        'margin-top': '20px',
-        'padding': '10px 20px',
-        'border': 'none',
-        'border-radius': '5px',
-        'cursor': 'pointer',
-        'font-size': '14px',
-        'font-weight': 'bold'
-    }
-
     if not session_data or not session_data.get('logged_in'):
-        return "❤️ Add to Favorites (Login Required)", {
-            **base_style,
-            'background-color': '#ddd',
-            'color': '#666',
-            'cursor': 'not-allowed'
-        }
+        return "❤️ Add to Favorites (Login Required)", "favorite-btn"
 
     user_id = session_data.get('user_id')
     is_favorited = is_author_favorited(user_id, author_id)
 
     if is_favorited:
-        return "💔 Remove from Favorites", {
-            **base_style,
-            'background-color': '#dc3545',
-            'color': 'white'
-        }
+        return "💔 Remove from Favorites", "favorite-btn remove"
     else:
-        return "❤️ Add to Favorites", {
-            **base_style,
-            'background-color': '#28a745',
-            'color': 'white'
-        }
+        return "❤️ Add to Favorites", "favorite-btn add"
 
 
 # Callback to handle favorite button clicks
 @callback(
     [Output({'type': 'author-favorite-btn', 'author_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
      Output({'type': 'author-favorite-btn',
-            'author_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+            'author_id': dash.dependencies.MATCH}, 'className', allow_duplicate=True),
      Output({'type': 'author-favorite-feedback', 'author_id': dash.dependencies.MATCH}, 'children')],
     [Input({'type': 'author-favorite-btn',
            'author_id': dash.dependencies.MATCH}, 'n_clicks')],
@@ -469,7 +332,7 @@ def handle_author_favorite_click(n_clicks, session_data):
     if not session_data or not session_data.get('logged_in'):
         return dash.no_update, dash.no_update, html.Div(
             "Please log in to add favorites",
-            style={'color': 'red'}
+            className="error-message"
         )
 
     # Get author_id from callback context
@@ -484,34 +347,15 @@ def handle_author_favorite_click(n_clicks, session_data):
     # Toggle favorite
     result = toggle_author_favorite(user_id, author_id)
 
-    # Base styles
-    base_style = {
-        'margin-top': '20px',
-        'padding': '10px 20px',
-        'border': 'none',
-        'border-radius': '5px',
-        'cursor': 'pointer',
-        'font-size': '14px',
-        'font-weight': 'bold'
-    }
-
     if result['success']:
         if result['is_favorited']:
-            return "💔 Remove from Favorites", {
-                **base_style,
-                'background-color': '#dc3545',
-                'color': 'white'
-            }, html.Div(result['message'], style={'color': 'green'})
+            return "💔 Remove from Favorites", "favorite-btn remove", html.Div(result['message'], className="success-message")
         else:
-            return "❤️ Add to Favorites", {
-                **base_style,
-                'background-color': '#28a745',
-                'color': 'white'
-            }, html.Div(result['message'], style={'color': 'green'})
+            return "❤️ Add to Favorites", "favorite-btn add", html.Div(result['message'], className="success-message")
     else:
         return dash.no_update, dash.no_update, html.Div(
             result['message'],
-            style={'color': 'red'}
+            className="error-message"
         )
 
 
@@ -574,4 +418,5 @@ def handle_pagination_click(clicks_list, page_data):
     pagination_controls = create_pagination_controls(
         new_page, total_pages, total_books, author_id)
 
+    time.sleep(0.6)
     return updated_page_data, book_cards, pagination_controls, pagination_controls

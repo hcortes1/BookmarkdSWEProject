@@ -1,8 +1,30 @@
-import psycopg2
-import psycopg2.extras
-from backend.db import get_conn
-from psycopg2 import Error
+# Frontend/Backend shared mappings for bookshelf UI
+
+# Map active tab to shelf type (frontend to backend)
 from datetime import datetime
+from psycopg2 import Error
+from backend.db import get_conn
+import psycopg2.extras
+import psycopg2
+shelf_mapping = {
+    'want-to-read': 'to_read',
+    'reading': 'reading',
+    'completed': 'finished'
+}
+
+# Tab titles and colors for UI
+tab_info = {
+    'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
+    'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
+    'completed': {'title': 'Completed', 'color': '#28a745'}
+}
+
+# Empty messages for each shelf
+empty_messages = {
+    'want-to-read': "Your 'Want to Read' shelf is empty. Start building your reading list by adding books from the book detail pages!",
+    'reading': "Your reading shelf is empty. Mark a book as 'Currently Reading' to see it here!",
+    'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!"
+}
 
 
 def add_to_bookshelf(user_id, book_id, shelf_type):
@@ -176,7 +198,7 @@ def get_yearly_reading_stats(user_id, year=None):
         from datetime import datetime
         if year is None:
             year = datetime.now().year
-            
+
         with get_conn() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 query = """
@@ -191,7 +213,7 @@ def get_yearly_reading_stats(user_id, year=None):
                 """
                 cursor.execute(query, (user_id, year))
                 result = cursor.fetchone()
-                
+
                 if result:
                     return True, "Stats retrieved successfully", {
                         'books_read': result['books_read'] or 0,

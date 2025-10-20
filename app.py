@@ -1,6 +1,7 @@
 import dash
 from dash import Dash, html, dcc, Input, Output, State
 from argparse import ArgumentParser
+import time
 import backend.settings as settings_backend
 import backend.profile as profile_backend
 import backend.friends as friends_backend
@@ -81,8 +82,27 @@ app.layout = html.Div([
         ])
     ]),
 
-    dash.page_container
+    html.Div(
+        id="page-container-wrapper",
+        children=[dash.page_container]
+    )
 ])
+
+
+@app.callback(
+    Output('page-container-wrapper', 'children'),
+    Input('url', 'pathname')
+)
+def update_page_container(pathname):
+    # Don't show loading for login page
+    if pathname == '/login':
+        return dash.page_container
+    else:
+        return dcc.Loading(
+            id="page-loading",
+            children=[dash.page_container],
+            type="default"
+        )
 
 
 @app.callback(

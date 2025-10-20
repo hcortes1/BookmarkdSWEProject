@@ -1,6 +1,7 @@
 import dash
 from dash import html, dcc, Input, Output, State, callback
 import backend.bookshelf as bookshelf_backend
+from backend.bookshelf import shelf_mapping, tab_info, empty_messages
 import backend.reviews as reviews_backend
 from backend.favorites import is_book_favorited
 
@@ -8,27 +9,17 @@ dash.register_page(__name__, path='/profile/bookshelf')
 
 layout = html.Div([
     html.Div([
-        html.H1("My Bookshelf", className="main-title", style={
-            'text-align': 'center',
-            'margin-bottom': '30px',
-            'color': '#333'
-        }),
+        html.H1("My Bookshelf", className="main-title bookshelf-main-title"),
 
         # Tab navigation
         html.Div([
-            html.Button("Want to Read", id="bookshelf-want-to-read-tab", className="bookshelf-tab active-tab",
-                        style={'margin-right': '5px'}),
-            html.Button("Currently Reading", id="bookshelf-reading-tab", className="bookshelf-tab",
-                        style={'margin-right': '5px'}),
+            html.Button("Want to Read", id="bookshelf-want-to-read-tab",
+                        className="bookshelf-tab active-tab"),
+            html.Button("Currently Reading",
+                        id="bookshelf-reading-tab", className="bookshelf-tab"),
             html.Button("Completed", id="bookshelf-completed-tab",
                         className="bookshelf-tab")
-        ], style={
-            'display': 'flex',
-            'justify-content': 'center',
-            'margin-bottom': '30px',
-            'border-bottom': '1px solid #ddd',
-            'padding-bottom': '10px'
-        }),
+        ], className='bookshelf-tabs-container'),
 
         # Tab content
         html.Div(id='bookshelf-tab-content', children=[
@@ -44,52 +35,30 @@ layout = html.Div([
         # Store for book to remove
         dcc.Store(id='book-to-remove', data=None)
 
-    ], className="app-container", style={'max-width': '1200px', 'margin': '0 auto', 'padding': '20px'}),
+    ], className="app-container bookshelf-app-container"),
 
     # Confirmation modal
     html.Div([
         html.Div([
-            html.H3("Remove Book", style={
-                    'margin': '0 0 15px 0', 'color': '#333'}),
+            html.H3("Remove Book", className='confirm-modal-title'),
             html.P(id='remove-confirmation-text',
                    children="Are you sure you want to remove this book from your bookshelf?"),
             html.Div([
                 html.Button("Cancel",
                             id='cancel-remove',
-                            style={
-                               'padding': '10px 20px',
-                               'margin-right': '10px',
-                               'background': '#6c757d',
-                               'color': 'white',
-                               'border': 'none',
-                               'border-radius': '4px',
-                               'cursor': 'pointer'
-                            }),
+                            className='btn-cancel'),
                 html.Button("Remove",
                             id='confirm-remove',
-                            style={
-                               'padding': '10px 20px',
-                               'background': '#dc3545',
-                               'color': 'white',
-                               'border': 'none',
-                               'border-radius': '4px',
-                               'cursor': 'pointer'
-                            })
+                            className='btn-remove')
             ], style={'text-align': 'right'})
-        ], style={
-            'padding': '25px',
-            'border-radius': '8px',
-            'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-            'max-width': '400px',
-            'width': '90%'
-        }, className='secondary-bg')
-    ], id='remove-confirmation-modal', style={'display': 'none'})
+        ], className='secondary-bg remove-modal-content')
+    ], id='remove-confirmation-modal', style={'display': 'none'}, className='remove-confirmation-modal')
 ])
 
 
 def create_book_card(book, show_status_buttons=True, reading_status=None, user_id=None):
     """Create a book card component for grid bookshelf view"""
-    
+
     # Check if the book is favorited
     is_favorited = False
     if user_id and book.get('book_id'):
@@ -97,34 +66,13 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
             is_favorited = is_book_favorited(user_id, book['book_id'])
         except:
             is_favorited = False
-    
+
     # Determine border styling based on favorite status
     border_style = '3px solid #007bff' if is_favorited else 'none'
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
                     id={'type': 'remove-book-btn', 'book_id': book['book_id']},
-                    style={
-                        'position': 'absolute',
-                        'top': '5px',
-                        'right': '5px',
-                        'width': '20px',
-                        'height': '20px',
-                        'border': 'none',
-                        'border-radius': '50%',
-                        'background': 'rgba(220, 53, 69, 0.9)',
-                        'color': 'white',
-                        'font-size': '12px',
-                        'font-weight': 'bold',
-                        'cursor': 'pointer',
-                        'display': 'flex',
-                        'align-items': 'center',
-                        'justify-content': 'center',
-                        'z-index': '10',
-                        'transition': 'all 0.2s ease',
-                        'opacity': '0',
-                        'box-shadow': '0 2px 4px rgba(0,0,0,0.2)'
-                    },
                     className='bookshelf-remove-btn',
                     title="Remove from bookshelf"
                     ) if show_status_buttons else html.Div(),
@@ -136,91 +84,54 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                 html.Img(
                     src=book.get(
                         'cover_url') or '/assets/svg/default-book.svg',
-                    style={
-                        'width': '120px',
-                        'height': '180px',
-                        'object-fit': 'contain',
-                        'border-radius': '8px',
-                        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-                        'transition': 'transform 0.2s',
-                        'display': 'block',
-                        'background-color': '#f8f9fa',
-                        'margin': '0 auto'  # Center the image horizontally
-                    }
+                    className='book-cover'
                 )
-            ], style={'margin-bottom': '5px', 'text-align': 'center', 'display': 'flex', 'justify-content': 'center'}),
+            ], className='cover-wrapper'),
 
             # Book info - compact and centered
             html.Div([
-                html.H4(book['title'], style={
-                    'margin': '0 0 0 0',  # Remove bottom margin to eliminate gap
-                    'font-size': '14px',
-                    'color': '#333',
-                    'font-weight': '600',
-                    'line-height': '1.2',
-                    'height': '2.4em',
-                    'overflow': 'hidden',
-                    'display': '-webkit-box',
-                    '-webkit-line-clamp': '2',
-                    '-webkit-box-orient': 'vertical',
-                    'text-align': 'center'
-                }),
-                html.P(book.get('author_name', 'Unknown Author'), style={
-                    'margin': '1px 0 3px 0',  # Further reduced margins
-                    'font-size': '12px',
-                    'color': '#666',
-                    'white-space': 'nowrap',
-                    'overflow': 'hidden',
-                    'text-overflow': 'ellipsis',
-                    'text-align': 'center'
-                }),
+                html.H4(book['title'], className='bookshelf-book-title'),
+                html.P(book.get('author_name', 'Unknown Author'),
+                       className='bookshelf-book-author'),
                 # Display different info based on reading status
                 html.Div([
                     # For completed books: show rating if exists, plus date added
                     html.Div([
                         html.Div([
                             html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
-                                      style={'font-size': '11px',
-                                             'font-weight': 'bold'},
-                                      className='rating-color') if book.get('user_rating') else
-                            html.Span("Not rated", style={
-                                      'font-size': '10px', 'color': '#999'})
-                        ], style={'margin-bottom': '1px', 'text-align': 'center'}),
+                                      className='book-rating rating-color') if book.get('user_rating') else
+                            html.Span("Not rated", className='not-rated')
+                        ], className='book-rating-block'),
                         # Date added for completed books
                         html.Div([
-                            html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                            html.Span("Added: ", className='added-label'),
                             html.Span(
-                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
                                 else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
                                 else 'Unknown date',
-                                style={'font-size': '9px', 'color': '#666'}
+                                className='added-date'
                             )
-                        ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                        ], className='added-info')
                     ]) if reading_status == 'finished' else
                     # For want-to-read and currently reading: only show date added
                     html.Div([
-                        html.Span("Added: ", style={'font-size': '9px', 'color': '#888'}),
+                        html.Span("Added: ", className='added-label'),
                         html.Span(
-                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str) 
+                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
                             else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
                             else 'Unknown date',
-                            style={'font-size': '9px', 'color': '#666'}
+                            className='added-date'
                         )
-                    ], style={'text-align': 'center', 'margin-bottom': '2px'})
+                    ], className='added-info')
                 ]),
                 # Show if has review
                 html.Div([
                     html.Span(
-                        "📝", style={'font-size': '12px', 'margin-right': '3px'}),
-                    html.Span("Has review", style={
-                              'font-size': '10px', 'color': '#28a745'})
-                ], style={'text-align': 'center'}) if book.get('review_text') and book.get('review_text').strip() else html.Div()
+                        "📝", className='review-icon'),
+                    html.Span("Has review", className='review-text')
+                ], className='book-review-indicator') if book.get('review_text') and book.get('review_text').strip() else html.Div()
             ])
-        ], href=f"/book/{book['book_id']}", style={
-            'text-decoration': 'none',
-            'color': 'inherit',
-            'display': 'block'
-        })
+        ], href=f"/book/{book['book_id']}", className='book-link')
 
     ], style={
         'position': 'relative',
@@ -281,7 +192,7 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
     if not session_data or not session_data.get('logged_in'):
         return html.Div([
             html.P("Please log in to view your bookshelf.",
-                   style={'text-align': 'center', 'color': '#666', 'margin-top': '50px'})
+                   className='bookshelf-login-message')
         ])
 
     user_id = session_data.get('user_id')
@@ -289,69 +200,28 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
 
     if not success:
         return html.Div([
-            html.P(f"Error loading bookshelf: {message}",
-                   style={'text-align': 'center', 'color': 'red', 'margin-top': '50px'})
+            html.P(
+                f"Error loading bookshelf: {message}", className='bookshelf-error')
         ])
 
-    # Map active tab to shelf type
-    shelf_mapping = {
-        'want-to-read': 'to_read',
-        'reading': 'reading',
-        'completed': 'finished'
-    }
-
+    # Use shared mappings from backend
     shelf_type = shelf_mapping.get(active_tab, 'to_read')
     books = bookshelf.get(shelf_type, [])
-
-    # Define tab titles and colors
-    tab_info = {
-        'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
-        'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
-        'completed': {'title': 'Completed', 'color': '#28a745'}
-    }
-
     current_tab_info = tab_info.get(active_tab, tab_info['want-to-read'])
 
     if not books:
-        empty_messages = {
-            'want-to-read': "Your 'Want to Read' shelf is empty. Start building your reading list by adding books from the book detail pages!",
-            'reading': "Your reading shelf is empty. Mark a book as 'Currently Reading' to see it here!",
-            'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!"
-        }
-
         return html.Div([
             html.Div([
-                html.Div("📚", style={
-                    'font-size': '4rem',
-                    'margin-bottom': '20px',
-                    'opacity': '0.3'
-                }),
-                html.P(empty_messages.get(active_tab, empty_messages['want-to-read']),
-                       style={
-                           'text-align': 'center',
-                           'color': '#666',
-                           'font-size': '16px',
-                           'line-height': '1.5',
-                           'max-width': '400px'
-                })
-            ], style={
-                'display': 'flex',
-                'flex-direction': 'column',
-                'align-items': 'center',
-                'justify-content': 'center',
-                'margin-top': '80px'
-            })
+                html.Div("📚", className='bookshelf-empty-icon'),
+                html.P(empty_messages.get(
+                    active_tab, empty_messages['want-to-read']), className='bookshelf-empty-message')
+            ], className='bookshelf-empty')
         ])
 
     return html.Div([
         html.Div([
             create_book_card(book, reading_status=shelf_type, user_id=user_id) for book in books
-        ], style={
-            'display': 'grid',
-            'grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))',
-            'gap': '20px',
-            'padding': '10px 0'
-        })
+        ], className='bookshelf-grid')
     ])
 
 
@@ -394,18 +264,7 @@ def show_remove_confirmation(remove_clicks, session_data, tab_content):
                 book_shelf_type = shelf_type
                 break
 
-    modal_style = {
-        'position': 'fixed',
-        'top': '0',
-        'left': '0',
-        'width': '100%',
-        'height': '100%',
-        'background': 'rgba(0,0,0,0.5)',
-        'display': 'flex',
-        'justify-content': 'center',
-        'align-items': 'center',
-        'z-index': '1000'
-    }
+    modal_style = {'display': 'flex'}
 
     # Create confirmation message based on shelf type
     if book_shelf_type == 'finished':
