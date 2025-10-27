@@ -770,8 +770,8 @@ if __name__ == "__main__":
         prog='app.py',
         description='main application'
     )
-    parser.add_argument('--hostname', default='localhost')
-    parser.add_argument('--port', default='8050')
+    parser.add_argument('--hostname', default='0.0.0.0')
+    parser.add_argument('--port', default='8080')
     args = parser.parse_args()
 
     app.run(debug=False, host=args.hostname, port=int(args.port))

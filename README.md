@@ -16,7 +16,7 @@ python3 app.py --hostname --port
 
 ```bash
 # by default the app runs at
-http://localhost:8050/
+http://localhost:8080/
 # unless hostname and port were specified
 ```
 
