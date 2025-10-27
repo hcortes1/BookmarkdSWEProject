@@ -1,6 +1,6 @@
 dash
 python-dotenv 
-psycopg2
+psycopg2-binary
 supabase
 requests
 google-generativeai
