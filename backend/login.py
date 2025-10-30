@@ -84,7 +84,7 @@ def login_user(username, password):
 
     # check login credentials and get all user data
     login_query = """
-        SELECT user_id, username, email, profile_image_url, created_at
+        SELECT user_id, username, email, profile_image_url, created_at, favorite_genres, first_login
         FROM users 
         WHERE username = %s AND password = %s
     """
@@ -101,7 +101,9 @@ def login_user(username, password):
             "username": user_record[1],
             "email": user_record[2],
             "profile_image_url": user_record[3],
-            "created_at": user_record[4].isoformat() if user_record[4] else None
+            "created_at": user_record[4].isoformat() if user_record[4] else None,
+            "first_login":user_record[5],
+            "favorite_genres": user_record[6]
         }
         return True, "Login successful", user_data
     else:
@@ -119,7 +121,7 @@ def refresh_user_session_data(user_id):
     try:
         # Get all user data
         query = """
-            SELECT user_id, username, email, profile_image_url, created_at
+            SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres
             FROM users 
             WHERE user_id = %s
         """
@@ -137,7 +139,9 @@ def refresh_user_session_data(user_id):
                 "username": user_record[1],
                 "email": user_record[2],
                 "profile_image_url": user_record[3],
-                "created_at": user_record[4].isoformat() if user_record[4] else None
+                "created_at": user_record[4].isoformat() if user_record[4] else None,
+                "first_login":user_record[5],
+                "favorite_genres": user_record[6]
             }
             return True, "Session data refreshed successfully", session_data
         else:
@@ -147,3 +151,7 @@ def refresh_user_session_data(user_id):
         cursor.close()
         connection.close()
         return False, f"Error refreshing session data: {e}", None
+    
+# stopped here, need to save users genre preference and mark first_login as false upon completion 
+def genre_preference(user_id,favorite_genres):
+    pass
