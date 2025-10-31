@@ -131,6 +131,9 @@ def update_notifications_display(notifications_data, user_session):
     count = notifications_data.get('count', 0)
     notifications = notifications_data.get('notifications', [])
 
+    # Sort notifications by created_at in descending order (newest first)
+    notifications = sorted(notifications, key=lambda x: x.get('created_at', ''), reverse=True)
+
     # Update header count
     count_display = f"{count} notification{'s' if count != 1 else ''}"
 
