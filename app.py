@@ -24,7 +24,7 @@ app.layout = html.Div([
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
-            html.Div(className="nav-left", children=[
+            html.Div(id='nav-left-container', className="nav-left", children=[
                 dcc.Link([
                     html.Span("Bookmarkd", className="brand-name", style={
                         'font-size': '24px',
@@ -99,13 +99,37 @@ def update_page_container(pathname):
 
 
 @app.callback(
-    Output('nav-right-container', 'children'),
+    [Output('nav-left-container', 'children'),
+     Output('nav-right-container', 'children')],
     Input('user-session', 'data'),
     Input('url', 'pathname')
 )
-def update_nav_right(user_session, pathname):
+def update_navigation(user_session, pathname):
     is_logged_in = user_session.get(
         'logged_in', False) if user_session else False
+
+    # Base left navigation (always visible)
+    left_nav = [
+        dcc.Link([
+            html.Span("Bookmarkd", className="brand-name", style={
+                'font-size': '24px',
+                'font-weight': 'bold',
+                'color': '#007bff',
+                'margin-right': '30px',
+                'text-decoration': 'none'
+            })
+        ], href='/', className='brand-link', style={'text-decoration': 'none'}),
+        dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon',
+                 alt='home'), href='/', className='nav-link'),
+    ]
+
+    # Add trending, leaderboards, showcase only for logged-in users
+    if is_logged_in:
+        left_nav.extend([
+            dcc.Link('Trending', href='/trending', className='nav-link'),
+            dcc.Link('Leaderboards', href='/leaderboards', className='nav-link'),
+            dcc.Link('Showcase', href='/showcase', className='nav-link'),
+        ])
 
     if is_logged_in:
         # Get user's profile image from session data
@@ -117,7 +141,7 @@ def update_nav_right(user_session, pathname):
             profile_image_src = profile_image_url
 
         # Show user navigation (bookshelf, profile, notifications, settings)
-        return [
+        right_nav = [
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
                      className='bookshelf-img', alt='bookshelf'), href='/profile/bookshelf'),
             dcc.Link(
@@ -182,10 +206,12 @@ def update_nav_right(user_session, pathname):
         ]
     else:
         # Show login/signup button
-        return [
+        right_nav = [
             dcc.Link('Log In / Sign Up', href='/login',
                      className='nav-link login-signup-btn')
         ]
+
+    return left_nav, right_nav
 
 
 @app.callback(

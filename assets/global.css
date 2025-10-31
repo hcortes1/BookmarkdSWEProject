@@ -52,3 +52,77 @@ body, html {
   font-size: 2.5rem;
   margin-bottom: 18px;
 }
+
+/* Welcome Page Styles */
+.welcome-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #d0d0d0;
+  padding: 40px;
+}
+
+.welcome-container {
+  text-align: center;
+  width: 100%;
+  max-width: none;
+}
+
+.welcome-title {
+  font-size: 6rem;
+  color: #007bff;
+  margin-bottom: 40px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.welcome-subtitle {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 60px;
+  line-height: 1.6;
+  text-align: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.welcome-buttons {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.welcome-login-btn,
+.welcome-signup-btn {
+  padding: 16px 32px;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  background: white;
+  color: #007bff;
+}
+
+.welcome-login-btn:hover,
+.welcome-signup-btn:hover {
+  background: #007bff;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Home Feed Styles */
+.homefeed-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
