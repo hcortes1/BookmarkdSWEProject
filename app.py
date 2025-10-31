@@ -127,7 +127,8 @@ def update_navigation(user_session, pathname):
     if is_logged_in:
         left_nav.extend([
             dcc.Link('Trending', href='/trending', className='nav-link'),
-            dcc.Link('Leaderboards', href='/leaderboards', className='nav-link'),
+            dcc.Link('Leaderboards', href='/leaderboards',
+                     className='nav-link'),
             dcc.Link('Showcase', href='/showcase', className='nav-link'),
         ])
 

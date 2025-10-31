@@ -562,7 +562,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     id='edit-profile-button',
                     className='btn-edit-profile',
                     style={
-                        'background': '#28a745',
+                        'background': '#007bff',
                         'color': 'white',
                         'border': 'none',
                         'padding': '8px 16px',

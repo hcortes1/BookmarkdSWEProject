@@ -9,9 +9,9 @@ def welcome_layout():
     return html.Div([
         html.Div([
             html.H1("Welcome to Bookmarkd", className="welcome-title"),
-            html.P("Discover, track, and share your favorite books with friends.", 
+            html.P("Discover, track, and share your favorite books with friends.",
                    className="welcome-subtitle"),
-            
+
             html.Div([
                 dcc.Link(
                     html.Button("Log In", className="welcome-login-btn"),
@@ -31,7 +31,7 @@ def leaderboards_layout():
     return html.Div([
         html.Div([
             html.H1("Leaderboards", className="main-title"),
-            html.P("See who's reading the most and discover top reviewers.", 
+            html.P("See who's reading the most and discover top reviewers.",
                    className="page-subtitle")
         ], className="app-container")
     ])
@@ -41,7 +41,7 @@ def layout():
     return html.Div([
         # Store for checking login status
         dcc.Store(id='leaderboards-session-check', data={}),
-        
+
         # Content will be dynamically loaded based on login status
         html.Div(id='leaderboards-content')
     ])
@@ -54,8 +54,9 @@ def layout():
     Input('user-session', 'data')
 )
 def update_leaderboards_content(dummy, user_session):
-    is_logged_in = user_session.get('logged_in', False) if user_session else False
-    
+    is_logged_in = user_session.get(
+        'logged_in', False) if user_session else False
+
     if is_logged_in:
         return leaderboards_layout()
     else:
