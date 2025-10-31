@@ -8,26 +8,23 @@ dash.register_page(__name__, path='/notifications')
 def layout():
     return html.Div([
         # Store for notification data
-        dcc.Store(id='notifications-data',
-                  data={'count': 0, 'notifications': []}),
+        dcc.Store(id='notifications-data', data={'count': 0, 'notifications': []}),
 
-        # Auto-refresh interval (3-5 seconds)
+        # Auto-refresh interval (4 seconds)
         dcc.Interval(
             id='notifications-refresh-interval',
-            interval=4*1000,  # 4 seconds
+            interval=4*1000,
             n_intervals=0
         ),
 
         # Page header
         html.Div([
             html.H1("Notifications", className="page-title"),
-            html.Div(id='notification-count-display',
-                     className='notification-count-header')
+            html.Div(id='notification-count-display', className='notification-count-header')
         ], className='notifications-header'),
 
         # Notifications list
-        html.Div(id='notifications-list',
-                 className='notifications-list', children=[])
+        html.Div(id='notifications-list', className='notifications-list')
     ], className='notifications-page')
 
 
@@ -59,14 +56,13 @@ def refresh_notifications(n_intervals, user_session):
     [Output('notifications-list', 'children'),
      Output('notification-count-display', 'children')],
     [Input('notifications-data', 'data'),
-     Input('user-session', 'data')],
-    prevent_initial_call=True
+     Input('user-session', 'data')]
 )
 def update_notifications_display(notifications_data, user_session):
     if not user_session or not user_session.get('logged_in', False):
         return [], ""
 
-    # Use cached notifications from session if store is empty
+    # Use cached notifications in session if store is empty
     if not notifications_data.get('notifications') and 'notifications' in user_session:
         notifications_data = user_session['notifications']
 
@@ -83,40 +79,44 @@ def update_notifications_display(notifications_data, user_session):
     notification_items = []
     for notification in notifications:
         if notification['type'] == 'friend_request':
-            item = html.Div([
-                # Profile image
-                html.Div([
-                    html.Img(
-                        src=notification.get(
-                            'sender_profile_image_url') or '/assets/svg/default-profile.svg',
-                        style={
-                            'width': '50px',
-                            'height': '50px',
-                            'border-radius': '50%',
-                            'object-fit': 'cover'
-                        }
-                    )
-                ], className='notification-avatar'),
+            sender_username = notification.get('sender_username') or ''
+            profile_href = f"/profile/view/{sender_username}"
 
-                # Content
+            item = html.Div([
+                dcc.Link(
+                    html.Div([
+                        html.Img(
+                            src=notification.get('sender_profile_image_url') or '/assets/svg/default-profile.svg',
+                            style={
+                                'width': '50px',
+                                'height': '50px',
+                                'border-radius': '50%',
+                                'object-fit': 'cover'
+                            }
+                        )
+                    ], className='notification-avatar'),
+                    href=profile_href,
+                    style={'text-decoration': 'none', 'color': 'inherit'}
+                ),
+
                 html.Div([
                     html.Div([
-                        html.Span(notification['message'],
-                                  className='notification-message'),
+                        html.Div([
+                            dcc.Link(html.Strong(sender_username, className='notification-username'), href=profile_href, style={'text-decoration': 'none', 'color': '#1976d2'}),
+                            html.Span(' sent you a friend request', className='notification-message', style={'margin-left': '6px', 'color': '#333'})
+                        ], style={'display': 'flex', 'align-items': 'center'}),
+
                         html.Div(
                             f"Sent {notification.get('created_at', 'recently')}",
                             className='notification-time',
-                            style={'font-size': '12px',
-                                   'color': '#666', 'margin-top': '4px'}
+                            style={'font-size': '12px', 'color': '#666', 'margin-top': '4px'}
                         )
                     ], className='notification-content'),
 
-                    # Action buttons
                     html.Div([
                         html.Button(
                             'Accept',
-                            id={'type': 'accept-notification',
-                                'notification_id': notification['id']},
+                            id={'type': 'accept-notification', 'notification_id': notification['id']},
                             className='btn-accept-notification',
                             style={
                                 'background': '#28a745',
@@ -131,8 +131,7 @@ def update_notifications_display(notifications_data, user_session):
                         ),
                         html.Button(
                             'Decline',
-                            id={'type': 'decline-notification',
-                                'notification_id': notification['id']},
+                            id={'type': 'decline-notification', 'notification_id': notification['id']},
                             className='btn-decline-notification',
                             style={
                                 'background': '#dc3545',
@@ -153,6 +152,7 @@ def update_notifications_display(notifications_data, user_session):
                 'border-bottom': '1px solid #f0f0f0',
                 'background': 'white'
             })
+
             notification_items.append(item)
 
     return notification_items, count_display
@@ -204,5 +204,5 @@ def handle_notification_response(accept_clicks, decline_clicks, user_session, no
         else:
             return dash.no_update
 
-    except Exception as e:
+    except Exception:
         return dash.no_update
