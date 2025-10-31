@@ -17,7 +17,8 @@ def get_relative_time(created_at):
     if isinstance(created_at, str):
         try:
             # Try to parse the string as datetime
-            created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            created_at = datetime.fromisoformat(
+                created_at.replace('Z', '+00:00'))
         except:
             return 'recently'
 
@@ -106,7 +107,7 @@ def refresh_notifications(n_intervals, user_session):
 def update_session_notifications(notifications_data, user_session):
     if not user_session:
         return dash.no_update
-    
+
     # Update session with latest notifications
     user_session['notifications'] = notifications_data
     return user_session

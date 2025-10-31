@@ -553,9 +553,25 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     ], className="favorites-card lighter-bg")
                 ], className="favorites-container")
 
-            # Friend request section
+            # Friend request/Edit profile section
             friend_request_section = html.Div()
-            if not is_own_profile and session_data and session_data.get('logged_in', False):
+            if is_own_profile and session_data and session_data.get('logged_in', False):
+                # Show "Edit Profile" button for own profile
+                friend_request_section = html.Button(
+                    "Edit Profile",
+                    id='edit-profile-button',
+                    className='btn-edit-profile',
+                    style={
+                        'background': '#28a745',
+                        'color': 'white',
+                        'border': 'none',
+                        'padding': '8px 16px',
+                        'border-radius': '6px',
+                        'margin-top': '0px',
+                        'cursor': 'pointer'
+                    }
+                )
+            elif not is_own_profile and session_data and session_data.get('logged_in', False):
                 # Check friendship status
                 friendship_status = friends_backend.get_friendship_status(
                     str(session_data['user_id']), viewed_username)
@@ -786,4 +802,16 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
                       'color': 'red', 'font-weight': 'bold'})
         ])
 
+    return dash.no_update
+
+
+# Handle edit profile button
+@callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    Input('edit-profile-button', 'n_clicks'),
+    prevent_initial_call=True
+)
+def handle_edit_profile(edit_clicks):
+    if edit_clicks and edit_clicks > 0:
+        return '/profile/settings'
     return dash.no_update
