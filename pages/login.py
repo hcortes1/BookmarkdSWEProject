@@ -140,6 +140,16 @@ def handle_login(n_clicks, username, password):
             "profile_image_url": user_data["profile_image_url"],
             "created_at": user_data["created_at"]
         }
+
+        # Fetch initial notifications immediately after login
+        try:
+            import backend.notifications as notifications_backend
+            notifications_data = notifications_backend.get_user_notifications(
+                str(user_data["user_id"]))
+            session_data["notifications"] = notifications_data
+        except Exception as e:
+            session_data["notifications"] = {"count": 0, "notifications": []}
+
         # update session and redirect to home page on successful login
         return '/', dash.no_update, session_data
     else:
