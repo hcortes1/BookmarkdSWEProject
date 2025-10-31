@@ -207,7 +207,8 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
              where author_id = ANY(%s)
              order by array_position(%s, author_id)
             """
-            cur.execute(authors_sql, (user_data['favorite_authors'], user_data['favorite_authors']))
+            cur.execute(
+                authors_sql, (user_data['favorite_authors'], user_data['favorite_authors']))
             user_data['favorite_authors_details'] = [
                 dict(r) for r in cur.fetchall()]
         else:
@@ -222,7 +223,8 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
              where b.book_id = ANY(%s)
              order by array_position(%s, b.book_id)
             """
-            cur.execute(books_sql, (user_data['favorite_books'], user_data['favorite_books']))
+            cur.execute(
+                books_sql, (user_data['favorite_books'], user_data['favorite_books']))
             user_data['favorite_books_details'] = [
                 dict(r) for r in cur.fetchall()]
         else:
