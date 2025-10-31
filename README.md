@@ -19,16 +19,19 @@ To set up and run the application locally, follow the steps below.
     ```
 
 3. Install dependencies
-All required python packages are listed in the `requirements.txt` file. Run the following command to install them from inside the project directory:
+   
+    All required python packages are listed in the `requirements.txt` file. Run the following command to install them from inside the project directory:
 
     ```bash
     pip3 install -r requirements.txt
     ```
 
-4. Environment configuration
-Create a `.env` file in the `backend/` folder and add the following variables:
+5. Environment configuration
+
+    Create a `.env` file in the `backend/` folder and add the following variables:
 
     ```bash
+    # Supabase database credentials
     user=
     password=
     host=
@@ -39,8 +42,9 @@ Create a `.env` file in the `backend/` folder and add the following variables:
     GEMINI_API_KEY=
     ```
 
-5. Run the application
-Once dependencies are installed and the environment file is configured launch the application using:
+6. Run the application
+
+    Once dependencies are installed and the environment file is configured launch the application using:
 
     ```bash
     python3 app.py –-hostname <optional-hostname> –-port <optional-port>
