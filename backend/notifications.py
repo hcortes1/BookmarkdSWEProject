@@ -27,7 +27,8 @@ def get_user_notifications(user_id: str) -> Dict[str, Any]:
             })
 
         # Get book recommendations
-        book_recommendations = recommendations_backend.get_user_recommendations(int(user_id))
+        book_recommendations = recommendations_backend.get_user_recommendations(
+            int(user_id))
         for rec in book_recommendations:
             notifications.append({
                 'type': 'book_recommendation',
@@ -93,7 +94,8 @@ def respond_to_book_recommendation_notification(user_id: str, notification_id: s
         rec_id = int(notification_id.replace('book_recommendation_', ''))
 
         if dismiss:
-            result = recommendations_backend.delete_recommendation(rec_id, int(user_id))
+            result = recommendations_backend.delete_recommendation(
+                rec_id, int(user_id))
             if result['success']:
                 return {'success': True, 'message': 'Book recommendation dismissed'}
             else:

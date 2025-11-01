@@ -60,7 +60,8 @@ def layout():
         dcc.Store(id='bookshelf-modal-visible', data=False),
         dcc.Store(id='bookshelf-book-data', data={}),
         dcc.Store(id='bookshelf-modal-mode', data='add'),  # 'add' or 'edit'
-        dcc.Store(id='bookshelf-selected-status', data='want-to-read'),  # selected status
+        dcc.Store(id='bookshelf-selected-status',
+                  data='want-to-read'),  # selected status
 
         # Auto-refresh interval (4 seconds)
         dcc.Interval(
@@ -84,7 +85,8 @@ def layout():
             html.Div([
                 html.Div([
                     html.H3("Add to Bookshelf", className="modal-header"),
-                    html.Button("×", id='close-bookshelf-modal', className="close-modal-btn"),
+                    html.Button("×", id='close-bookshelf-modal',
+                                className="close-modal-btn"),
 
                     # Status selection
                     html.Div([
@@ -103,7 +105,8 @@ def layout():
                     html.Div([
                         html.H4("Write a Review", className="modal-subheader"),
                         html.Div([
-                            html.Label("Rating (required):", style={'display': 'block', 'margin-bottom': '5px'}),
+                            html.Label("Rating (required):", style={
+                                       'display': 'block', 'margin-bottom': '5px'}),
                             dcc.Dropdown(
                                 id='rating-dropdown',
                                 options=[
@@ -116,22 +119,26 @@ def layout():
                                 placeholder="Select a rating...",
                                 className="rating-dropdown"
                             ),
-                            html.Label("Review (optional):", style={'display': 'block', 'margin-top': '15px', 'margin-bottom': '5px'}),
+                            html.Label("Review (optional):", style={
+                                       'display': 'block', 'margin-top': '15px', 'margin-bottom': '5px'}),
                             dcc.Textarea(
                                 id='review-text',
                                 placeholder="Share your thoughts about this book...",
                                 className="review-textarea",
-                                style={'width': '100%', 'height': '100px', 'resize': 'vertical'}
+                                style={'width': '100%',
+                                       'height': '100px', 'resize': 'vertical'}
                             )
                         ])
                     ], id='review-form', style={'display': 'none'}),
 
                     # Action buttons
                     html.Div([
-                        html.Button("Save", id='save-bookshelf', className="save-bookshelf-btn")
+                        html.Button("Save", id='save-bookshelf',
+                                    className="save-bookshelf-btn")
                     ], className="modal-buttons-right"),
 
-                    html.Div(id='bookshelf-feedback', className="modal-feedback")
+                    html.Div(id='bookshelf-feedback',
+                             className="modal-feedback")
                 ], className='secondary-bg modal-content')
             ], id='bookshelf-modal-overlay', className="modal-overlay")
         ], id='bookshelf-modal', style={'display': 'none'})
@@ -331,7 +338,8 @@ def update_notifications_display(notifications_data, user_session):
                         html.Div(
                             f"They said: {notification.get('reason', 'You might like this book!')}",
                             className='notification-reason',
-                            style={'font-size': '14px', 'color': '#666', 'margin-top': '6px', 'font-style': 'italic'}
+                            style={'font-size': '14px', 'color': '#666',
+                                   'margin-top': '6px', 'font-style': 'italic'}
                         ) if notification.get('reason') else html.Div(),
 
                         html.Div(
@@ -405,8 +413,10 @@ def update_notifications_display(notifications_data, user_session):
      Output('bookshelf-modal-visible', 'data'),
      Output('bookshelf-book-data', 'data')],
     [Input({'type': 'accept-notification', 'notification_id': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'decline-notification', 'notification_id': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'dismiss-notification', 'notification_id': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'decline-notification',
+           'notification_id': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'dismiss-notification',
+           'notification_id': dash.dependencies.ALL}, 'n_clicks'),
      Input({'type': 'add-to-bookshelf-notification', 'notification_id': dash.dependencies.ALL}, 'n_clicks')],
     [State('user-session', 'data'),
      State('notifications-refresh-interval', 'n_intervals'),
@@ -521,7 +531,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
     if 'select-status-want-to-read' in triggered_prop:
         if not book_data:
             return no_update, no_update, "No book data available.", no_update, no_update
-        
+
         try:
             # Immediately add to bookshelf as plan-to-read
             success, message = bookshelf_backend.add_to_bookshelf(
@@ -529,7 +539,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
                 book_id=int(book_data['book_id']),
                 shelf_type='plan-to-read'
             )
-            
+
             if success:
                 # Mark notification as responded to
                 notification_result = notifications_backend.respond_to_book_recommendation_notification(
@@ -544,11 +554,11 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
         except Exception as e:
             print(f"Error adding book to bookshelf: {e}")
             return no_update, no_update, "An error occurred while adding the book.", no_update, no_update
-    
+
     elif 'select-status-reading' in triggered_prop:
         if not book_data:
             return no_update, no_update, "No book data available.", no_update, no_update
-        
+
         try:
             # Immediately add to bookshelf as reading
             success, message = bookshelf_backend.add_to_bookshelf(
@@ -556,7 +566,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
                 book_id=int(book_data['book_id']),
                 shelf_type='reading'
             )
-            
+
             if success:
                 # Mark notification as responded to
                 notification_result = notifications_backend.respond_to_book_recommendation_notification(
@@ -571,7 +581,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
         except Exception as e:
             print(f"Error adding book to bookshelf: {e}")
             return no_update, no_update, "An error occurred while adding the book.", no_update, no_update
-    
+
     elif 'select-status-finished' in triggered_prop:
         # Just update selected status for finished (requires review form)
         return no_update, no_update, "", 'finished', no_update
@@ -584,7 +594,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
     if 'save-bookshelf' in triggered_prop:
         if not book_data:
             return dash.no_update, dash.no_update, "No book data available.", dash.no_update
-        
+
         # Use selected status or default
         status = selected_status or 'want-to-read'
 
@@ -592,26 +602,26 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
             # Map status to shelf type (database values)
             shelf_mapping = {
                 'want-to-read': 'plan-to-read',
-                'currently-reading': 'reading', 
+                'currently-reading': 'reading',
                 'finished': 'completed'
             }
             shelf_type = shelf_mapping.get(status, 'plan-to-read')
-            
+
             # Handle review submission for finished books
             if status == 'finished':
                 if not rating:
                     return no_update, no_update, "Please select a rating to mark the book as finished.", no_update, no_update
-                
+
                 # Add to bookshelf first
                 success, message = bookshelf_backend.add_to_bookshelf(
                     user_id=int(user_id),
                     book_id=int(book_data['book_id']),
                     shelf_type=shelf_type
                 )
-                
+
                 if not success:
                     return no_update, no_update, f"Error adding to bookshelf: {message}", no_update, no_update
-                
+
                 # Then save review
                 review_success, review_message = reviews_backend.create_or_update_review(
                     user_id=int(user_id),
@@ -619,7 +629,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
                     rating=int(rating),
                     review_text=review or ""
                 )
-                
+
                 if review_success:
                     # Mark notification as responded to (dismiss the recommendation)
                     notification_result = notifications_backend.respond_to_book_recommendation_notification(
@@ -670,14 +680,14 @@ def update_status_button_styles(selected_status):
     want_class = base_class
     reading_class = base_class
     finished_class = base_class
-    
+
     if selected_status == 'want-to-read':
         want_class += ' selected'
     elif selected_status == 'currently-reading':
         reading_class += ' reading selected'
     elif selected_status == 'finished':
         finished_class += ' finished selected'
-    
+
     return want_class, reading_class, finished_class
 
 
@@ -708,15 +718,17 @@ def toggle_review_form(want_clicks, reading_clicks, finished_clicks):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update
-    
+
     triggered_prop = ctx.triggered[0]['prop_id']
-    
+
     if 'select-status-finished' in triggered_prop:
         # Show review form for finished books
         return {'display': 'block'}, {'display': 'none'}
     else:
         # Hide review form for other statuses
         return {'display': 'none'}, {'display': 'block'}
+
+
 def toggle_review_form(status):
     if status == 'finished':
         return {'display': 'block'}

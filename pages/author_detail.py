@@ -124,6 +124,23 @@ def layout(author_id=None, **kwargs):
 
             html.Div([
                 html.Div([
+                    # Favorite button (top right corner of author card)
+                    html.Button(
+                        id={'type': 'author-favorite-btn',
+                            'author_id': author_id},
+                        className="favorite-btn-author-detail",
+                        style={
+                            'position': 'absolute',
+                            'top': '20px',
+                            'right': '20px',
+                            'background': 'none',
+                            'border': 'none',
+                            'font-size': '2rem',
+                            'cursor': 'pointer',
+                            'zIndex': 2
+                        }
+                    ),
+
                     # Author image
                     html.Div([
                         html.Img(
@@ -164,23 +181,15 @@ def layout(author_id=None, **kwargs):
                             )
                         ], className="author-info-block"),
 
-                        # Favorite button
-                        html.Div([
-                            html.Button(
-                                id={'type': 'author-favorite-btn',
-                                    'author_id': author_id},
-                                className="favorite-btn"
-                            ),
-                            html.Div(
-                                id={'type': 'author-favorite-feedback',
-                                    'author_id': author_id},
-                                className="favorite-feedback"
-                            )
-                        ], className="favorite-section")
+                        html.Div(
+                            id={'type': 'author-favorite-feedback',
+                                'author_id': author_id},
+                            className="favorite-feedback"
+                        )
 
                     ], className="author-details")
 
-                ], className="author-detail-container secondary-bg"),
+                ], className="author-detail-container secondary-bg", style={'position': 'relative'}),
 
                 # Author's books section with pagination
                 html.Div([
@@ -301,15 +310,15 @@ def set_initial_author_favorite_state(store_id, session_data):
     author_id = store_id['author_id']
 
     if not session_data or not session_data.get('logged_in'):
-        return "❤️ Add to Favorites (Login Required)", "favorite-btn"
+        return "❤️", "favorite-btn-author-detail"
 
     user_id = session_data.get('user_id')
     is_favorited = is_author_favorited(user_id, author_id)
 
     if is_favorited:
-        return "💔 Remove from Favorites", "favorite-btn remove"
+        return "💔", "favorite-btn-author-detail remove"
     else:
-        return "❤️ Add to Favorites", "favorite-btn add"
+        return "❤️", "favorite-btn-author-detail add"
 
 
 # Callback to handle favorite button clicks
@@ -349,9 +358,9 @@ def handle_author_favorite_click(n_clicks, session_data):
 
     if result['success']:
         if result['is_favorited']:
-            return "💔 Remove from Favorites", "favorite-btn remove", html.Div(result['message'], className="success-message")
+            return "💔", "favorite-btn-author-detail remove", html.Div(result['message'], className="success-message")
         else:
-            return "❤️ Add to Favorites", "favorite-btn add", html.Div(result['message'], className="success-message")
+            return "❤️", "favorite-btn-author-detail add", html.Div(result['message'], className="success-message")
     else:
         return dash.no_update, dash.no_update, html.Div(
             result['message'],
