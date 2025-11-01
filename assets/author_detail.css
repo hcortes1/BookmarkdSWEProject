@@ -49,7 +49,7 @@
 
 .author-detail-container {
   display: flex;
-  max-width: 800px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 30px;
   border-radius: 12px;
@@ -185,7 +185,7 @@
 /* Page Container */
 .page-container {
   padding: 30px;
-  background: #f5f5f5;
+  background: #d0d0d0;
   min-height: 100vh;
 }
 

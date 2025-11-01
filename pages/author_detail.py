@@ -233,7 +233,6 @@ def layout(author_id=None, **kwargs):
 
             ], className="page-container", style={
                 'padding': '30px',
-                'background': '#f5f5f5',
                 'min-height': '100vh'
             })
         ])
@@ -293,7 +292,7 @@ def create_book_card(book: Dict[str, Any], author_id: int):
                 year_info
             ])
         ], href=href, style={'text-decoration': 'none', 'color': 'inherit'})
-    ], className="book-card secondary-bg")
+    ], className="book-card lighter-bg")
 
 
 # Callback to set initial favorite button state

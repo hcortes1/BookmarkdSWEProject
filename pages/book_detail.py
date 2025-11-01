@@ -66,6 +66,8 @@ def layout(book_id=None, **kwargs):
             # Store for favorite status feedback
             dcc.Store(id={'type': 'book-favorite-store', 'book_id': book_id}),
             dcc.Store(id='book-navigation-store', data={'book_id': book_id}),
+            dcc.Store(id={'type': 'error-modal-visible',
+                      'book_id': book_id}, data=False),
 
             html.Div([
                 html.Div([
@@ -358,10 +360,10 @@ def layout(book_id=None, **kwargs):
 
                             # Action buttons
                             html.Div([
-                                html.Button("Send Recommendations",
+                                html.Button("Send Recommendation",
                                             id={'type': 'send-recommendations',
                                                 'book_id': book_id},
-                                            className="send-recommend-btn")
+                                            className="send-recommendations")
                             ], id={'type': 'recommend-buttons-section', 'book_id': book_id}, className="modal-buttons-right"),
 
                             html.Div(id={'type': 'recommend-modal-feedback', 'book_id': book_id},
@@ -369,6 +371,20 @@ def layout(book_id=None, **kwargs):
                         ], className='secondary-bg modal-content')
                     ], id={'type': 'recommend-modal-overlay', 'book_id': book_id}, className="modal-overlay")
                 ], id={'type': 'recommend-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Error modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3(
+                                "Error", className="modal-header error-modal-header"),
+                            html.Button("×", id={'type': 'close-error-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+                            html.Div(id={'type': 'error-modal-content', 'book_id': book_id},
+                                     className="error-modal-content")
+                        ], className='secondary-bg modal-content error-modal-content')
+                    ], className="error-modal-overlay")
+                ], id={'type': 'error-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Other editions/versions section
                 html.Div(id='other-editions-section', children=[
@@ -491,9 +507,9 @@ def set_initial_bookshelf_button_state(store_id, session_data):
 
     if success and shelf_type:
         status_text = DISPLAY_SHELF_MAPPING.get(shelf_type, shelf_type)
-        return [f"📚 Manage: {status_text}"]
+        return [f"Manage: {status_text}"]
     else:
-        return ["📚 Add to Bookshelf"]
+        return ["Add to Bookshelf"]
 
 
 # Callback to handle bookshelf button clicks (open modal)
@@ -690,7 +706,7 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
                 dash.no_update,
                 dash.no_update,
                 html.Div(message, style={'color': 'green'}),
-                f"📚 Manage: {status_text}",
+                f"Manage: {status_text}",
                 False,  # Close modal
                 dash.no_update,  # Keep confirmation modal hidden
                 dash.no_update,  # Don't change confirmation state
@@ -718,7 +734,11 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
             'data', allow_duplicate=True),
      Output({'type': 'rating-dropdown',
             'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True),
-     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True)],
+     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH},
+            'value', allow_duplicate=True),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
     Input({'type': 'save-review', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     [State({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value'),
      State({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value'),
@@ -733,12 +753,13 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
     if not rating:
         return (
-            html.Div("Please select a rating before submitting.",
-                     style={'color': 'red'}),
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update
+            dash.no_update,  # modal-feedback
+            dash.no_update,  # book-bookshelf-btn
+            dash.no_update,  # modal-visible
+            dash.no_update,  # rating-dropdown
+            dash.no_update,  # review-text
+            True,  # error-modal-visible
+            "Please select a rating before submitting."  # error-modal-content
         )
 
     # Get book_id from callback context
@@ -758,12 +779,14 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
             if not shelf_success:
                 return (
-                    html.Div(f"Error updating bookshelf: {shelf_message}", style={
-                             'color': 'red'}),
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update
+                    dash.no_update,  # modal-feedback
+                    dash.no_update,  # book-bookshelf-btn
+                    dash.no_update,  # modal-visible
+                    dash.no_update,  # rating-dropdown
+                    dash.no_update,  # review-text
+                    True,  # error-modal-visible
+                    # error-modal-content
+                    f"Error updating bookshelf: {shelf_message}"
                 )
 
         # Then save review
@@ -772,28 +795,34 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
         if not review_success:
             return (
-                html.Div(f"Bookshelf updated but error saving review: {review_message}", style={
-                         'color': 'orange'}),
-                "📚 Manage: Finished",
-                dash.no_update,
-                dash.no_update,
-                dash.no_update
+                dash.no_update,  # modal-feedback
+                dash.no_update,  # book-bookshelf-btn
+                dash.no_update,  # modal-visible
+                dash.no_update,  # rating-dropdown
+                dash.no_update,  # review-text
+                True,  # error-modal-visible
+                # error-modal-content
+                f"Bookshelf updated but error saving review: {review_message}"
             )
 
         return (
             html.Div(feedback_text, style={'color': 'green'}),
-            "📚 Manage: Finished",
+            "Manage: Finished",
             False,  # Close modal
             None,  # Clear rating
-            ""     # Clear review text
+            "",    # Clear review text
+            False,  # error-modal-visible
+            ""      # error-modal-content
         )
     except Exception as e:
         return (
-            html.Div(f"Unexpected error: {str(e)}", style={'color': 'red'}),
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update
+            dash.no_update,  # modal-feedback
+            dash.no_update,  # book-bookshelf-btn
+            dash.no_update,  # modal-visible
+            dash.no_update,  # rating-dropdown
+            dash.no_update,  # review-text
+            True,  # error-modal-visible
+            f"Unexpected error: {str(e)}"  # error-modal-content
         )
 
 
@@ -939,7 +968,11 @@ def cancel_review_removal(n_clicks):
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
      Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH},
             'style', allow_duplicate=True),
-     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
     [Input({'type': 'confirm-review-removal',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
     [State({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data'),
@@ -980,26 +1013,30 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             else:
                 return (
                     {'display': 'none'},
-                    html.Div(f"Error updating status: {status_message}", style={
-                             'color': 'red'}),
+                    dash.no_update,
                     dash.no_update,
                     dash.no_update,
                     False,
                     {},
-                    dash.no_update,
-                    dash.no_update
+                    {'display': 'block'},  # status selection
+                    {'display': 'none'},   # review form
+                    True,  # error-modal-visible
+                    # error-modal-content
+                    f"Error updating status: {status_message}"
                 )
         else:
             return (
                 {'display': 'none'},
-                html.Div(f"Error removing review: {review_message}", style={
-                         'color': 'red'}),
+                dash.no_update,
                 dash.no_update,
                 dash.no_update,
                 False,
                 {},
                 dash.no_update,
-                dash.no_update
+                dash.no_update,
+                True,  # error-modal-visible
+                # error-modal-content
+                f"Error removing review: {review_message}"
             )
 
     if not book_id or not new_status:
@@ -1027,24 +1064,28 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             {'display': 'none'},  # Hide confirmation modal
             html.Div("Review removed and status updated successfully.",
                      style={'color': 'green'}),
-            f"📚 Manage: {status_text}",
+            f"Manage: {status_text}",
             False,  # Close main modal
             False,  # Mark confirmation as not visible
             {},  # Clear pending change
             dash.no_update,  # status selection
-            dash.no_update   # review form
+            dash.no_update,  # review form
+            False,  # error-modal-visible
+            ""      # error-modal-content
         )
     else:
         error_msg = f"Error: {review_message if not review_success else status_message}"
         return (
             {'display': 'none'},  # Hide confirmation modal
-            html.Div(error_msg, style={'color': 'red'}),
+            dash.no_update,
             dash.no_update,
             dash.no_update,
             False,  # Mark confirmation as not visible
             {},  # Clear pending change
             dash.no_update,
-            dash.no_update
+            dash.no_update,
+            True,  # error-modal-visible
+            error_msg  # error-modal-content
         )
 
 
@@ -1119,7 +1160,7 @@ def populate_friends_list(is_visible, user_session, book_data):
                     src=friend.get(
                         'profile_image_url') or '/assets/svg/default-profile.svg',
                     style={'width': '30px', 'height': '30px', 'border-radius': '50%',
-                           'margin-right': '10px', 'vertical-align': 'middle'}
+                           'margin-left': '20px', 'margin-right': '10px', 'vertical-align': 'middle'}
                 ),
                 html.Span(username_display, style={'vertical-align': 'middle'})
             ],
@@ -1136,7 +1177,11 @@ def populate_friends_list(is_visible, user_session, book_data):
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
      Output({'type': 'book-recommend-feedback',
             'book_id': dash.dependencies.MATCH}, 'children'),
-     Output({'type': 'recommend-reason', 'book_id': dash.dependencies.MATCH}, 'value')],
+     Output({'type': 'recommend-reason',
+            'book_id': dash.dependencies.MATCH}, 'value'),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
     [Input({'type': 'send-recommendations',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
     [State({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'value'),
@@ -1154,7 +1199,7 @@ def send_recommendations(send_clicks, selected_friend_ids, reason, user_session,
         int(fid) for fid in selected_friend_ids] if selected_friend_ids else []
 
     if not selected_friends:
-        return dash.no_update, dash.no_update, html.Div("Please select at least one friend.", style={'color': 'red'}), dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Please select at least one friend."
 
     book_id = book_data['book_id']
     sender_id = user_session['user_id']
@@ -1170,9 +1215,40 @@ def send_recommendations(send_clicks, selected_friend_ids, reason, user_session,
 
     if success_count == len(selected_friends):
         message = f"Book recommendation sent to {success_count} friend{'s' if success_count != 1 else ''}!"
-        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), ""
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), "", False, ""
     elif success_count > 0:
         message = f"Book recommendation sent to {success_count} out of {len(selected_friends)} friends."
-        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), ""
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), "", False, ""
     else:
-        return dash.no_update, dash.no_update, html.Div("Failed to send recommendations. Please try again.", style={'color': 'red'}), dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Failed to send recommendations. Please try again."
+
+
+# Callback to control error modal visibility
+@callback(
+    [Output({'type': 'error-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'error-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    Input({'type': 'error-modal-visible',
+          'book_id': dash.dependencies.MATCH}, 'data'),
+    prevent_initial_call=False
+)
+def control_error_modal_visibility(is_visible):
+    """Control the visibility of the error modal"""
+    if is_visible:
+        return {'display': 'block'}, is_visible
+    else:
+        return {'display': 'none'}, is_visible
+
+
+# Callback to close error modal
+@callback(
+    [Output({'type': 'error-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children')],
+    Input({'type': 'close-error-modal',
+          'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def close_error_modal(n_clicks):
+    """Close the error modal when X button is clicked"""
+    if n_clicks:
+        return False, ""
+    return dash.no_update, dash.no_update
