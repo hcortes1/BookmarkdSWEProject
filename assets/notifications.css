@@ -100,3 +100,27 @@
   display: inline-block;
   text-decoration: none;
 }
+
+/* Bookshelf modal styles */
+.save-bookshelf-btn {
+  padding: 12px 24px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.save-bookshelf-btn:hover {
+  background-color: #0056b3;
+}
+
+.btn-add-to-bookshelf {
+  background-color: #007bff !important;
+}
+
+.btn-add-to-bookshelf:hover {
+  background-color: #0056b3 !important;
+}

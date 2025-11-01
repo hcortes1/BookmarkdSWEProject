@@ -2,7 +2,7 @@
 
 .settings-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #d0d0d0;
   padding: 32px 20px;
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
 }
 
 .settings-card {
-  background: white;
+  background: #f0f0f0;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   padding: 30px;
@@ -90,11 +90,10 @@
 }
 
 .btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
+  background-color: #fef2f2;
+  border: 1px solid #dc3545;
+  color: #dc3545;
   padding: 10px 20px;
-  border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -102,8 +101,9 @@
 }
 
 .btn-danger:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
+  background-color: #fce8e8;
+  border-color: #c82333;
+  color: #c82333;
   transform: translateY(-1px);
 }
 
@@ -166,4 +166,32 @@
     width: 100%;
     margin-bottom: 10px;
   }
+}
+
+/* Navigation Sidebar Styles */
+.settings-page html {
+  scroll-behavior: smooth;
+}
+
+.settings-page a:hover {
+  background-color: #e9ecef !important;
+  text-decoration: underline !important;
+}
+
+/* Responsive navigation for mobile */
+@media (max-width: 768px) {
+  .settings-page .sidebar {
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    margin-bottom: 20px;
+  }
+  .settings-page .content {
+    margin-left: 0 !important;
+  }
+}
+
+/* Scroll margin for section headers */
+#profile-settings, #account-settings, #account-actions {
+  scroll-margin-top: 20vh;
 }
