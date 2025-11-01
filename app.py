@@ -79,6 +79,22 @@ app.layout = html.Div([
     html.Div(
         id="page-container-wrapper",
         children=[dash.page_container]
+    ),
+
+    # Mobile overlay - only shown on mobile devices
+    html.Div(
+        id="mobile-overlay",
+        className="mobile-overlay",
+        children=[
+            html.Div(
+                "Bookmarkd",
+                className="mobile-brand"
+            ),
+            html.Div(
+                "is better experienced on a PC or tablet",
+                className="mobile-subtext"
+            )
+        ]
     )
 ])
 
@@ -147,16 +163,17 @@ def update_navigation(user_session, pathname):
         level = rewards.get('level', 1)
         xp = rewards.get('xp', 0)
         points = rewards.get('points', 0)
-        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(xp)
+        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+            xp)
 
         # Show user navigation (bookshelf, profile, notifications, settings)
         right_nav = [
             html.Div(
                 html.Span(
-                    f"Lvl {level}", 
+                    f"Lvl {level}",
                     className='level-badge',
                     title=f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
-                ), 
+                ),
                 className='user-level'
             ),
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',

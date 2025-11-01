@@ -420,25 +420,26 @@ def update_profile_data(session_data, viewed_username, active_tab):
             profile_user_id = user_data.get('user_id')
             rewards = rewards_backend.get_user_rewards(profile_user_id)
             level = rewards.get('level', 1)
-            
+
             # Only show XP and points tooltip for own profile
             level_title = ""
             level_style = {'cursor': 'default'}
             if is_own_profile:
                 xp = rewards.get('xp', 0)
                 points = rewards.get('points', 0)
-                _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(xp)
+                _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+                    xp)
                 level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
                 level_style = {'cursor': 'help'}
-            
+
             user_info_elements.append(
                 html.Div(
                     html.Span(
-                        f"Lvl {level}", 
+                        f"Lvl {level}",
                         className='level-badge',
                         title=level_title if level_title else None,
                         style=level_style
-                    ), 
+                    ),
                     className='profile-level-badge',
                     style={'margin-bottom': '10px'}
                 )

@@ -85,17 +85,17 @@ def calculate_level(xp):
         1800,   # Level 9 (400 XP more)
         2250,   # Level 10 (450 XP more)
     ]
-    
+
     for level, required_xp in enumerate(level_requirements, 1):
         if xp < required_xp:
             return level - 1 if level > 1 else 1
-    
+
     # For levels beyond 10, each level requires 50 more than the previous increment
     # Level 10 requires 450 XP, so level 11 would require 500 XP, etc.
     base_level = 10
     base_xp = 2250
     increment = 450  # Starting increment for level 10->11
-    
+
     while True:
         next_xp = base_xp + increment
         if xp < next_xp:
@@ -108,7 +108,7 @@ def calculate_level(xp):
 def get_level_progress(xp):
     """Get current level, XP in current level, and XP needed for next level"""
     level = calculate_level(xp)
-    
+
     # XP requirements for each level (cumulative)
     level_requirements = [
         0,      # Level 1
@@ -122,10 +122,11 @@ def get_level_progress(xp):
         1800,   # Level 9
         2250,   # Level 10
     ]
-    
+
     if level <= len(level_requirements):
         current_level_xp = level_requirements[level - 1]
-        next_level_xp = level_requirements[level] if level < len(level_requirements) else level_requirements[-1] + 450 + (level - 10) * 50
+        next_level_xp = level_requirements[level] if level < len(
+            level_requirements) else level_requirements[-1] + 450 + (level - 10) * 50
     else:
         # For levels beyond 10
         base_xp = 2250
@@ -135,10 +136,10 @@ def get_level_progress(xp):
             increment += 50
         current_level_xp = base_xp - increment + 50  # Previous level's requirement
         next_level_xp = base_xp + increment
-    
+
     xp_in_level = xp - current_level_xp
     xp_to_next = next_level_xp - current_level_xp
-    
+
     return level, xp_in_level, xp_to_next
 
 
