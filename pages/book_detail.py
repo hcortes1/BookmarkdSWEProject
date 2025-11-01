@@ -8,6 +8,7 @@ from backend.reviews import get_user_review, create_or_update_review
 from backend.friends import get_friends_list
 from backend.recommendations import create_book_recommendation
 from backend.rewards import award_completion_rating, award_review, award_recommendation
+from backend.gutenberg import search_and_download_gutenberg_html
 from urllib.parse import unquote, parse_qs
 
 dash.register_page(__name__, path_template="/book/<book_id>")
@@ -62,6 +63,12 @@ def layout(book_id=None, **kwargs):
 
         if not book_data:
             return html.Div("Book not found", className="error-message")
+
+        # Check if HTML is available from Gutenberg
+        if not book_data.get('html_path'):
+            search_and_download_gutenberg_html(book_data['title'], book_data['author_name'], book_id)
+            # Refresh book data after potential update
+            book_data = get_book_details(book_id)
 
         return html.Div([
             # Store for favorite status feedback

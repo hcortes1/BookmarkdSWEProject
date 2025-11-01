@@ -1274,6 +1274,7 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
             if existing:
                 author_id = existing['author_id']
                 print(f"DEBUG: Found existing author with ID: {author_id}")
+                return author_id  # Skip fetching works since author already exists
             else:
                 # Save new author
                 author_id = save_author_to_db(merged_author_data)
@@ -1524,8 +1525,7 @@ def get_or_create_book_from_api(book_data: Dict[str, Any]) -> Optional[int]:
 
 def get_or_create_book_with_author_books(book_data: Dict[str, Any]) -> Optional[int]:
     """
-    When a book is clicked from API results, import the author and all their books
-    Similar to get_or_create_author_with_books but triggered from book click
+    When a book is clicked from API results, import the author and the specific book only
     Returns book_id of the clicked book
     """
     print(
@@ -1546,34 +1546,38 @@ def get_or_create_book_with_author_books(book_data: Dict[str, Any]) -> Optional[
         'name': author_names[0]
     }
 
-    print(f"DEBUG: Importing author and all their books: {author_data}")
+    print(f"DEBUG: Importing author: {author_data}")
 
-    # This will fetch the author and all their books from the API and store them
-    author_id = get_or_create_author_with_books(author_data)
+    # Get or create the author without fetching all their books
+    author_id = get_or_create_author_from_api(author_data)
 
     if not author_id:
         print("DEBUG: Failed to import author, falling back to single book save")
         return get_or_create_book_from_api(book_data)
 
-    # Now find the book we originally clicked on in the database
+    # Check if this is a new author (has no books yet)
     try:
-        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT book_id FROM books 
-                WHERE LOWER(title) = LOWER(%s) AND author_id = %s
-                LIMIT 1
-            """, (book_data['title'], author_id))
-
-            result = cur.fetchone()
-            if result:
-                print(
-                    f"DEBUG: Found clicked book in database with ID: {result['book_id']}")
-                return result['book_id']
-            else:
-                print(
-                    "DEBUG: Clicked book not found in database after import, falling back to single book save")
-                return get_or_create_book_from_api(book_data)
-
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM books WHERE author_id = %s", (author_id,))
+            book_count = cur.fetchone()[0]
+            
+            if book_count == 0:
+                # New author, fetch all their books in background
+                print(f"DEBUG: New author {author_data['name']}, fetching all their books")
+                # For now, do it synchronously since background tasks are complex
+                # In a real app, this would be done asynchronously
+                try:
+                    get_or_create_author_with_books(author_data)
+                except Exception as e:
+                    print(f"DEBUG: Failed to fetch all books for new author: {e}")
     except Exception as e:
-        logger.error(f"Error finding clicked book after author import: {e}")
-        return get_or_create_book_from_api(book_data)
+        logger.error(f"Error checking author book count: {e}")
+
+    # Get detailed book information
+    detailed_book = OpenLibraryAPI.get_book_details(book_data['key'])
+    if detailed_book:
+        # Merge the data
+        book_data = {**book_data, **detailed_book}
+
+    # Save the specific book
+    return save_book_to_db(book_data, author_id)
