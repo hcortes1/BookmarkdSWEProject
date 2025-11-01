@@ -21,17 +21,10 @@ app.layout = html.Div([
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
-    dcc.Interval(
-        id='notifications-interval',
-        interval=5*1000,  # Update every 5 seconds
-        n_intervals=0
-    ),
-    # Store notification statuses
-    dcc.Store(id='notification-status', data={}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
-            html.Div(className="nav-left", children=[
+            html.Div(id='nav-left-container', className="nav-left", children=[
                 dcc.Link([
                     html.Span("Bookmarkd", className="brand-name", style={
                         'font-size': '24px',
@@ -94,8 +87,8 @@ app.layout = html.Div([
     Input('url', 'pathname')
 )
 def update_page_container(pathname):
-    # Don't show loading for login page
-    if pathname == '/login':
+    # Don't show loading for login page and notifications page
+    if pathname in ['/login', '/notifications']:
         return dash.page_container
     else:
         return dcc.Loading(
@@ -106,13 +99,38 @@ def update_page_container(pathname):
 
 
 @app.callback(
-    Output('nav-right-container', 'children'),
+    [Output('nav-left-container', 'children'),
+     Output('nav-right-container', 'children')],
     Input('user-session', 'data'),
     Input('url', 'pathname')
 )
-def update_nav_right(user_session, pathname):
+def update_navigation(user_session, pathname):
     is_logged_in = user_session.get(
         'logged_in', False) if user_session else False
+
+    # Base left navigation (always visible)
+    left_nav = [
+        dcc.Link([
+            html.Span("Bookmarkd", className="brand-name", style={
+                'font-size': '24px',
+                'font-weight': 'bold',
+                'color': '#007bff',
+                'margin-right': '30px',
+                'text-decoration': 'none'
+            })
+        ], href='/', className='brand-link', style={'text-decoration': 'none'}),
+        dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon',
+                 alt='home'), href='/', className='nav-link'),
+    ]
+
+    # Add trending, leaderboards, showcase only for logged-in users
+    if is_logged_in:
+        left_nav.extend([
+            dcc.Link('Trending', href='/trending', className='nav-link'),
+            dcc.Link('Leaderboards', href='/leaderboards',
+                     className='nav-link'),
+            dcc.Link('Showcase', href='/showcase', className='nav-link'),
+        ])
 
     if is_logged_in:
         # Get user's profile image from session data
@@ -124,7 +142,7 @@ def update_nav_right(user_session, pathname):
             profile_image_src = profile_image_url
 
         # Show user navigation (bookshelf, profile, notifications, settings)
-        return [
+        right_nav = [
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
                      className='bookshelf-img', alt='bookshelf'), href='/profile/bookshelf'),
             dcc.Link(
@@ -142,29 +160,15 @@ def update_nav_right(user_session, pathname):
                     'username') else '/login'
             ),
             html.Div([
-                html.Img(src='/assets/svg/bell.svg',
-                         className='notifications-img', alt='notifications',
-                         style={'cursor': 'pointer'}),
+                dcc.Link(
+                    html.Img(src='/assets/svg/bell.svg',
+                             className='notifications-img', alt='notifications',
+                             style={'cursor': 'pointer'}),
+                    href='/notifications',
+                    className='notifications-link'
+                ),
                 html.Div(id='notification-badge', className='notification-badge',
                          style={'display': 'none'}),
-                html.Div([
-                    html.Div(id='notifications-content', children=[])
-                ], className='notifications-dropdown', style={
-                    'position': 'absolute',
-                    'top': '100%',
-                    'right': '0',
-                    'background': 'white',
-                    'border': '1px solid #ddd',
-                    'border-radius': '8px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                    'z-index': '1000',
-                    'min-width': '350px',
-                    'max-width': '400px',
-                    'margin-top': '2px',
-                    'max-height': '400px',
-                    'overflow-y': 'auto',
-                    'display': 'none'
-                })
             ], className='notifications-container',
                 style={'position': 'relative', 'display': 'inline-block'}),
             html.Div([
@@ -203,10 +207,12 @@ def update_nav_right(user_session, pathname):
         ]
     else:
         # Show login/signup button
-        return [
+        right_nav = [
             dcc.Link('Log In / Sign Up', href='/login',
                      className='nav-link login-signup-btn')
         ]
+
+    return left_nav, right_nav
 
 
 @app.callback(
@@ -382,266 +388,52 @@ def handle_search(search_value, search_type):
 
 @app.callback(
     [Output('notification-badge', 'children'),
-     Output('notification-badge', 'style'),
-     Output('notifications-content', 'children'),
-     Output('notification-status', 'data', allow_duplicate=True)],
-    [Input('user-session', 'data'),
-     Input('notifications-interval', 'n_intervals')],
-    [State('notification-status', 'data')],
-    prevent_initial_call=True
+     Output('notification-badge', 'style')],
+    Input('user-session', 'data'),
+    State('notification-badge', 'children')
 )
-def update_notifications(user_session, n_intervals, notification_status):
-    # print(f"DEBUG: update_notifications called with user_session: {user_session}, n_intervals: {n_intervals}")
-
-    # Check if user is logged in first to avoid component not found errors
+def update_notifications(user_session, current_badge_text):
+    # Check if user is logged in first
     if not user_session or not user_session.get('logged_in', False):
-        # print("DEBUG: User not logged in")
-        # Return early to prevent component not found errors
-        raise dash.exceptions.PreventUpdate
+        return '', {'display': 'none'}
 
     user_id = user_session.get('user_id')
-    # print(f"DEBUG: Extracted user_id: {user_id}")
-
     if not user_id:
-        # print("DEBUG: No user_id found in session")
-        raise dash.exceptions.PreventUpdate
+        return '', {'display': 'none'}
 
-    # Clean up old notification statuses (older than 5 seconds)
-    import time
-    if notification_status is None:
-        notification_status = {}
-
-    current_time = time.time()
-    cleaned_status = {}
-    for sender_id, status_data in notification_status.items():
-        # Keep for 5 seconds
-        if current_time - status_data.get('timestamp', 0) < 5:
-            cleaned_status[sender_id] = status_data
-
-    try:
-        # Get pending friend requests - make sure we pass user_id as string
-        pending_requests = friends_backend.get_pending_friend_requests(
+    # Use cached notifications from session immediately after login
+    if 'notifications' in user_session:
+        notifications_data = user_session['notifications']
+    else:
+        # Fallback: fetch fresh notifications
+        import backend.notifications as notifications_backend
+        notifications_data = notifications_backend.get_user_notifications(
             str(user_id))
-        # print(f"DEBUG: Found {len(pending_requests)} pending requests for user {user_id}")
-        # print(f"DEBUG: Pending requests data: {pending_requests}")
-        # print(f"DEBUG: Current notification status: {cleaned_status}")
 
-        # Filter out requests that have been responded to
-        active_requests = []
-        for request in pending_requests:
-            sender_id = str(request['sender_id'])
-            if sender_id not in cleaned_status:
-                active_requests.append(request)
+    count = notifications_data.get('count', 0)
+    new_badge_text = str(count) if count > 0 else ''
 
-        # Add status messages for recently responded requests
-        status_messages = []
-        for sender_id, status_data in cleaned_status.items():
-            # Get username for the status message
-            username = None
-            for request in pending_requests:
-                if str(request['sender_id']) == sender_id:
-                    username = request['username']
-                    break
-
-            if username:
-                status_color = '#28a745' if status_data['status'] == 'accepted' else '#dc3545'
-                status_message = html.Div([
-                    html.Div([
-                        html.Span("✓ " if status_data['status'] == 'accepted' else "✗ ",
-                                  style={'font-weight': 'bold', 'color': status_color}),
-                        html.Span(status_data['message'],
-                                  style={'color': status_color, 'font-weight': '500'})
-                    ], style={'padding': '12px 16px', 'text-align': 'center'})
-                ], className='notification-item', style={
-                    'background-color': '#f8f9fa',
-                    'border-left': f'4px solid {status_color}'
-                })
-                status_messages.append(status_message)
-
-        if not active_requests and not status_messages:
-            # print("DEBUG: No pending requests or status messages found")
-            return '', {'display': 'none'}, [html.Div("No notifications", className='no-notifications', style={'padding': '20px', 'text-align': 'center', 'color': '#666'})], cleaned_status
-
-        # Show notification count badge
-        total_notifications = len(active_requests) + len(status_messages)
-        count = total_notifications
-        badge_style = {
-            'display': 'block',
-            'position': 'absolute',
-            'top': '-5px',
-            'right': '-5px',
-            'background': '#dc3545',
-            'color': 'white',
-            'border-radius': '50%',
-            'width': '18px',
-            'height': '18px',
-            'font-size': '12px',
-            'text-align': 'center',
-            'line-height': '18px'
-        } if count > 0 else {'display': 'none'}
-
-        # Create notification items for active requests
-        notification_items = []
-
-        # Add status messages first
-        notification_items.extend(status_messages)
-
-        # Add active friend requests
-        for request in active_requests:
-            username = request['username']
-            # Ensure we always have a valid profile image URL
-            profile_image_url = request.get('profile_image_url')
-            if not profile_image_url or not profile_image_url.strip():
-                profile_image_url = '/assets/svg/default-profile.svg'
-            sender_id = request['sender_id']
-
-            notification_item = html.Div([
-                # Profile image as clickable link
-                dcc.Link([
-                    html.Img(
-                        src=profile_image_url,
-                        style={
-                            'width': '40px',
-                            'height': '40px',
-                            'border-radius': '50%',
-                            'object-fit': 'cover',
-                            'cursor': 'pointer'
-                        }
-                    )
-                ], href=f'/profile/view/{username}', style={'margin-right': '12px'}),
-
-                # Content area
-                html.Div([
-                    html.Div([
-                        dcc.Link(
-                            html.Strong(username, style={
-                                        'color': '#1976d2', 'text-decoration': 'none'}),
-                            href=f'/profile/view/{username}',
-                            style={'text-decoration': 'none'}
-                        ),
-                        html.Span(" sent you a friend request",
-                                  style={'font-size': '14px', 'color': '#666', 'margin-left': '4px'})
-                    ], style={'margin-bottom': '8px'}),
-
-                    # Action buttons
-                    html.Div([
-                        html.Button('Accept',
-                                    id={'type': 'accept-friend',
-                                        'sender_id': sender_id},
-                                    className='btn-accept',
-                                    style={
-                                        'background': '#28a745',
-                                        'color': 'white',
-                                        'border': 'none',
-                                        'padding': '6px 12px',
-                                        'border-radius': '4px',
-                                        'margin-right': '8px',
-                                        'font-size': '12px',
-                                        'cursor': 'pointer'
-                                    }),
-                        html.Button('Decline',
-                                    id={'type': 'decline-friend',
-                                        'sender_id': sender_id},
-                                    className='btn-decline',
-                                    style={
-                                        'background': '#dc3545',
-                                        'color': 'white',
-                                        'border': 'none',
-                                        'padding': '6px 12px',
-                                        'border-radius': '4px',
-                                        'font-size': '12px',
-                                        'cursor': 'pointer'
-                                    })
-                    ], style={'display': 'flex', 'gap': '8px'})
-                ], style={'flex': '1'})
-            ], className='notification-item', style={
-                'display': 'flex',
-                'align-items': 'flex-start',
-                'padding': '12px 16px',
-                'border-bottom': '1px solid #f0f0f0'
-            })
-            notification_items.append(notification_item)
-
-        return str(count) if count > 0 else '', badge_style, notification_items, cleaned_status
-
-    except Exception as e:
-        print(f"Error loading notifications: {e}")
-        return '', {'display': 'none'}, [html.Div("Error loading notifications", className='notification-error')], {}
-
-
-@app.callback(
-    [Output('user-session', 'data', allow_duplicate=True),
-     Output('notification-status', 'data', allow_duplicate=True)],
-    [Input({'type': 'accept-friend', 'sender_id': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'decline-friend', 'sender_id': dash.dependencies.ALL}, 'n_clicks')],
-    [State('user-session', 'data'),
-     State('notification-status', 'data')],
-    prevent_initial_call=True
-)
-def handle_friend_request_response(accept_clicks, decline_clicks, user_session, notification_status):
-    # print(f"DEBUG: handle_friend_request_response called")
-    # print(f"DEBUG: accept_clicks: {accept_clicks}")
-    # print(f"DEBUG: decline_clicks: {decline_clicks}")
-
-    if not user_session or not user_session.get('logged_in', False):
-        # print("DEBUG: User not logged in")
-        return dash.no_update, dash.no_update
-
-    ctx = dash.callback_context
-    # print(f"DEBUG: callback_context.triggered: {ctx.triggered}")
-
-    if not ctx.triggered:
-        print("DEBUG: No trigger detected")
-        return dash.no_update, dash.no_update
-
-    # Get the triggered component
-    triggered_prop = ctx.triggered[0]['prop_id']
-    clicked_value = ctx.triggered[0]['value']
-
-    # print(f"DEBUG: triggered_prop: {triggered_prop}")
-    # print(f"DEBUG: clicked_value: {clicked_value}")
-
-    # Only proceed if a button was actually clicked (value is not None and > 0)
-    if clicked_value is None or clicked_value == 0:
-        # print("DEBUG: Button not actually clicked (value is None or 0)")
-        return dash.no_update, dash.no_update
-
-    try:
-        # Parse the button ID more safely
-        import json
-        button_id_str = triggered_prop.split('.')[0]
-        button_data = json.loads(button_id_str.replace("'", '"'))
-
-        sender_id = button_data['sender_id']
-        is_accept = button_data['type'] == 'accept-friend'
-
-        # print(f"DEBUG: Processing friend request - sender_id: {sender_id}, accept: {is_accept}")
-
-        result = friends_backend.respond_to_friend_request(
-            receiver_id=str(user_session['user_id']),
-            sender_id=str(sender_id),
-            accept=is_accept
-        )
-        # print(f"DEBUG: Friend request response: {result['message']}")
-
-        # Update notification status to show the message
-        import time
-        if notification_status is None:
-            notification_status = {}
-
-        notification_status[str(sender_id)] = {
-            'status': 'accepted' if is_accept else 'declined',
-            'message': 'Friend request accepted!' if is_accept else 'Friend request declined.',
-            'timestamp': time.time()
-        }
-
-        # Return the same session data to trigger a refresh of notifications
-        return user_session, notification_status
-
-    except Exception as e:
-        print(f"Error responding to friend request: {e}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
+    # Only update if the badge content has actually changed
+    if new_badge_text != current_badge_text:
+        if count > 0:
+            badge_style = {
+                'display': 'block',
+                'position': 'absolute',
+                'top': '-5px',
+                'right': '-5px',
+                'background': '#dc3545',
+                'color': 'white',
+                'border-radius': '50%',
+                'width': '18px',
+                'height': '18px',
+                'font-size': '12px',
+                'text-align': 'center',
+                'line-height': '18px'
+            }
+            return new_badge_text, badge_style
+        else:
+            return '', {'display': 'none'}
+    else:
         return dash.no_update, dash.no_update
 
 

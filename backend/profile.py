@@ -11,11 +11,11 @@ from .db import get_conn
 def list_friends(user_id: str) -> List[Dict[str, Any]]:
     # Handle type mismatch: users.user_id is integer, friends.user_id/friend_id are uuid
     sql = """
-    select u.user_id, u.username, u.profile_image_url
+    select u.user_id, u.username, u.profile_image_url, f.created_at
       from public.friends f
       join public.users u on u.user_id::text = f.friend_id::text
      where f.user_id::text = %s::text
-     order by u.username
+     order by f.created_at ASC
     """
     with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(sql, (str(user_id),))
@@ -188,11 +188,11 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
 
         # Get user's friends - handle type mismatch between tables
         friends_sql = """
-        select u.user_id, u.username, u.profile_image_url
+        select u.user_id, u.username, u.profile_image_url, f.created_at
           from public.friends f
           join public.users u on u.user_id = f.friend_id
          where f.user_id = %s
-         order by u.username
+         order by f.created_at ASC
         """
         cur.execute(friends_sql, (user_data['user_id'],))
         friends = [dict(r) for r in cur.fetchall()]
@@ -205,9 +205,10 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
             select author_id, name, author_image_url
               from public.authors
              where author_id = ANY(%s)
-             order by name
+             order by array_position(%s, author_id)
             """
-            cur.execute(authors_sql, (user_data['favorite_authors'],))
+            cur.execute(
+                authors_sql, (user_data['favorite_authors'], user_data['favorite_authors']))
             user_data['favorite_authors_details'] = [
                 dict(r) for r in cur.fetchall()]
         else:
@@ -220,9 +221,10 @@ def get_user_profile_by_username(username: str) -> Optional[Dict[str, Any]]:
               from public.books b
               left join public.authors a on b.author_id = a.author_id
              where b.book_id = ANY(%s)
-             order by b.title
+             order by array_position(%s, b.book_id)
             """
-            cur.execute(books_sql, (user_data['favorite_books'],))
+            cur.execute(
+                books_sql, (user_data['favorite_books'], user_data['favorite_books']))
             user_data['favorite_books_details'] = [
                 dict(r) for r in cur.fetchall()]
         else:
