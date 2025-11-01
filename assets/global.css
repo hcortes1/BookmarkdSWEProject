@@ -126,3 +126,50 @@ body, html {
   font-size: 1.1rem;
   margin-bottom: 30px;
 }
+
+/* Mobile overlay - hidden by default on desktop */
+.mobile-overlay {
+  display: none !important;
+}
+
+/* Add mobile overlay to body for mobile devices */
+@media (max-width: 768px) {
+  /* Hide main content for mobile devices */
+  #_dash-app-content,
+  .app-container,
+  #page-container-wrapper {
+    display: none !important;
+  }
+  
+  /* Show mobile overlay */
+  .mobile-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #d0d0d0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    padding-top: 30vh !important;
+    z-index: 9999 !important;
+    text-align: center !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+  
+  .mobile-brand {
+    font-size: 60px !important;
+    font-weight: bold !important;
+    color: #007bff !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .mobile-subtext {
+    font-size: 15px !important;
+    color: #666 !important;
+    max-width: 300px !important;
+    line-height: 1.4 !important;
+  }
+}

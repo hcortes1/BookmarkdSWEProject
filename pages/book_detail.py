@@ -7,6 +7,7 @@ from backend.bookshelf import get_book_shelf_status, add_to_bookshelf
 from backend.reviews import get_user_review, create_or_update_review
 from backend.friends import get_friends_list
 from backend.recommendations import create_book_recommendation
+from backend.rewards import award_completion_rating, award_review, award_recommendation
 from urllib.parse import unquote, parse_qs
 
 dash.register_page(__name__, path_template="/book/<book_id>")
@@ -805,6 +806,12 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
                 f"Bookshelf updated but error saving review: {review_message}"
             )
 
+        # Award points
+        if mode == 'add':
+            award_completion_rating(user_id)
+        if review_text and review_text.strip():
+            award_review(user_id)
+
         return (
             html.Div(feedback_text, style={'color': 'green'}),
             "Manage: Finished",
@@ -1212,6 +1219,7 @@ def send_recommendations(send_clicks, selected_friend_ids, reason, user_session,
             sender_id, friend_id, book_id, reason)
         if result['success']:
             success_count += 1
+            award_recommendation(sender_id)
 
     if success_count == len(selected_friends):
         message = f"Book recommendation sent to {success_count} friend{'s' if success_count != 1 else ''}!"

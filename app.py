@@ -5,6 +5,7 @@ import time
 import backend.settings as settings_backend
 import backend.profile as profile_backend
 import backend.friends as friends_backend
+import backend.rewards as rewards_backend
 
 
 app = Dash(
@@ -78,6 +79,22 @@ app.layout = html.Div([
     html.Div(
         id="page-container-wrapper",
         children=[dash.page_container]
+    ),
+
+    # Mobile overlay - only shown on mobile devices
+    html.Div(
+        id="mobile-overlay",
+        className="mobile-overlay",
+        children=[
+            html.Div(
+                "Bookmarkd",
+                className="mobile-brand"
+            ),
+            html.Div(
+                "is better experienced on a PC or tablet",
+                className="mobile-subtext"
+            )
+        ]
     )
 ])
 
@@ -141,8 +158,24 @@ def update_navigation(user_session, pathname):
         if profile_image_url and profile_image_url.strip():
             profile_image_src = profile_image_url
 
+        # Get user rewards for level display
+        rewards = rewards_backend.get_user_rewards(user_session.get('user_id'))
+        level = rewards.get('level', 1)
+        xp = rewards.get('xp', 0)
+        points = rewards.get('points', 0)
+        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+            xp)
+
         # Show user navigation (bookshelf, profile, notifications, settings)
         right_nav = [
+            html.Div(
+                html.Span(
+                    f"Lvl {level}",
+                    className='level-badge',
+                    title=f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
+                ),
+                className='user-level'
+            ),
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
                      className='bookshelf-img', alt='bookshelf'), href='/profile/bookshelf'),
             dcc.Link(
@@ -389,10 +422,9 @@ def handle_search(search_value, search_type):
 @app.callback(
     [Output('notification-badge', 'children'),
      Output('notification-badge', 'style')],
-    Input('user-session', 'data'),
-    State('notification-badge', 'children')
+    Input('user-session', 'data')
 )
-def update_notifications(user_session, current_badge_text):
+def update_notifications(user_session):
     # Check if user is logged in first
     if not user_session or not user_session.get('logged_in', False):
         return '', {'display': 'none'}
@@ -413,28 +445,24 @@ def update_notifications(user_session, current_badge_text):
     count = notifications_data.get('count', 0)
     new_badge_text = str(count) if count > 0 else ''
 
-    # Only update if the badge content has actually changed
-    if new_badge_text != current_badge_text:
-        if count > 0:
-            badge_style = {
-                'display': 'block',
-                'position': 'absolute',
-                'top': '-5px',
-                'right': '-5px',
-                'background': '#dc3545',
-                'color': 'white',
-                'border-radius': '50%',
-                'width': '18px',
-                'height': '18px',
-                'font-size': '12px',
-                'text-align': 'center',
-                'line-height': '18px'
-            }
-            return new_badge_text, badge_style
-        else:
-            return '', {'display': 'none'}
+    if count > 0:
+        badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-5px',
+            'right': '-5px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '18px',
+            'height': '18px',
+            'font-size': '12px',
+            'text-align': 'center',
+            'line-height': '18px'
+        }
+        return new_badge_text, badge_style
     else:
-        return dash.no_update, dash.no_update
+        return '', {'display': 'none'}
 
 
 @app.callback(
