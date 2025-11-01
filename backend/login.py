@@ -1,6 +1,7 @@
 import os
 import hashlib
 import psycopg2
+import json
 from dotenv import load_dotenv
 from psycopg2 import Error
 
@@ -152,6 +153,31 @@ def refresh_user_session_data(user_id):
         connection.close()
         return False, f"Error refreshing session data: {e}", None
     
-# stopped here, need to save users genre preference and mark first_login as false upon completion 
-def genre_preference(user_id,favorite_genres):
+# Update User Genre backend
+def update_user_genres(user_id, favorite_genres):
+    """Update user's favorite genres and mark first login as complete"""
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed"
+    
+    cursor = connection.cursor()
+    
+    try:
+        update_preference_query = """
+            UPDATE users 
+            SET favorite_genres = %s, first_login = %s 
+            WHERE user_id = %s
+        """
+        cursor.execute(update_preference_query, (json.dumps(favorite_genres), False, user_id))
+        connection.commit()
+        
+        cursor.close()
+        connection.close()
+        
+        return True, "User's favorite genres have been updated!"
+        
+    except Error as e:
+        cursor.close()
+        connection.close()
+        return False, f"Error updating genres: {e}"
     pass
