@@ -5,6 +5,8 @@ from backend.books import get_book_details, get_books_with_same_title
 from backend.favorites import is_book_favorited, toggle_book_favorite
 from backend.bookshelf import get_book_shelf_status, add_to_bookshelf
 from backend.reviews import get_user_review, create_or_update_review
+from backend.friends import get_friends_list
+from backend.recommendations import create_book_recommendation
 from urllib.parse import unquote, parse_qs
 
 dash.register_page(__name__, path_template="/book/<book_id>")
@@ -155,6 +157,13 @@ def layout(book_id=None, **kwargs):
                                     'book_id': book_id},
                                 className="bookshelf-btn"
                             ),
+                            # Recommend button
+                            html.Button(
+                                "Recommend",
+                                id={'type': 'book-recommend-btn',
+                                    'book_id': book_id},
+                                className="recommend-btn"
+                            ),
                             html.Div([
                                 html.Div(
                                     id={'type': 'book-favorite-feedback',
@@ -163,6 +172,11 @@ def layout(book_id=None, **kwargs):
                                 ),
                                 html.Div(
                                     id={'type': 'book-bookshelf-feedback',
+                                        'book_id': book_id},
+                                    className="feedback-text"
+                                ),
+                                html.Div(
+                                    id={'type': 'book-recommend-feedback',
                                         'book_id': book_id},
                                     className="feedback-text"
                                 )
@@ -184,6 +198,10 @@ def layout(book_id=None, **kwargs):
                           'book_id': book_id}, data=None),
                 dcc.Store(id={'type': 'modal-mode',
                           'book_id': book_id}, data='add'),
+
+                # Store for recommendation modal visibility
+                dcc.Store(id={'type': 'recommend-modal-visible',
+                          'book_id': book_id}, data=False),
 
                 # Bookshelf overlay modal
                 html.Div([
@@ -283,6 +301,61 @@ def layout(book_id=None, **kwargs):
                         ], className='secondary-bg modal-content')
                     ], className="review-removal-modal")
                 ], id={'type': 'review-removal-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Recommendation modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3("Recommend Book",
+                                    className="modal-header"),
+                            html.Button("×", id={'type': 'close-recommend-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+
+                            # Friend selection
+                            html.Div([
+                                html.H4("Select friends to recommend to:",
+                                        className="modal-subheader"),
+                                html.Div(
+                                    id={'type': 'friends-list-container',
+                                        'book_id': book_id},
+                                    children=[
+                                        dcc.Checklist(
+                                            id={'type': 'friends-checklist', 'book_id': book_id},
+                                            options=[],
+                                            value=[],
+                                            labelStyle={'display': 'flex', 'align-items': 'center', 'margin-bottom': '8px'}
+                                        )
+                                    ]
+                                )
+                            ]),
+
+                            # Reason input
+                            html.Div([
+                                html.H4("Reason for recommendation (optional):",
+                                        className="modal-subheader"),
+                                dcc.Textarea(
+                                    id={'type': 'recommend-reason',
+                                        'book_id': book_id},
+                                    placeholder="Tell your friends why you recommend this book...",
+                                    className="recommend-reason-textarea",
+                                    style={'width': '100%', 'height': '80px',
+                                           'resize': 'vertical', 'margin-bottom': '15px'}
+                                )
+                            ], id={'type': 'recommend-reason-section', 'book_id': book_id}),
+
+                            # Action buttons
+                            html.Div([
+                                html.Button("Send Recommendations",
+                                            id={'type': 'send-recommendations',
+                                                'book_id': book_id},
+                                            className="send-recommend-btn")
+                            ], id={'type': 'recommend-buttons-section', 'book_id': book_id}, className="modal-buttons-right"),
+
+                            html.Div(id={'type': 'recommend-modal-feedback', 'book_id': book_id},
+                                     className="modal-feedback")
+                        ], className='secondary-bg modal-content')
+                    ], id={'type': 'recommend-modal-overlay', 'book_id': book_id}, className="modal-overlay")
+                ], id={'type': 'recommend-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Other editions/versions section
                 html.Div(id='other-editions-section', children=[
@@ -979,3 +1052,122 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             dash.no_update,
             dash.no_update
         )
+
+
+# Recommendation modal callbacks
+@callback(
+    [Output({'type': 'recommend-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'recommend-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'book-recommend-btn', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+     Input({'type': 'close-recommend-modal', 'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'recommend-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    prevent_initial_call=True
+)
+def toggle_recommend_modal(open_clicks, close_clicks, is_visible):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, is_visible
+
+    triggered_prop = ctx.triggered[0]['prop_id']
+    
+    # Check if it's a close action
+    if 'close-recommend-modal' in triggered_prop:
+        return {'display': 'none'}, False
+    elif 'book-recommend-btn' in triggered_prop:
+        return {'display': 'block'}, True
+    else:
+        return dash.no_update, is_visible
+
+
+@callback(
+    [Output({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'options'),
+     Output({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'value'),
+     Output({'type': 'recommend-reason-section', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'recommend-buttons-section', 'book_id': dash.dependencies.MATCH}, 'style')],
+    [Input({'type': 'recommend-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [State('user-session', 'data'),
+     State('book-navigation-store', 'data')],
+    prevent_initial_call=True
+)
+def populate_friends_list(is_visible, user_session, book_data):
+    if not is_visible or not user_session or not user_session.get('logged_in'):
+        return [], [], {'display': 'none'}, {'display': 'none'}
+
+    user_id = user_session['user_id']
+    friends = get_friends_list(user_id)
+    book_id = book_data.get('book_id')
+
+    if not friends:
+        return [], [], {'display': 'none'}, {'display': 'none'}
+
+    # Create options for checklist
+    options = []
+    for friend in friends:
+        # Check if friend has already completed this book
+        has_completed = False
+        if book_id:
+            success, message, shelf_type = get_book_shelf_status(friend['friend_id'], book_id)
+            has_completed = success and shelf_type == 'completed'
+
+        # Create label with completion status
+        username_display = friend['username']
+        if has_completed:
+            username_display += ' (completed)'
+
+        options.append({
+            'label': [
+                html.Img(
+                    src=friend.get('profile_image_url') or '/assets/svg/default-profile.svg',
+                    style={'width': '30px', 'height': '30px', 'border-radius': '50%',
+                           'margin-right': '10px', 'vertical-align': 'middle'}
+                ),
+                html.Span(username_display, style={'vertical-align': 'middle'})
+            ],
+            'value': str(friend['friend_id']),
+            'disabled': has_completed  # Disable if already completed
+        })
+
+    return options, [], {'display': 'block'}, {'display': 'block'}
+
+
+@callback(
+    [Output({'type': 'recommend-modal', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'recommend-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'book-recommend-feedback', 'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'recommend-reason', 'book_id': dash.dependencies.MATCH}, 'value')],
+    [Input({'type': 'send-recommendations', 'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'value'),
+     State({'type': 'recommend-reason', 'book_id': dash.dependencies.MATCH}, 'value'),
+     State('user-session', 'data'),
+     State('book-navigation-store', 'data')],
+    prevent_initial_call=True
+)
+def send_recommendations(send_clicks, selected_friend_ids, reason, user_session, book_data):
+    if not send_clicks or not user_session or not user_session.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Get selected friends
+    selected_friends = [int(fid) for fid in selected_friend_ids] if selected_friend_ids else []
+
+    if not selected_friends:
+        return dash.no_update, dash.no_update, html.Div("Please select at least one friend.", style={'color': 'red'}), dash.no_update
+
+    book_id = book_data['book_id']
+    sender_id = user_session['user_id']
+    reason = reason.strip() if reason else ""
+
+    # Send recommendations to selected friends
+    success_count = 0
+    for friend_id in selected_friends:
+        result = create_book_recommendation(sender_id, friend_id, book_id, reason)
+        if result['success']:
+            success_count += 1
+
+    if success_count == len(selected_friends):
+        message = f"Book recommendation sent to {success_count} friend{'s' if success_count != 1 else ''}!"
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), ""
+    elif success_count > 0:
+        message = f"Book recommendation sent to {success_count} out of {len(selected_friends)} friends."
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), ""
+    else:
+        return dash.no_update, dash.no_update, html.Div("Failed to send recommendations. Please try again.", style={'color': 'red'}), dash.no_update

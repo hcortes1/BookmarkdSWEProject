@@ -33,7 +33,7 @@ layout = html.Div([
                 }),
             ], style={'list-style': 'none', 'padding': '0', 'margin': '0'})
         ], style={
-            'width': '180px', 'background-color': '#f8f9fa', 'padding': '20px',
+            'width': '180px', 'background-color': '#f0f0f0', 'padding': '20px',
             'border-radius': '8px', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
             'margin-right': '40px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
         }),
@@ -128,7 +128,8 @@ layout = html.Div([
                                 type='text',
                                 placeholder='Enter new username',
                                 className='form-input',
-                                style={'width': '100%', 'margin-bottom': '10px'}
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
                             ),
                             html.Button(
                                 "Update Username",
@@ -148,7 +149,8 @@ layout = html.Div([
                                 type='email',
                                 placeholder='Enter new email',
                                 className='form-input',
-                                style={'width': '100%', 'margin-bottom': '10px'}
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
                             ),
                             html.Button(
                                 "Update Email",
@@ -169,7 +171,8 @@ layout = html.Div([
                                 type='password',
                                 placeholder='Current password',
                                 className='form-input',
-                                style={'width': '100%', 'margin-bottom': '25px'}
+                                style={'width': '100%',
+                                       'margin-bottom': '25px'}
                             ),
                             dcc.Input(
                                 id='new-password-input',
@@ -183,7 +186,8 @@ layout = html.Div([
                                 type='password',
                                 placeholder='Confirm new password',
                                 className='form-input',
-                                style={'width': '100%', 'margin-bottom': '10px'}
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
                             ),
                             html.Button(
                                 "Update Password",

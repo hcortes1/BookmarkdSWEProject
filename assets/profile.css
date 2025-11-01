@@ -303,3 +303,44 @@
 .btn-remove-friend:hover {
     background: #c82333;
 }
+
+/* Tab styles */
+.profile-tab {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    padding: 12px 24px !important;
+}
+
+.tab-section-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 15px !important;
+}
+
+.tab-empty-message {
+    font-size: 1.1rem !important;
+}
+
+/* General profile text improvements */
+.profile-username {
+    font-size: 2.2rem !important;
+}
+
+.user-bio {
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+}
+
+.user-email,
+.user-join-date {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+.friends-title-left {
+    font-size: 1.4rem !important;
+}
+
+.favorites-card-title {
+    font-size: 1.5rem !important;
+}
