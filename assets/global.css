@@ -127,6 +127,11 @@ body, html {
   margin-bottom: 30px;
 }
 
+/* Mobile overlay - hidden by default on desktop */
+.mobile-overlay {
+  display: none !important;
+}
+
 /* Add mobile overlay to body for mobile devices */
 @media (max-width: 768px) {
   /* Hide main content for mobile devices */
