@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State, callback
 import backend.profile as profile_backend
 import backend.friends as friends_backend
+import backend.rewards as rewards_backend
 
 # Register only the view path - all profiles use the same structure
 dash.register_page(__name__, path_template='/profile/view/<username>')
@@ -415,6 +416,34 @@ def update_profile_data(session_data, viewed_username, active_tab):
                        style={'margin-top': '0px', 'margin-bottom': '10px', 'padding-top': '0px'})
             ]
 
+            # Add level badge above bio
+            profile_user_id = user_data.get('user_id')
+            rewards = rewards_backend.get_user_rewards(profile_user_id)
+            level = rewards.get('level', 1)
+            
+            # Only show XP and points tooltip for own profile
+            level_title = ""
+            level_style = {'cursor': 'default'}
+            if is_own_profile:
+                xp = rewards.get('xp', 0)
+                points = rewards.get('points', 0)
+                _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(xp)
+                level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
+                level_style = {'cursor': 'help'}
+            
+            user_info_elements.append(
+                html.Div(
+                    html.Span(
+                        f"Lvl {level}", 
+                        className='level-badge',
+                        title=level_title if level_title else None,
+                        style=level_style
+                    ), 
+                    className='profile-level-badge',
+                    style={'margin-bottom': '10px'}
+                )
+            )
+
             # Add bio if it exists
             bio = user_data.get('bio')
             if bio and bio.strip():
@@ -427,7 +456,6 @@ def update_profile_data(session_data, viewed_username, active_tab):
             from backend.bookshelf import get_yearly_reading_stats
             from datetime import datetime
             current_year = datetime.now().year
-            profile_user_id = user_data.get('user_id')
 
             stats_success, stats_message, yearly_stats = get_yearly_reading_stats(
                 profile_user_id, current_year)

@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, State, no_update
+from dash import html, dcc, Input, Output, State, no_update, callback
 import backend.notifications as notifications_backend
 import backend.bookshelf as bookshelf_backend
 import backend.reviews as reviews_backend
@@ -146,7 +146,7 @@ def layout():
 
 
 # Callback to refresh notifications data
-@dash.callback(
+@callback(
     Output('notifications-data', 'data'),
     [Input('notifications-refresh-interval', 'n_intervals'),
      Input('user-session', 'data')]
@@ -170,7 +170,7 @@ def refresh_notifications(n_intervals, user_session):
 
 
 # Callback to update session with fresh notifications
-@dash.callback(
+@callback(
     Output('user-session', 'data', allow_duplicate=True),
     [Input('notifications-data', 'data')],
     [State('user-session', 'data')],
@@ -186,7 +186,7 @@ def update_session_notifications(notifications_data, user_session):
 
 
 # Callback to update the notifications display
-@dash.callback(
+@callback(
     [Output('notifications-list', 'children'),
      Output('notification-count-display', 'children')],
     [Input('notifications-data', 'data'),
@@ -408,7 +408,7 @@ def update_notifications_display(notifications_data, user_session):
 
 
 # Callback to handle notification responses
-@dash.callback(
+@callback(
     [Output('notifications-refresh-interval', 'n_intervals'),
      Output('bookshelf-modal-visible', 'data'),
      Output('bookshelf-book-data', 'data')],
@@ -497,7 +497,7 @@ def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, 
 
 
 # Callback to handle bookshelf modal actions
-@dash.callback(
+@callback(
     [Output('bookshelf-modal-visible', 'data', allow_duplicate=True),
      Output('bookshelf-book-data', 'data', allow_duplicate=True),
      Output('bookshelf-feedback', 'children'),
@@ -668,7 +668,7 @@ def handle_bookshelf_modal(save_clicks, close_clicks, want_read_clicks, reading_
 
 
 # Callback to update status button styles based on selected status
-@dash.callback(
+@callback(
     [Output('select-status-want-to-read', 'className'),
      Output('select-status-reading', 'className'),
      Output('select-status-finished', 'className')],
@@ -692,7 +692,7 @@ def update_status_button_styles(selected_status):
 
 
 # Callback to update modal visibility based on store
-@dash.callback(
+@callback(
     Output('bookshelf-modal', 'style'),
     Input('bookshelf-modal-visible', 'data'),
     prevent_initial_call=False
@@ -706,7 +706,7 @@ def update_bookshelf_modal_visibility(is_visible):
 
 
 # Callback to show/hide review form based on status selection
-@dash.callback(
+@callback(
     [Output('review-form', 'style', allow_duplicate=True),
      Output('status-selection', 'style', allow_duplicate=True)],
     [Input('select-status-want-to-read', 'n_clicks'),

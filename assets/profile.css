@@ -344,3 +344,19 @@
 .favorites-card-title {
     font-size: 1.5rem !important;
 }
+
+/* Profile level badge */
+.profile-level-badge {
+    display: flex;
+    justify-content: center;
+}
+
+.profile-level-badge .level-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}

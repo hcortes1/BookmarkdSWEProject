@@ -503,3 +503,20 @@
 .notification-status-declined {
     border-left: 4px solid #dc3545;
 }
+
+/* User level badge in header */
+.user-level {
+    margin-right: 8px;
+}
+
+.level-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    cursor: help;
+}
