@@ -86,126 +86,79 @@ def extract_headers_from_html(html_content):
 def create_navigation_panel(headers):
     """Create the navigation panel with headers"""
     if not headers:
-        return html.Div("No headers found", className="nav-panel")
+        return ""
 
     nav_items = []
     for i, header in enumerate(headers):
         indent_class = f"nav-indent-{header['level']}"
         nav_items.append(
-            html.A(
-                header['text'][:50] + ('...' if len(header['text']) > 50 else ''),
-                href=f"#{header['id']}",
-                className=f"nav-link {indent_class}",
-                id=f"nav-{i}",
-                style={
-                    'display': 'block',
-                    'padding': '5px 10px',
-                    'textDecoration': 'none',
-                    'color': '#333',
-                    'borderLeft': f"{header['level'] * 2}px solid #ddd",
-                    'marginLeft': f"{(header['level'] - 1) * 10}px",
-                    'cursor': 'pointer'
-                }
+            '<a href="#{id}" class="nav-link {indent_class}" style="display:block;padding:5px 10px;text-decoration:none;color:#333;border-left:{border_left}px solid #ddd;margin-left:{margin_left}px;cursor:pointer;">{text}</a>'.format(
+                id=header["id"],
+                indent_class=indent_class,
+                border_left=header["level"]*2,
+                margin_left=(header["level"]-1)*10,
+                text=header["text"][:50] + ("..." if len(header["text"]) > 50 else "")
             )
         )
 
-    # Add JavaScript to handle navigation clicks
-    nav_script = '''
+    # Fixed sidebar TOC, always visible on the left
+    nav_html = '''
+    <style>
+    .nav-panel-fixed {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid #ddd;
+        background: #f9f9f9;
+        z-index: 1000;
+    }}
+    .toc-book-content-fixed {{margin-left: 270px; padding: 20px 20px 20px 0; min-width: 0; box-sizing: border-box;}}
+    /* Fallback: if book content is not moved, offset body */
+    body:not(:has(.toc-book-content-fixed > *)) {{margin-left: 270px !important;}}
+    </style>
+    <div class="nav-panel-fixed">
+      <h3 style="padding:10px;margin:0;border-bottom:1px solid #ddd;">Table of Contents</h3>
+      <div class="nav-links">{nav_items}</div>
+    </div>
+    <div class="toc-book-content-fixed" id="toc-book-content-fixed">
+      <!-- BOOK CONTENT WILL BE MOVED HERE BY JS -->
+    </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("Navigation script loaded");
-
-        // Function to send message to iframe
-        function sendMessageToIframe(targetId) {
-            var iframe = document.querySelector('.book-content-iframe');
-            if (iframe && iframe.contentWindow) {
-                console.log("Sending postMessage to iframe. Target ID:", targetId);
-                iframe.contentWindow.postMessage({
-                    type: 'scrollToElement',
-                    elementId: targetId
-                }, '*');
-                return true;
-            } else {
-                console.error("Iframe not found or contentWindow unavailable");
-                return false;
-            }
-        }
-
-        // Handle navigation link clicks
-        document.querySelectorAll('.nav-link').forEach(function(link) {
-            console.log("Found nav link:", link.getAttribute('href'));
-            link.addEventListener('click', function(e) {
-                console.log("Nav link clicked, preventing default");
+    document.addEventListener('DOMContentLoaded', function() {{
+        // Move all book content except the nav-panel into the .toc-book-content-fixed
+        var wrapper = document.getElementById('toc-book-content-fixed');
+        var navPanel = document.querySelector('.nav-panel-fixed');
+        if (wrapper && navPanel) {{
+            // Move all siblings after navPanel into wrapper
+            var next = navPanel.nextSibling;
+            var nodesToMove = [];
+            while (next) {{
+                // Only move elements that are not the wrapper itself
+                if (next !== wrapper) nodesToMove.push(next);
+                next = next.nextSibling;
+            }}
+            nodesToMove.forEach(function(node) {{
+                wrapper.appendChild(node);
+            }});
+        }}
+        document.querySelectorAll('.nav-link').forEach(function(link) {{
+            link.addEventListener('click', function(e) {{
                 e.preventDefault();
                 var targetId = this.getAttribute('href').substring(1);
-
-                console.log("Navigation link clicked. Target ID:", targetId);
-
-                // Function to attempt scrolling
-                function attemptScroll() {
-                    var iframe = document.querySelector('.book-content-iframe');
-                    if (iframe && iframe.contentWindow && iframe.contentDocument) {
-                        try {
-                            console.log("Trying direct access to iframe document");
-                            var targetElement = iframe.contentDocument.getElementById(targetId);
-                            if (targetElement) {
-                                console.log("Found target element in iframe, scrolling");
-                                targetElement.scrollIntoView({ behavior: 'smooth' });
-                                return true;
-                            } else {
-                                console.error("Target element not found in iframe document");
-                                // Try postMessage as fallback
-                                console.log("Trying postMessage as fallback");
-                                iframe.contentWindow.postMessage({
-                                    type: 'scrollToElement',
-                                    elementId: targetId
-                                }, '*');
-                                return true;
-                            }
-                        } catch (e) {
-                            console.error("Error accessing iframe document:", e);
-                            return false;
-                        }
-                    } else {
-                        console.error("Iframe not ready for direct access");
-                        return false;
-                    }
-                }
-
-                // Try immediately
-                if (!attemptScroll()) {
-                    // If not ready, wait and try again
-                    setTimeout(attemptScroll, 100);
-                    setTimeout(attemptScroll, 500);
-                    setTimeout(attemptScroll, 1000);
-                }
-
+                var targetElement = document.getElementById(targetId);
+                if (targetElement) {{
+                    targetElement.scrollIntoView({{ behavior: 'smooth' }});
+                }}
                 return false;
-            });
-        });
-
-        // Also listen for iframe load events
-        var iframe = document.querySelector('.book-content-iframe');
-        if (iframe) {
-            iframe.addEventListener('load', function() {
-                console.log("Iframe loaded, navigation should now work");
-            });
-        }
-    });
+            }});
+        }});
+    }});
     </script>
-    '''
-
-    return html.Div([
-        html.H3("Table of Contents", style={'padding': '10px', 'margin': '0', 'borderBottom': '1px solid #ddd'}),
-        html.Div(nav_items, className="nav-links"),
-        html.Script(nav_script)
-    ], className="nav-panel", style={
-        'width': '250px',
-        'height': '70vh',
-        'overflowY': 'auto',
-        'borderRight': '1px solid #ddd',
-        'backgroundColor': '#f9f9f9'
-    })
+    '''.format(nav_items=''.join(nav_items))
+    return nav_html
 
 
 def layout(book_id=None, **kwargs):
@@ -292,11 +245,16 @@ def layout(book_id=None, **kwargs):
         except Exception as e:
             return html.Div(f"Error loading book content: {str(e)}", className="error-message")
 
-        # Create navigation panel
-        nav_panel = create_navigation_panel(headers)
+        # Create navigation panel HTML
+        nav_panel_html = create_navigation_panel(headers)
+
+        # Inject the navigation panel at the top of the book HTML content
+        if '<body' in html_content:
+            html_content = re.sub(r'(<body[^>]*>)', r'\1' + nav_panel_html, html_content, count=1)
+        else:
+            html_content = nav_panel_html + html_content
 
         return html.Div([
-            # Header with back button
             html.Div([
                 html.Div([
                     dcc.Link("← Back to Book Details",
@@ -308,23 +266,13 @@ def layout(book_id=None, **kwargs):
                         f"by {book_data.get('author_name', 'Unknown Author')}", className="reading-author")
                 ], className="reading-header")
             ], className="reading-header-container"),
-
-            # Main content area with navigation and book
-            html.Div([
-                # Navigation panel (left side)
-                nav_panel,
-
-                # Book content (right side)
-                html.Iframe(
-                    srcDoc=html_content,
-                    style={'flex': '1', 'height': '70vh', 'border': 'none'},
-                    className="book-content-iframe"
-                )
-            ], style={
-                'display': 'flex',
-                'width': '100%',
-                'marginBottom': '0'
-            })
+            html.Iframe(
+                srcDoc=html_content,
+                style={'width': '100%', 'height': '70vh', 'border': 'none'},
+                className="book-content-iframe",
+                sandbox="allow-scripts allow-same-origin",
+                key=str(hash(html_content))
+            )
         ], className="reading-page")
 
     except Exception as e:
