@@ -66,7 +66,8 @@ def layout(book_id=None, **kwargs):
 
         # Check if HTML is available from Gutenberg
         if not book_data.get('html_path'):
-            search_and_download_gutenberg_html(book_data['title'], book_data['author_name'], book_id)
+            search_and_download_gutenberg_html(
+                book_data['title'], book_data['author_name'], book_id)
             # Refresh book data after potential update
             book_data = get_book_details(book_id)
 
@@ -178,6 +179,12 @@ def layout(book_id=None, **kwargs):
                                     'book_id': book_id},
                                 className="bookshelf-btn"
                             ),
+                            # Read button (only show if HTML is available)
+                            dcc.Link(
+                                "📖 Read",
+                                href=f"/read/{book_id}",
+                                className="read-btn"
+                            ) if book_data.get('html_path') else html.Div(),
                             # Recommend button
                             html.Button(
                                 "Recommend",
