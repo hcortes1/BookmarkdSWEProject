@@ -85,7 +85,7 @@ def login_user(username, password):
 
     # check login credentials and get all user data
     login_query = """
-        SELECT user_id, username, email, profile_image_url, created_at, favorite_genres, first_login
+        SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres
         FROM users 
         WHERE username = %s AND password = %s
     """
