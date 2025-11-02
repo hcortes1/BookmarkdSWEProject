@@ -9,6 +9,7 @@ from backend.friends import get_friends_list
 from backend.recommendations import create_book_recommendation
 from backend.rewards import award_completion_rating, award_review, award_recommendation
 from backend.gutenberg import search_and_download_gutenberg_html
+from backend.rentals import check_book_rental_status, rent_book, get_rental_info_for_confirmation
 from urllib.parse import unquote, parse_qs
 
 dash.register_page(__name__, path_template="/book/<book_id>")
@@ -71,12 +72,19 @@ def layout(book_id=None, **kwargs):
             # Refresh book data after potential update
             book_data = get_book_details(book_id)
 
+        # Check rental status (will be updated by callback)
+        rental_status = None  # Will be set by callback
+
         return html.Div([
             # Store for favorite status feedback
             dcc.Store(id={'type': 'book-favorite-store', 'book_id': book_id}),
             dcc.Store(id='book-navigation-store', data={'book_id': book_id}),
             dcc.Store(id={'type': 'error-modal-visible',
                       'book_id': book_id}, data=False),
+            dcc.Store(id={'type': 'rental-modal-visible',
+                      'book_id': book_id}, data=False),
+            dcc.Store(id={'type': 'rental-status-store',
+                      'book_id': book_id}, data=None),
 
             html.Div([
                 html.Div([
@@ -177,20 +185,44 @@ def layout(book_id=None, **kwargs):
                             html.Button(
                                 id={'type': 'book-bookshelf-btn',
                                     'book_id': book_id},
-                                className="bookshelf-btn"
+                                className="bookshelf-btn",
+                                style={
+                                    'background': '#1976d2',
+                                    'color': 'white',
+                                    'fontSize': '1rem',
+                                    'padding': '10px 24px',
+                                    'borderRadius': '6px',
+                                    'border': 'none',
+                                    'fontWeight': 'bold',
+                                    'marginRight': '12px',
+                                    'cursor': 'pointer',
+                                    'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+                                }
                             ),
-                            # Read button (only show if HTML is available)
-                            dcc.Link(
-                                "📖 Read",
-                                href=f"/read/{book_id}",
-                                className="read-btn"
-                            ) if book_data.get('html_path') else html.Div(),
-                            # Recommend button
                             html.Button(
                                 "Recommend",
                                 id={'type': 'book-recommend-btn',
                                     'book_id': book_id},
-                                className="recommend-btn"
+                                className="recommend-btn blue-btn",
+                                style={
+                                    'background': '#1976d2',
+                                    'color': 'white',
+                                    'fontSize': '1rem',
+                                    'padding': '10px 24px',
+                                    'borderRadius': '6px',
+                                    'border': 'none',
+                                    'fontWeight': 'bold',
+                                    'marginRight': '12px',
+                                    'cursor': 'pointer',
+                                    'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+                                }
+                            ),
+                            # Read/Rent button - will be updated by callback
+                            html.Div(
+                                id={'type': 'read-rent-button-container',
+                                    'book_id': book_id},
+                                children=[],  # Will be populated by callback
+                                style={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px', 'verticalAlign': 'middle'}
                             ),
                             html.Div([
                                 html.Div(
@@ -209,7 +241,7 @@ def layout(book_id=None, **kwargs):
                                     className="feedback-text"
                                 )
                             ])
-                        ], className="action-buttons-section")
+                        ], className="action-buttons-section", style={'display': 'flex', 'alignItems': 'center'})
 
                     ], className="book-details", style={'position': 'relative'})
 
@@ -386,6 +418,32 @@ def layout(book_id=None, **kwargs):
                         ], className='secondary-bg modal-content')
                     ], id={'type': 'recommend-modal-overlay', 'book_id': book_id}, className="modal-overlay")
                 ], id={'type': 'recommend-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Rental confirmation modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3("Rent Book", className="modal-header"),
+                            html.Button("×", id={'type': 'close-rental-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+                            html.Div([
+                                html.H4("Rental Confirmation",
+                                        className="modal-subheader"),
+                                html.Div(id={'type': 'rental-confirmation-content', 'book_id': book_id},
+                                         className="rental-confirmation-content"),
+                                html.Div([
+                                    html.Button("Confirm Rental",
+                                                id={'type': 'confirm-rental',
+                                                    'book_id': book_id},
+                                                className="confirm-btn",
+                                                style={'background': '#1976d2'})
+                                ], className="modal-buttons-right")
+                            ]),
+                            html.Div(id={'type': 'rental-modal-feedback', 'book_id': book_id},
+                                     className="modal-feedback")
+                        ], className='secondary-bg modal-content', style={'width': '500px'})
+                    ], className="rental-modal-overlay")
+                ], id={'type': 'rental-modal', 'book_id': book_id}, style={'display': 'none'}),
 
                 # Error modal
                 html.Div([
@@ -1274,3 +1332,211 @@ def close_error_modal(n_clicks):
     if n_clicks:
         return False, ""
     return dash.no_update, dash.no_update
+
+
+# Callback to set initial rental status and Read/Rent button
+@callback(
+    [Output({'type': 'read-rent-button-container', 'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'id'),
+     Input('user-session', 'data')],
+    [State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=False
+)
+def set_initial_rental_status(store_id, session_data, book_store_id):
+    """Set the initial rental status and show appropriate Read/Rent button"""
+    book_id = store_id['book_id']
+
+    if not session_data or not session_data.get('logged_in'):
+        # Not logged in - show disabled rent button
+        return html.Button(
+            "Rent Book",
+            className="rent-btn blue-btn",
+            disabled=True,
+            style={
+                'background': '#ccc',
+                'color': '#666',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'cursor': 'not-allowed'
+            }
+        ), None
+
+    user_id = session_data.get('user_id')
+    rental_status = check_book_rental_status(user_id, book_id)
+
+    if rental_status:
+        # User has active rental - show Read button
+        return dcc.Link(
+            "Read",
+            href=f"/read/{book_id}",
+            className="read-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'textDecoration': 'none',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        ), rental_status
+    else:
+        # No active rental - show Rent button
+        return html.Button(
+            "Rent Book",
+            id={'type': 'rent-book-btn', 'book_id': book_id},
+            className="rent-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        ), None
+
+
+# Callback to open rental modal
+@callback(
+    [Output({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
+     Output({'type': 'rental-confirmation-content', 'book_id': dash.dependencies.MATCH}, 'children')],
+    [Input({'type': 'rent-book-btn', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+     Input({'type': 'close-rental-modal',
+           'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
+     State('user-session', 'data'),
+     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=False
+)
+def toggle_rental_modal(open_clicks, close_clicks, is_visible, session_data, store_id):
+    """Toggle rental modal visibility and populate confirmation content"""
+    if open_clicks is None and close_clicks is None:
+        return dash.no_update, dash.no_update
+
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    triggered_prop = ctx.triggered[0]['prop_id']
+    book_id = store_id['book_id']
+
+    # Check if it's a close action
+    if 'close-rental-modal' in triggered_prop:
+        return False, dash.no_update
+    elif 'rent-book-btn' in triggered_prop and session_data and session_data.get('logged_in'):
+        # Opening modal - get rental info
+        user_id = session_data['user_id']
+        rental_info = get_rental_info_for_confirmation(user_id, book_id)
+
+        if not rental_info['can_afford']:
+            content = html.Div([
+                html.P("You don't have enough points to rent this book.",
+                       style={'color': 'red'}),
+                html.P(f"Required: {rental_info['cost']} points"),
+                html.P(f"Your balance: {rental_info['current_points']} points")
+            ], style={'marginBottom': '20px'})
+        else:
+            content = html.Div([
+                html.P(f"Cost: {rental_info['cost']} points"),
+                html.P(
+                    f"Rental duration: {rental_info['duration_days']} days"),
+                html.P(
+                    f"Your current balance: {rental_info['current_points']} points"),
+                html.P(f"Balance after rental: {rental_info['points_after']} points",
+                       style={'fontSize': 'smaller', 'fontWeight': 'normal'})
+            ], style={'marginBottom': '20px'})
+
+        return True, content
+
+    return dash.no_update, dash.no_update
+
+
+# Callback to control rental modal visibility
+@callback(
+    Output({'type': 'rental-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+    Input({'type': 'rental-modal-visible',
+          'book_id': dash.dependencies.MATCH}, 'data'),
+    prevent_initial_call=False
+)
+def control_rental_modal_visibility(is_visible):
+    """Control the visibility of the rental modal"""
+    if is_visible:
+        return {
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background': 'rgba(0,0,0,0.5)',
+            'display': 'flex',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'z-index': '1000'
+        }
+    else:
+        return {'display': 'none'}
+
+
+# Callback to handle rental confirmation
+@callback(
+    [Output({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'rental-modal-feedback',
+            'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'read-rent-button-container',
+            'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
+     Output({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
+    Input({'type': 'confirm-rental', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    [State('user-session', 'data'),
+     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=True
+)
+def confirm_rental(n_clicks, session_data, store_id):
+    """Handle rental confirmation and update UI"""
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    book_id = store_id['book_id']
+    user_id = session_data['user_id']
+
+    success, message = rent_book(user_id, book_id)
+
+    if success:
+        # Update to show Read button
+        read_button = dcc.Link(
+            "Read",
+            href=f"/read/{book_id}",
+            className="read-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'textDecoration': 'none',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        )
+        return False, html.Div(message, style={'color': 'green'}), read_button, check_book_rental_status(user_id, book_id)
+    else:
+        return False, html.Div(message, style={'color': 'red'}), dash.no_update, dash.no_update
