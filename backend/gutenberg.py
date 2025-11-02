@@ -4,33 +4,35 @@ from backend.settings import supabase
 from backend.db import get_conn
 from typing import List, Dict, Any
 
+
 def search_gutenberg_books_by_author(author_name: str) -> List[Dict[str, Any]]:
     """
     Search Gutenberg for books by a specific author.
     Returns a list of book data dictionaries compatible with OpenLibrary format.
     """
     books = []
-    
+
     try:
         # Search Gutenberg with author name
         search_query = author_name.replace(' ', '+')
         search_url = f"https://www.gutenberg.org/ebooks/search/?query={search_query}"
-        
+
         response = requests.get(search_url, timeout=15)
         if response.status_code != 200:
             return books
-        
+
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+
         # Find all ebook links
         ebook_links = []
         for link in soup.find_all('a', href=True):
             href = link['href']
             if '/ebooks/' in href:
                 ebook_links.append((link, href))
-        
-        print(f"DEBUG GUTENBERG_search_gutenberg_books_by_author: Found {len(ebook_links)} potential Gutenberg books for {author_name}")
-        
+
+        print(
+            f"DEBUG GUTENBERG_search_gutenberg_books_by_author: Found {len(ebook_links)} potential Gutenberg books for {author_name}")
+
         # Process up to 20 books to get more results
         for link, href in ebook_links[:20]:
             try:
@@ -40,71 +42,73 @@ def search_gutenberg_books_by_author(author_name: str) -> List[Dict[str, Any]]:
                     full_text = parent.get_text().strip()
                 else:
                     full_text = link.get_text().strip()
-                
+
                 # Parse title and author from text
                 # Gutenberg format is typically: "Title\nAuthor"
                 lines = full_text.split('\n')
                 title = lines[0].strip() if lines else link.get_text().strip()
                 author = lines[1].strip() if len(lines) > 1 else ""
-                
+
                 # Check if this author matches - be more flexible
                 author_lower = author.lower()
                 author_name_lower = author_name.lower()
-                
+
                 # Check if author name components match (e.g., "William Shakespeare" should match "Shakespeare, William")
                 author_parts = set(author_lower.replace(',', '').split())
                 search_parts = set(author_name_lower.split())
-                
+
                 # If we have significant overlap in name parts, consider it a match
                 overlap = len(author_parts.intersection(search_parts))
                 name_match = overlap >= 1  # At least one name part matches
-                
+
                 # Also check if the full author name is contained in the search name or vice versa
                 if not name_match:
-                    name_match = (author_name_lower in author_lower or 
-                                author_lower in author_name_lower or
-                                author_name_lower in full_text.lower())
-                
+                    name_match = (author_name_lower in author_lower or
+                                  author_lower in author_name_lower or
+                                  author_name_lower in full_text.lower())
+
                 if not name_match:
                     continue
-                
+
                 # Get book details page
                 book_url = "https://www.gutenberg.org" + href
                 book_response = requests.get(book_url, timeout=10)
                 if book_response.status_code != 200:
                     continue
-                
+
                 book_soup = BeautifulSoup(book_response.text, 'html.parser')
-                
+
                 # Extract metadata from the page
                 book_data = {
                     'title': title,
-                    'author_names': [author_name],  # Use the searched author name
+                    # Use the searched author name
+                    'author_names': [author_name],
                     'author_keys': [],  # Gutenberg doesn't have OL keys
                     'source': 'gutenberg',
                     'key': href  # Use the Gutenberg URL as key
                 }
-                
+
                 # Try to extract additional metadata
                 # Look for publication year, etc.
                 page_text = book_soup.get_text()
-                
+
                 # Look for year patterns
                 import re
                 year_match = re.search(r'\b(18|19|20)\d{2}\b', page_text)
                 if year_match:
                     book_data['first_publish_year'] = int(year_match.group())
-                
+
                 books.append(book_data)
-                
+
             except Exception as e:
                 print(f"Error processing Gutenberg book {href}: {e}")
                 continue
-                
+
     except Exception as e:
         print(f"Error searching Gutenberg for author {author_name}: {e}")
-    
-    print(f"DEBUG GUTENBERG_search_gutenberg_books_by_author: Found {len(books)} Gutenberg books for {author_name}")
+
+    print(
+        f"DEBUG GUTENBERG_search_gutenberg_books_by_author: Found {len(books)} Gutenberg books for {author_name}")
     return books
 
 
@@ -129,7 +133,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
         book_url = None
 
         for search_query in search_queries:
-            print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Trying search query: {search_query}")
+            print(
+                f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Trying search query: {search_query}")
             search_url = f"https://www.gutenberg.org/ebooks/search/?query={search_query}"
 
             response = requests.get(search_url, timeout=15)
@@ -181,7 +186,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
                                     break
 
                         if author_found or not author_name:  # If no author to check, accept
-                            print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Matched book: {full_text}")
+                            print(
+                                f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Matched book: {full_text}")
                             break
 
             if book_url:
@@ -192,7 +198,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
                 f"No matching book found on Gutenberg for {book_title} by {author_name}")
             return None
 
-        print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Accessing book page: {book_url}")
+        print(
+            f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Accessing book page: {book_url}")
 
         # Get the book page
         book_response = requests.get(book_url, timeout=15)
@@ -211,7 +218,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
             href = link['href']
             if '-h.htm' in href or '-h.html' in href:
                 html_link = "https://www.gutenberg.org" + href
-                print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Found plain HTML link: {html_link}")
+                print(
+                    f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Found plain HTML link: {html_link}")
                 break
 
         # If not found, look for "Read now!" link
@@ -222,7 +230,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
                 href = read_now_link['href']
                 if href.startswith('/'):
                     html_link = "https://www.gutenberg.org" + href
-                    print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Found 'Read now!' HTML link: {html_link}")
+                    print(
+                        f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Found 'Read now!' HTML link: {html_link}")
 
         # If still not found, look for the download table
         if not html_link:
@@ -290,15 +299,18 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
                         return None
             else:
                 # Handle UploadResponse object
-                print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Upload response: {upload_response}")
+                print(
+                    f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Upload response: {upload_response}")
                 if 'already exists' in str(upload_response).lower():
-                    print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: File already exists in storage: {file_path}")
+                    print(
+                        f"DEBUG GUTENBERG_search_and_download_gutenberg_html: File already exists in storage: {file_path}")
                 elif 'error' in str(upload_response).lower():
                     print(f"Failed to upload to Supabase: {upload_response}")
                     return None
         except Exception as e:
             if 'already exists' in str(e).lower():
-                print(f"DEBUG GUTENBERG_search_and_download_gutenberg_html: File already exists in storage: {file_path}")
+                print(
+                    f"DEBUG GUTENBERG_search_and_download_gutenberg_html: File already exists in storage: {file_path}")
             else:
                 print(f"Exception during upload: {e}")
                 return None

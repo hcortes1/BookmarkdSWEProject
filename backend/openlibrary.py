@@ -22,32 +22,36 @@ def make_request_with_retry(url: str, timeout: int = 10, max_retries: int = 5, p
     for attempt in range(max_retries):
         try:
             response = requests.get(url, params=params, timeout=timeout)
-            
+
             if response.status_code == 429:
                 # Too Many Requests - wait with exponential backoff
                 wait_time = min(2 ** attempt, 30)  # Cap at 30 seconds
-                logger.warning(f"429 Too Many Requests for {url}, attempt {attempt + 1}, waiting {wait_time}s")
+                logger.warning(
+                    f"429 Too Many Requests for {url}, attempt {attempt + 1}, waiting {wait_time}s")
                 time.sleep(wait_time)
                 continue
             elif response.status_code >= 500:
                 # Server errors - retry with shorter backoff
                 wait_time = min(1 * (attempt + 1), 10)  # Cap at 10 seconds
-                logger.warning(f"Server error {response.status_code} for {url}, attempt {attempt + 1}, waiting {wait_time}s")
+                logger.warning(
+                    f"Server error {response.status_code} for {url}, attempt {attempt + 1}, waiting {wait_time}s")
                 time.sleep(wait_time)
                 continue
             else:
                 response.raise_for_status()
                 return response
-                
+
         except requests.exceptions.RequestException as e:
             if attempt == max_retries - 1:
                 logger.error(f"Final failure for {url}: {e}")
                 raise
             else:
-                wait_time = min(1 * (attempt + 1), 5)  # Cap at 5 seconds for other errors
-                logger.warning(f"Request failed for {url}, attempt {attempt + 1}, waiting {wait_time}s: {e}")
+                # Cap at 5 seconds for other errors
+                wait_time = min(1 * (attempt + 1), 5)
+                logger.warning(
+                    f"Request failed for {url}, attempt {attempt + 1}, waiting {wait_time}s: {e}")
                 time.sleep(wait_time)
-    
+
     return None
 
 
@@ -264,7 +268,8 @@ class OpenLibraryAPI:
         try:
             # book_key comes in format like "/works/OL123W" - use it directly
             url = f"{OpenLibraryAPI.BASE_URL}{book_key}.json"
-            print(f"DEBUG OPENLIBRARY_get_book_details: Requesting book details from URL: {url}")
+            print(
+                f"DEBUG OPENLIBRARY_get_book_details: Requesting book details from URL: {url}")
 
             response = make_request_with_retry(url, timeout=10)
             if not response:
@@ -340,7 +345,8 @@ class OpenLibraryAPI:
                 author_id = author_key
 
             url = f"{OpenLibraryAPI.BASE_URL}/authors/{author_id}.json"
-            print(f"DEBUG OPENLIBRARY_get_author_details: Requesting author details from URL: {url}")
+            print(
+                f"DEBUG OPENLIBRARY_get_author_details: Requesting author details from URL: {url}")
 
             response = requests.get(url, timeout=10)
             response.raise_for_status()
@@ -381,7 +387,8 @@ class OpenLibraryAPI:
 
 def save_author_to_db(author_data: Dict[str, Any]) -> Optional[int]:
     """Save author to database if not already exists"""
-    print(f"DEBUG OPENLIBRARY_save_author_to_db: save_author_to_db called with: {author_data}")
+    print(
+        f"DEBUG OPENLIBRARY_save_author_to_db: save_author_to_db called with: {author_data}")
 
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -618,7 +625,8 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
 
         # Skip very short or empty titles
         if len(title) < 3:
-            print(f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: Skipping book '{title}' - title too short")
+            print(
+                f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: Skipping book '{title}' - title too short")
             return None
 
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -696,15 +704,17 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
 
                 cur.execute(update_sql, (
                     merged_isbn, merged_genre, merged_release_date, merged_description,
-                    merged_cover_url, merged_language, merged_page_count, 
-                    book_data.get('key', '').replace('/works/', ''), book_id_to_update
+                    merged_cover_url, merged_language, merged_page_count,
+                    book_data.get('key', '').replace(
+                        '/works/', ''), book_id_to_update
                 ))
 
                 conn.commit()
                 return book_id_to_update
 
             # If no similar books found, insert new book
-            print(f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: No similar books found, inserting new book")
+            print(
+                f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: No similar books found, inserting new book")
 
             # Prepare data for insertion (same logic as before)
             isbn = None
@@ -762,7 +772,8 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             language = book_data.get('language', 'en')
             page_count = book_data.get('page_count')
 
-            print(f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: Inserting new book with enhanced data")
+            print(
+                f"DEBUG OPENLIBRARY_save_enhanced_book_to_db: Inserting new book with enhanced data")
             insert_sql = """
                 INSERT INTO books (title, isbn, genre, release_date, description, cover_url, author_id,
                                  language, page_count, openlibrary_key)
@@ -773,7 +784,8 @@ def save_enhanced_book_to_db(book_data: Dict[str, Any], author_id: int = None) -
             cur.execute(insert_sql, (
                 book_data['title'], isbn, genre, release_date,
                 book_data.get('description', ''), cover_url, author_id,
-                language, page_count, book_data.get('key', '').replace('/works/', '')
+                language, page_count, book_data.get(
+                    'key', '').replace('/works/', '')
             ))
 
             result = cur.fetchone()
@@ -809,7 +821,8 @@ def save_book_to_db(book_data: Dict[str, Any], author_id: int = None) -> Optiona
                     f"DEBUG OPENLIBRARY_save_book_to_db: Book already exists with ID: {existing['book_id']}")
                 # If this is an API book with additional data, update the existing record
                 if book_data.get('source') == 'openlibrary':
-                    print(f"DEBUG OPENLIBRARY_save_book_to_db: Updating existing book with new API data")
+                    print(
+                        f"DEBUG OPENLIBRARY_save_book_to_db: Updating existing book with new API data")
                     update_sql = """
                         UPDATE books 
                         SET isbn = COALESCE(NULLIF(%s, ''), isbn),
@@ -1269,10 +1282,12 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
     import time
     import re
 
-    print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: get_or_create_author_with_books called with: {author_data}")
+    print(
+        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: get_or_create_author_with_books called with: {author_data}")
 
     if not author_data.get('key') and not author_data.get('openlibrary_key'):
-        print("DEBUG OPENLIBRARY_get_or_create_author_with_books: No key found in author_data")
+        print(
+            "DEBUG OPENLIBRARY_get_or_create_author_with_books: No key found in author_data")
         return None
 
     # Get detailed author information
@@ -1282,7 +1297,8 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
         print("DEBUG OPENLIBRARY_get_or_create_author_with_books: Failed to get detailed author info")
         return None
 
-    print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Got detailed author: {detailed_author}")
+    print(
+        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Got detailed author: {detailed_author}")
 
     # Merge the data
     merged_author_data = {**author_data, **detailed_author}
@@ -1316,11 +1332,13 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
             existing = cur.fetchone()
             if existing:
                 author_id = existing['author_id']
-                print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Found existing author with ID: {author_id}")
+                print(
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Found existing author with ID: {author_id}")
 
                 # Check if we need to update the openlibrary_key
                 if not existing['openlibrary_key'] and merged_author_data.get('key'):
-                    print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Updating author {author_id} with OpenLibrary key")
+                    print(
+                        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Updating author {author_id} with OpenLibrary key")
                     cur.execute("""
                         UPDATE authors SET openlibrary_key = %s WHERE author_id = %s
                     """, (merged_author_data['key'], author_id))
@@ -1328,16 +1346,19 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                 elif existing['openlibrary_key']:
                     # Author has a key - we should fetch their complete works from OpenLibrary
                     # The bulk insert will handle duplicates, so it's safe to fetch again
-                    print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Author has OpenLibrary key, will fetch complete works list")
+                    print(
+                        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Author has OpenLibrary key, will fetch complete works list")
                     # Don't return early - continue to fetch works
                 # If author exists but has no key, continue to fetch works
             else:
                 # Save new author
                 author_id = save_author_to_db(merged_author_data)
                 if not author_id:
-                    print("DEBUG OPENLIBRARY_get_or_create_author_with_books: Failed to save author to database")
+                    print(
+                        "DEBUG OPENLIBRARY_get_or_create_author_with_books: Failed to save author to database")
                     return None
-                print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Saved new author with ID: {author_id}")
+                print(
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Saved new author with ID: {author_id}")
 
     except Exception as e:
         logger.error(f"Error checking/saving author: {e}")
@@ -1345,11 +1366,13 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
 
     # Get the author's works/books from Open Library with retry logic and pagination
     try:
-        author_key = author_data.get('key') or author_data.get('openlibrary_key')
+        author_key = author_data.get(
+            'key') or author_data.get('openlibrary_key')
         if not author_key:
-            print("DEBUG OPENLIBRARY_get_or_create_author_with_books: No author key available for works fetch")
+            print(
+                "DEBUG OPENLIBRARY_get_or_create_author_with_books: No author key available for works fetch")
             return author_id
-            
+
         if author_key.startswith('/authors/'):
             author_id_clean = author_key.replace('/authors/', '')
         else:
@@ -1364,7 +1387,7 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                 WHERE author_id = %s AND openlibrary_key IS NOT NULL AND openlibrary_key != ''
             """, (author_id,))
             existing_work_keys = {row[0] for row in cur.fetchall()}
-            
+
             # Also get existing book titles (normalized) to catch books without keys
             cur.execute("""
                 SELECT DISTINCT REGEXP_REPLACE(LOWER(title), '[^a-zA-Z0-9]', '', 'g') as normalized_title
@@ -1372,11 +1395,13 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                 WHERE author_id = %s
             """, (author_id,))
             existing_titles = {row[0] for row in cur.fetchall()}
-            
-            print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Found {len(existing_work_keys)} existing works with keys and {len(existing_titles)} existing titles for author {author_id}")
+
+            print(
+                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Found {len(existing_work_keys)} existing works with keys and {len(existing_titles)} existing titles for author {author_id}")
 
         works_url = f"{OpenLibraryAPI.BASE_URL}/authors/{author_id_clean}/works.json"
-        print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Requesting author works from URL: {works_url}")
+        print(
+            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Requesting author works from URL: {works_url}")
 
         # Collect works using pagination, but limit to 500 and skip existing ones
         all_works = []
@@ -1404,31 +1429,34 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                         raise
 
             if not works_data or not works_data.get('entries'):
-                print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: No more works found at offset {offset}")
+                print(
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: No more works found at offset {offset}")
                 break
 
             current_works = works_data.get('entries', [])
-            
+
             # Filter out works that already exist
             new_works = []
             for work in current_works:
                 work_key = work.get('key', '')
                 work_title = work.get('title', '')
-                normalized_title = re.sub(r'[^a-zA-Z0-9]', '', work_title.lower()) if work_title else ''
-                
+                normalized_title = re.sub(
+                    r'[^a-zA-Z0-9]', '', work_title.lower()) if work_title else ''
+
                 # Strip /works/ prefix for comparison with stored keys
                 clean_work_key = work_key.replace('/works/', '')
-                
+
                 # Skip if we already have this work by key or by title
                 if (clean_work_key and clean_work_key in existing_work_keys) or (normalized_title and normalized_title in existing_titles):
                     continue
-                    
+
                 new_works.append(work)
                 if work_key:
-                    existing_work_keys.add(clean_work_key)  # Add cleaned key to set
+                    # Add cleaned key to set
+                    existing_work_keys.add(clean_work_key)
                 if normalized_title:
                     existing_titles.add(normalized_title)
-            
+
             all_works.extend(new_works)
             print(
                 f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Fetched {len(current_works)} works, {len(new_works)} new at offset {offset}, total new so far: {len(all_works)}")
@@ -1441,23 +1469,27 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
 
             # Stop if we've reached our limit
             if len(all_works) >= max_works:
-                print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Reached maximum works limit of {max_works}")
+                print(
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Reached maximum works limit of {max_works}")
                 break
 
             offset += limit
             # Small delay between requests to be respectful to the API
             time.sleep(0.5)
 
-        print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Total new works to process: {len(all_works)}")
+        print(
+            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Total new works to process: {len(all_works)}")
 
         if not all_works:
-            print("DEBUG OPENLIBRARY_get_or_create_author_with_books: No new works to process")
+            print(
+                "DEBUG OPENLIBRARY_get_or_create_author_with_books: No new works to process")
             return author_id
 
         # Collect all book data before inserting using concurrent processing
         books_to_insert = []
 
-        print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing {len(all_works)} works concurrently...")
+        print(
+            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing {len(all_works)} works concurrently...")
 
         # Adaptive batch sizing based on total number of works - optimized for API limits
         if len(all_works) <= 100:
@@ -1546,7 +1578,8 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
 
         # Bulk insert books
         if books_to_insert:
-            print(f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Bulk inserting {len(books_to_insert)} books")
+            print(
+                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Bulk inserting {len(books_to_insert)} books")
             bulk_insert_books(books_to_insert, author_id)
 
     except Exception as e:
@@ -1634,14 +1667,16 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
     Search for additional books by an author that might not be in their OpenLibrary works list.
     Uses OpenLibrary search API and Gutenberg search to find missing books.
     """
-    print(f"DEBUG OPENLIBRARY_search_additional_books_by_author: Searching for additional books by {author_name}")
-    
+    print(
+        f"DEBUG OPENLIBRARY_search_additional_books_by_author: Searching for additional books by {author_name}")
+
     found_books = set()  # Track titles to avoid duplicates
-    
+
     # Get existing books by this author to avoid duplicates
     try:
         with get_conn() as conn, conn.cursor() as cur:
-            cur.execute("SELECT LOWER(title) as title, isbn FROM books WHERE author_id = %s", (author_id,))
+            cur.execute(
+                "SELECT LOWER(title) as title, isbn FROM books WHERE author_id = %s", (author_id,))
             existing_books = cur.fetchall()
             existing_titles = {row[0] for row in existing_books}
             existing_isbns = {row[1] for row in existing_books if row[1]}
@@ -1649,7 +1684,7 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
         print(f"Error getting existing books: {e}")
         existing_titles = set()
         existing_isbns = set()
-    
+
     # 1. Search OpenLibrary for books by this author
     try:
         search_query = f"author:\"{author_name}\""
@@ -1659,34 +1694,35 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
             'limit': 20,  # Reduced from 50 to speed up loading
             'fields': 'key,title,author_name,author_key,first_publish_year,cover_i,isbn,subject,publisher'
         }
-        
+
         response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
-        
+
         data = response.json()
         books = data.get('docs', [])
-        
-        print(f"DEBUG OPENLIBRARY_search_additional_books_by_author: Found {len(books)} books in OpenLibrary search for {author_name}")
-        
+
+        print(
+            f"DEBUG OPENLIBRARY_search_additional_books_by_author: Found {len(books)} books in OpenLibrary search for {author_name}")
+
         for book_doc in books:
             title = book_doc.get('title', '').strip()
             if not title:
                 continue
-                
+
             title_lower = title.lower()
             isbn_list = book_doc.get('isbn', [])
-            
+
             # Skip if we already have this book by title or ISBN
             if title_lower in existing_titles:
                 continue
             if any(isbn in existing_isbns for isbn in isbn_list):
                 continue
-                
+
             # Check if this book is by our author
             author_names = book_doc.get('author_name', [])
             if author_name.lower() not in [name.lower() for name in author_names]:
                 continue
-                
+
             # Create book data
             book_data = {
                 'key': book_doc.get('key'),
@@ -1700,50 +1736,53 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
                 'publishers': book_doc.get('publisher', []),
                 'source': 'openlibrary'
             }
-            
+
             # Generate cover URL
             if book_data['cover_id']:
                 book_data['cover_url'] = f"{OpenLibraryAPI.COVERS_URL}/b/id/{book_data['cover_id']}-M.jpg"
-            
+
             # Save the book
             try:
                 book_id_saved = get_or_create_book_from_api(book_data)
                 if book_id_saved:
-                    print(f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added additional book: {title}")
+                    print(
+                        f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added additional book: {title}")
                     existing_titles.add(title_lower)
             except Exception as e:
                 print(f"Error saving additional book {title}: {e}")
-                
+
     except Exception as e:
         print(f"Error searching OpenLibrary for additional books: {e}")
-    
+
     # 2. Search Gutenberg for books by this author
     try:
         from .gutenberg import search_gutenberg_books_by_author
-        
+
         gutenberg_books = search_gutenberg_books_by_author(author_name)
-        
+
         for book_data in gutenberg_books:
             title = book_data.get('title', '').strip()
             if not title:
                 continue
-                
+
             title_lower = title.lower()
-            
+
             # Skip if we already have this book
             if title_lower in existing_titles:
                 continue
-                
+
             # Save the book
             try:
                 book_id_saved = get_or_create_book_from_api(book_data)
                 if book_id_saved:
-                    print(f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added Gutenberg book: {title}")
+                    print(
+                        f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added Gutenberg book: {title}")
                     existing_titles.add(title_lower)
             except Exception as e:
                 print(f"Error saving Gutenberg book {title}: {e}")
-                
+
     except Exception as e:
         print(f"Error searching Gutenberg for additional books: {e}")
-    
-    print(f"DEBUG OPENLIBRARY_search_additional_books_by_author: Finished searching for additional books by {author_name}")
+
+    print(
+        f"DEBUG OPENLIBRARY_search_additional_books_by_author: Finished searching for additional books by {author_name}")

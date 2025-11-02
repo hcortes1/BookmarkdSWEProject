@@ -6,6 +6,9 @@ This script searches OpenLibrary for existing books that don't have openlibrary_
 populated and updates them with the correct keys for future duplicate prevention.
 """
 
+import psycopg2.extras
+from backend.openlibrary import OpenLibraryAPI
+from backend.db import get_conn
 import sys
 import os
 import re
@@ -14,10 +17,6 @@ from typing import List, Dict, Any, Optional
 
 # Add the backend directory to the path so we can import modules
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-
-from backend.db import get_conn
-from backend.openlibrary import OpenLibraryAPI
-import psycopg2.extras
 
 
 def normalize_title(title: str) -> str:
@@ -77,10 +76,12 @@ def backfill_book_keys():
             """)
 
             books_to_update = cur.fetchall()
-            print(f"Found {len(books_to_update)} books that need OpenLibrary keys")
+            print(
+                f"Found {len(books_to_update)} books that need OpenLibrary keys")
 
             if not books_to_update:
-                print("No books need backfilling. All books already have OpenLibrary keys.")
+                print(
+                    "No books need backfilling. All books already have OpenLibrary keys.")
                 return
 
             updated_count = 0
@@ -101,7 +102,8 @@ def backfill_book_keys():
                         search_query = f'"{title}"'
 
                     # Search OpenLibrary
-                    search_results = OpenLibraryAPI.search_books(search_query, limit=5)
+                    search_results = OpenLibraryAPI.search_books(
+                        search_query, limit=5)
 
                     if not search_results:
                         print(f"  No search results found for: {search_query}")
@@ -109,7 +111,8 @@ def backfill_book_keys():
                         continue
 
                     # Find best match
-                    best_key = find_best_match(title, author_name, search_results)
+                    best_key = find_best_match(
+                        title, author_name, search_results)
 
                     if best_key:
                         # Update the book with the OpenLibrary key (strip /works/ prefix)
@@ -124,7 +127,8 @@ def backfill_book_keys():
                         updated_count += 1
                         print(f"  ✓ Updated with key: {clean_key}")
                     else:
-                        print(f"  ✗ No good match found among {len(search_results)} results")
+                        print(
+                            f"  ✗ No good match found among {len(search_results)} results")
                         error_count += 1
 
                 except Exception as e:

@@ -126,7 +126,8 @@ def layout(author_id=None, **kwargs):
 
             # Check if background search is already running for this author
             if author_id in _background_searches_running:
-                print(f"DEBUG AUTHOR_DETAIL: Background search already running for author {author_data['name']} (ID: {author_id})")
+                print(
+                    f"DEBUG AUTHOR_DETAIL: Background search already running for author {author_data['name']} (ID: {author_id})")
             else:
                 _background_searches_running.add(author_id)
 
@@ -135,24 +136,32 @@ def layout(author_id=None, **kwargs):
                         # Start works fetching in its own thread
                         def fetch_works():
                             try:
-                                print(f"DEBUG AUTHOR_DETAIL: Starting works fetch for author {author_data['name']}")
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Starting works fetch for author {author_data['name']}")
                                 get_or_create_author_with_books(author_data)
-                                print(f"DEBUG AUTHOR_DETAIL: Completed works fetch for author {author_data['name']}")
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Completed works fetch for author {author_data['name']}")
                             except Exception as e:
                                 print(f"Error in works fetch thread: {e}")
 
                         # Start additional search in its own thread
                         def additional_search():
                             try:
-                                print(f"DEBUG AUTHOR_DETAIL: Starting additional search for author {author_data['name']}")
-                                search_additional_books_by_author(author_data['name'], author_id)
-                                print(f"DEBUG AUTHOR_DETAIL: Completed additional search for author {author_data['name']}")
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Starting additional search for author {author_data['name']}")
+                                search_additional_books_by_author(
+                                    author_data['name'], author_id)
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Completed additional search for author {author_data['name']}")
                             except Exception as e:
-                                print(f"Error in additional search thread: {e}")
+                                print(
+                                    f"Error in additional search thread: {e}")
 
                         # Start both threads
-                        works_thread = threading.Thread(target=fetch_works, daemon=True, name=f"works-{author_id}")
-                        search_thread = threading.Thread(target=additional_search, daemon=True, name=f"search-{author_id}")
+                        works_thread = threading.Thread(
+                            target=fetch_works, daemon=True, name=f"works-{author_id}")
+                        search_thread = threading.Thread(
+                            target=additional_search, daemon=True, name=f"search-{author_id}")
 
                         works_thread.start()
                         search_thread.start()
@@ -165,8 +174,10 @@ def layout(author_id=None, **kwargs):
                         print(f"Error in background search: {e}")
                     finally:
                         # Remove from running set when done
-                        _background_searches_running.discard(author_id)                # Start background thread
-                search_thread = threading.Thread(target=background_search, daemon=True)
+                        _background_searches_running.discard(
+                            author_id)                # Start background thread
+                search_thread = threading.Thread(
+                    target=background_search, daemon=True)
                 search_thread.start()
 
         except Exception as e:
@@ -451,13 +462,13 @@ def handle_author_favorite_click(n_clicks, session_data):
 def handle_pagination_click(clicks_list, n_intervals, page_data):
     """Handle pagination button clicks and automatic refresh updates"""
     triggered = dash.callback_context.triggered[0] if dash.callback_context.triggered else None
-    
+
     if not triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-    
+
     # Check if this is a refresh interval trigger
     is_refresh = 'author-books-refresh' in triggered['prop_id']
-    
+
     if is_refresh:
         # For refresh, stay on current page but update book count
         if not page_data:
@@ -474,7 +485,7 @@ def handle_pagination_click(clicks_list, n_intervals, page_data):
 
         # Ensure valid page number
         new_page = max(1, int(button_info.get('page', 1)))
-    
+
     # Extract author_id from the triggered component
     triggered_id = triggered['prop_id'].split('.')[0]
     if 'author-books-refresh' in triggered_id:
