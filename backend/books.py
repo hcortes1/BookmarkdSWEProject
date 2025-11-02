@@ -12,7 +12,7 @@ def get_book_details(book_id: int):
                        b.description, b.cover_url, b.author_id,
                        COALESCE(b.language, 'en') as language,
                        b.page_count, b.average_rating, b.rating_count,
-                       a.name as author_name, a.bio as author_bio
+                       a.name as author_name, a.bio as author_bio, b.html_path
                 FROM books b
                 LEFT JOIN authors a ON b.author_id = a.author_id
                 WHERE b.book_id = %s
@@ -35,7 +35,7 @@ def get_books_with_same_title(book_id: int, title: str):
                        b.description, b.cover_url, b.author_id,
                        COALESCE(b.language, 'en') as language,
                        b.page_count,
-                       a.name as author_name
+                       a.name as author_name, b.html_path
                 FROM books b
                 LEFT JOIN authors a ON b.author_id = a.author_id
                 WHERE LOWER(b.title) = LOWER(%s) AND b.book_id != %s

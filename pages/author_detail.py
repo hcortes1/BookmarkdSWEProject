@@ -9,6 +9,10 @@ from urllib.parse import unquote, parse_qs
 from typing import Dict, Any
 import time
 
+# Global set to track authors currently having background search running
+# This prevents multiple concurrent searches for the same author
+_background_searches_running = set()
+
 dash.register_page(__name__, path_template="/author/<author_id>")
 
 
@@ -115,12 +119,85 @@ def layout(author_id=None, **kwargs):
             print(f"Error getting author books: {e}")
             books = []
 
+        # Search for additional books by this author in the background
+        try:
+            from backend.openlibrary import search_additional_books_by_author, get_or_create_author_with_books
+            import threading
+
+            # Check if background search is already running for this author
+            if author_id in _background_searches_running:
+                print(
+                    f"DEBUG AUTHOR_DETAIL: Background search already running for author {author_data['name']} (ID: {author_id})")
+            else:
+                _background_searches_running.add(author_id)
+
+                def background_search():
+                    try:
+                        # Start works fetching in its own thread
+                        def fetch_works():
+                            try:
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Starting works fetch for author {author_data['name']}")
+                                get_or_create_author_with_books(author_data)
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Completed works fetch for author {author_data['name']}")
+                            except Exception as e:
+                                print(f"Error in works fetch thread: {e}")
+
+                        # Start additional search in its own thread
+                        def additional_search():
+                            try:
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Starting additional search for author {author_data['name']}")
+                                search_additional_books_by_author(
+                                    author_data['name'], author_id)
+                                print(
+                                    f"DEBUG AUTHOR_DETAIL: Completed additional search for author {author_data['name']}")
+                            except Exception as e:
+                                print(
+                                    f"Error in additional search thread: {e}")
+
+                        # Start both threads
+                        works_thread = threading.Thread(
+                            target=fetch_works, daemon=True, name=f"works-{author_id}")
+                        search_thread = threading.Thread(
+                            target=additional_search, daemon=True, name=f"search-{author_id}")
+
+                        works_thread.start()
+                        search_thread.start()
+
+                        # Wait for both to complete (optional - could let them run independently)
+                        # works_thread.join()
+                        # search_thread.join()
+
+                    except Exception as e:
+                        print(f"Error in background search: {e}")
+                    finally:
+                        # Remove from running set when done
+                        _background_searches_running.discard(
+                            author_id)                # Start background thread
+                search_thread = threading.Thread(
+                    target=background_search, daemon=True)
+                search_thread.start()
+
+        except Exception as e:
+            print(f"Error starting background search: {e}")
+            # Clean up in case of error
+            _background_searches_running.discard(author_id)
+
         return html.Div([
             # Store for favorite status feedback
             dcc.Store(id={'type': 'author-favorite-store',
                       'author_id': author_id}),
             dcc.Store(id='author-navigation-store',
                       data={'author_id': author_id}),
+            # Interval for refreshing books list after background search
+            dcc.Interval(
+                id={'type': 'author-books-refresh', 'author_id': author_id},
+                interval=5000,  # Check every 5 seconds
+                n_intervals=0,
+                max_intervals=12  # Stop after 1 minute
+            ),
 
             html.Div([
                 html.Div([
@@ -367,7 +444,7 @@ def handle_author_favorite_click(n_clicks, session_data):
         )
 
 
-# Callback to handle pagination clicks
+# Callback to handle pagination clicks and refresh updates
 @callback(
     [Output({'type': 'author-books-page-store', 'author_id': dash.dependencies.MATCH}, 'data'),
      Output({'type': 'author-books-grid',
@@ -376,24 +453,55 @@ def handle_author_favorite_click(n_clicks, session_data):
             'author_id': dash.dependencies.MATCH}, 'children'),
      Output({'type': 'author-books-pagination-bottom', 'author_id': dash.dependencies.MATCH}, 'children')],
     [Input({'type': 'pagination-btn', 'author_id': dash.dependencies.MATCH,
-           'page': dash.dependencies.ALL}, 'n_clicks')],
+           'page': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'author-books-refresh', 'author_id': dash.dependencies.MATCH}, 'n_intervals')],
     [State({'type': 'author-books-page-store',
            'author_id': dash.dependencies.MATCH}, 'data')],
     prevent_initial_call=True
 )
-def handle_pagination_click(clicks_list, page_data):
-    """Handle pagination button clicks"""
-    if not dash.callback_context.triggered or not any(clicks_list):
+def handle_pagination_click(clicks_list, n_intervals, page_data):
+    """Handle pagination button clicks and automatic refresh updates"""
+    triggered = dash.callback_context.triggered[0] if dash.callback_context.triggered else None
+
+    if not triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    # Find which button was clicked
-    triggered = dash.callback_context.triggered[0]
-    button_id = triggered['prop_id'].split('.')[0]
-    button_info = eval(button_id)  # Convert string back to dict
+    # Check if this is a refresh interval trigger
+    is_refresh = 'author-books-refresh' in triggered['prop_id']
 
-    # Ensure valid page number
-    new_page = max(1, int(button_info.get('page', 1)))
-    author_id = int(button_info.get('author_id', 0))
+    if is_refresh:
+        # For refresh, stay on current page but update book count
+        if not page_data:
+            page_data = {'current_page': 1, 'books_per_page': 80}
+        new_page = int(page_data.get('current_page', 1))
+    else:
+        # Handle pagination button clicks
+        if not any(clicks_list):
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+        # Find which button was clicked
+        button_id = triggered['prop_id'].split('.')[0]
+        button_info = eval(button_id)  # Convert string back to dict
+
+        # Ensure valid page number
+        new_page = max(1, int(button_info.get('page', 1)))
+
+    # Extract author_id from the triggered component
+    triggered_id = triggered['prop_id'].split('.')[0]
+    if 'author-books-refresh' in triggered_id:
+        # For refresh interval, extract author_id from the ID
+        try:
+            id_dict = eval(triggered_id)
+            author_id = id_dict['author_id']
+        except:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    else:
+        # For pagination button
+        try:
+            button_info = eval(triggered_id)
+            author_id = button_info['author_id']
+        except:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Ensure page_data is valid
     if not page_data:

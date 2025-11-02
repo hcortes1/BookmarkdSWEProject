@@ -7,7 +7,7 @@ def get_author_details(author_id: int):
     try:
         with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             sql = """
-                SELECT author_id, name, bio, birth_date, death_date, nationality, author_image_url, created_at
+                SELECT author_id, name, bio, birth_date, death_date, nationality, author_image_url, openlibrary_key, created_at
                 FROM authors
                 WHERE author_id = %s
             """

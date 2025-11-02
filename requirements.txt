@@ -5,3 +5,5 @@ supabase
 requests
 google-generativeai
 gunicorn
+gutenbergpy
+beautifulsoup4

@@ -229,10 +229,10 @@ def update_navigation(user_session, pathname):
                     'right': '0',
                     'background': 'white',
                     'border': '1px solid #ddd',
-                    'border-radius': '8px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                    'z-index': '1000',
-                    'min-width': '120px',
+                    'borderRadius': '8px',
+                    'boxShadow': '0 4px 12px rgba(0,0,0,0.15)',
+                    'zIndex': '1000',
+                    'minWidth': '120px',
                     'display': 'none'
                 })
             ], className='settings-menu-container',
@@ -485,14 +485,15 @@ def clear_search_on_navigation(pathname):
     prevent_initial_call=True
 )
 def handle_search_item_clicks(book_clicks, author_clicks, search_data):
-    print(f"DEBUG: Pattern-matching click handler called")
-    print(f"DEBUG: Book clicks: {book_clicks}")
-    print(f"DEBUG: Author clicks: {author_clicks}")
-    print(f"DEBUG: Search data: {search_data}")
+    print(f"DEBUG APP_handle_search_item_clicks: Pattern-matching click handler called")
+    print(f"DEBUG APP_handle_search_item_clicks: Book clicks: {book_clicks}")
+    print(
+        f"DEBUG APP_handle_search_item_clicks: Author clicks: {author_clicks}")
+    print(f"DEBUG APP_handle_search_item_clicks: Search data: {search_data}")
 
     ctx = dash.callback_context
     if not ctx.triggered:
-        print("DEBUG: No trigger detected")
+        print("DEBUG APP_handle_search_item_clicks: No trigger detected")
         return dash.no_update
 
     # Get the triggered component
@@ -500,10 +501,10 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
     clicked_value = ctx.triggered[0]['value']
 
     print(
-        f"DEBUG: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
+        f"DEBUG APP_handle_search_item_clicks: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
 
     if clicked_value is None or clicked_value == 0:
-        print("DEBUG: Click value is None or 0")
+        print("DEBUG APP_handle_search_item_clicks: Click value is None or 0")
         return dash.no_update
 
     try:
@@ -515,12 +516,13 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
         item_type = component_data['type']
         item_index = component_data['index']
 
-        print(f"DEBUG: Item type: {item_type}, index: {item_index}")
+        print(
+            f"DEBUG APP_handle_search_item_clicks: Item type: {item_type}, index: {item_index}")
 
         if item_type == 'search-book':
             books = search_data.get('books', [])
             print(
-                f"DEBUG: Book click, index: {item_index}, books count: {len(books)}")
+                f"DEBUG APP_handle_search_item_clicks: Book click, index: {item_index}, books count: {len(books)}")
 
             if item_index < len(books):
                 book_data = books[item_index]
@@ -538,17 +540,19 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
         elif item_type == 'search-author':
             authors = search_data.get('authors', [])
             print(
-                f"DEBUG: Author click, index: {item_index}, authors count: {len(authors)}")
+                f"DEBUG APP_handle_search_item_clicks: Author click, index: {item_index}, authors count: {len(authors)}")
 
             if item_index < len(authors):
                 author_data = authors[item_index]
-                print(f"DEBUG: Author data: {author_data}")
+                print(
+                    f"DEBUG APP_handle_search_item_clicks: Author data: {author_data}")
 
                 # Store the author and their books in database if it's from API
                 if author_data.get('source') == 'openlibrary':
                     from backend.openlibrary import get_or_create_author_with_books
                     author_id = get_or_create_author_with_books(author_data)
-                    print(f"DEBUG: Got author_id: {author_id}")
+                    print(
+                        f"DEBUG APP_handle_search_item_clicks: Got author_id: {author_id}")
                     if author_id:
                         return f"/author/{author_id}"
                 else:
