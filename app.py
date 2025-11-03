@@ -63,9 +63,6 @@ app.layout = html.Div([
                             clearable=False,
                             searchable=False,
                             className='search-type-dropdown',
-                            style={
-                                'width': '80px'
-                            }
                         ),
                         dcc.Input(id='header-search', placeholder='Search...',
                                   type='text', className='search-input',

@@ -813,7 +813,8 @@ def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_sessio
         return dash.no_update
 
     # Check if any button was actually clicked
-    all_clicks = (send_clicks or []) + (remove_clicks or []) + (cancel_clicks or [])
+    all_clicks = (send_clicks or []) + \
+        (remove_clicks or []) + (cancel_clicks or [])
     if not any(all_clicks):
         return dash.no_update
 
@@ -833,7 +834,8 @@ def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_sessio
             # Show cancel button immediately after sending request
             return html.Button(
                 "Cancel Friend Request",
-                id={'type': 'cancel-friend-request', 'username': target_username},
+                id={'type': 'cancel-friend-request',
+                    'username': target_username},
                 className='btn-cancel-friend-request',
                 style={
                     'background': '#6c757d',
