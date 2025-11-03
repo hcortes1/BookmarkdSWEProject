@@ -222,7 +222,8 @@ def layout(book_id=None, **kwargs):
                                 id={'type': 'read-rent-button-container',
                                     'book_id': book_id},
                                 children=[],  # Will be populated by callback
-                                style={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px', 'verticalAlign': 'middle'}
+                                style={'display': 'inline-flex', 'alignItems': 'center',
+                                       'marginRight': '12px', 'verticalAlign': 'middle'}
                             ),
                             html.Div([
                                 html.Div(
@@ -1346,6 +1347,11 @@ def close_error_modal(n_clicks):
 def set_initial_rental_status(store_id, session_data, book_store_id):
     """Set the initial rental status and show appropriate Read/Rent button"""
     book_id = store_id['book_id']
+
+    # Check if book has available HTML
+    book_data = get_book_details(book_id)
+    if not book_data or not book_data.get('html_path'):
+        return html.Div(), None
 
     if not session_data or not session_data.get('logged_in'):
         # Not logged in - show disabled rent button

@@ -3,6 +3,7 @@ from backend.db import get_conn
 import psycopg2.extras
 from datetime import datetime, timedelta
 from backend.rewards import get_user_rewards, add_points
+from backend.bookshelf import add_to_bookshelf
 
 
 def check_book_rental_status(user_id, book_id):
@@ -69,6 +70,9 @@ def rent_book(user_id, book_id):
                 VALUES (%s, %s, %s, %s)
                 RETURNING rental_id
             """, (user_id, book_id, rental_date, due_date))
+
+            # Add book to user's bookshelf as "currently reading"
+            add_to_bookshelf(user_id, book_id, 'reading')
 
             conn.commit()
             return True, f"Book rented successfully! Due date: {due_date.strftime('%Y-%m-%d')}"
