@@ -24,15 +24,23 @@
 
 /* Friends section on the left */
 .friends-section-left {
-    width: 100%;
+    width: 80%; /* Less wide */
+    max-width: 300px; /* Maximum width */
     margin-top: 10px;
 }
 
 .friends-title-left {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    color: #333;
+    font-size: 18px !important; /* Small but readable title */
+    margin-bottom: 6px;
+    color: #666; /* Lighter color */
     text-align: center;
+    font-weight: normal; /* Not bold */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.friends-title-left:hover {
+    color: #007bff; /* Blue on hover to indicate it's clickable */
 }
 
 .friends-list-left {
@@ -48,6 +56,8 @@
 
 .friends-list-left li {
     margin-bottom: 6px;
+    font-size: 0.85rem; /* Smaller list items */
+
     padding: 8px;
     border-radius: 6px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -259,6 +269,7 @@
 
 .friend-name {
     font-weight: 500;
+    font-size: 1.1rem; /* Bigger username */
 }
 
 .no-friends {
@@ -359,4 +370,68 @@
     font-size: 0.8rem;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .profile-info {
+        max-width: 100%;
+        width: 100%;
+        order: -1; /* Put profile info above tabs */
+    }
+
+    .profile-user-image {
+        width: 120px;
+        height: 120px;
+        border-width: 2px;
+    }
+
+    .profile-username {
+        font-size: 1.4rem;
+    }
+
+    .friends-section-left {
+        margin-top: 15px;
+        max-height: 150px; /* Reduce height on mobile */
+        opacity: 0.8; /* Make less prominent */
+        width: 100%; /* Full width on mobile */
+        max-width: none; /* Remove max-width on mobile */
+    }
+
+    .friends-title-left {
+        font-size: 18px !important; /* Small but readable on mobile too */
+        margin-bottom: 4px;
+        color: #777; /* Even lighter on mobile */
+    }
+
+    .friends-list-left {
+        max-height: 120px; /* Smaller list height */
+        padding: 8px; /* Less padding */
+    }
+
+    .friends-list-left li {
+        font-size: 0.8rem; /* Smaller list items on mobile */
+    }
+
+    .profile-right {
+        width: 100%;
+        order: 1; /* Put tabs below profile info */
+    }
+
+    .profile-tabs {
+        justify-content: center;
+    }
+
+    .profile-tab {
+        flex: 1;
+        max-width: 120px;
+        padding: 8px 12px !important;
+        font-size: 0.9rem;
+    }
 }

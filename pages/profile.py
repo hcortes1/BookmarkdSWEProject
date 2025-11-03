@@ -292,12 +292,14 @@ def layout(username=None, **kwargs):
                     html.Div(id="friend-request-section",
                              className="friend-request-section"),
 
-                    # Friends list (below friend request button)
+                    # Friends list (below friend request button) - collapsible
                     html.Div([
                         html.H3(id="friends-title", children=friends_title,
-                                className="friends-title-left"),
+                                className="friends-title-left collapsible",
+                                style={'cursor': 'pointer', 'user-select': 'none'}),
                         html.Ul(id="friends-list",
-                                className="friends-list-left secondary-bg")
+                                className="friends-list-left secondary-bg",
+                                style={'display': 'none'})  # Hidden by default
                     ], className="friends-section-left")
                 ], className="profile-info"),
 
@@ -665,6 +667,23 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     if not friend_profile_image or not friend_profile_image.strip():
                         friend_profile_image = '/assets/svg/default-profile.svg'
 
+                    # Format the friendship date
+                    created_at = friend.get('created_at')
+                    since_text = 'Unknown'
+                    if created_at:
+                        if hasattr(created_at, 'strftime'):
+                            since_text = created_at.strftime('%m/%d/%Y')
+                        elif isinstance(created_at, str):
+                            # Try to parse the string and reformat
+                            try:
+                                from datetime import datetime
+                                parsed_date = datetime.fromisoformat(
+                                    created_at.replace('Z', '+00:00'))
+                                since_text = parsed_date.strftime('%m/%d/%Y')
+                            except:
+                                since_text = created_at[:10] if len(
+                                    created_at) >= 10 else created_at
+
                     friend_item = html.Li([
                         dcc.Link([
                             html.Img(
@@ -678,8 +697,18 @@ def update_profile_data(session_data, viewed_username, active_tab):
                                     'margin-right': '10px'
                                 }
                             ),
-                            html.Span(friend['username'],
-                                      className='friend-name')
+                            html.Div([
+                                html.Span(friend['username'],
+                                          className='friend-name'),
+                                html.Span(f"since: {since_text}",
+                                          className='friend-since',
+                                          style={
+                                              'font-size': '0.8rem',
+                                              'color': '#888',
+                                              'display': 'block',
+                                              'margin-top': '2px'
+                                })
+                            ], style={'flex': '1'})
                         ],
                             href=f"/profile/view/{friend['username']}",
                             className='friend-link',
@@ -689,6 +718,13 @@ def update_profile_data(session_data, viewed_username, active_tab):
             else:
                 friends_list = [
                     html.Li("No friends yet", className="no-friends")]
+
+            # Update friends title to include count
+            friends_count = len(friends)
+            if is_own_profile:
+                friends_title = f"Your Friends ({friends_count})"
+            else:
+                friends_title = f"{user_data['username']}'s Friends ({friends_count})"
 
             # Ensure we always have a valid profile image URL for the main profile
             profile_image_url = user_data.get('profile_image_url')
@@ -836,11 +872,16 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
 
 # Handle edit profile button
 @callback(
-    Output('url', 'pathname', allow_duplicate=True),
-    Input('edit-profile-button', 'n_clicks'),
+    Output('friends-list', 'style'),
+    Input('friends-title', 'n_clicks'),
+    State('friends-list', 'style'),
     prevent_initial_call=True
 )
-def handle_edit_profile(edit_clicks):
-    if edit_clicks and edit_clicks > 0:
-        return '/profile/settings'
-    return dash.no_update
+def toggle_friends_list(n_clicks, current_style):
+    if n_clicks and n_clicks > 0:
+        # Toggle between hidden and visible
+        if current_style and current_style.get('display') == 'none':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+    return current_style or {'display': 'none'}

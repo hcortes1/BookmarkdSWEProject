@@ -190,7 +190,7 @@ def get_friends_list(user_id: str) -> List[Dict[str, Any]]:
     Get all friends for a user.
     """
     sql = """
-    SELECT f.friend_id, u.username, u.profile_image_url
+    SELECT f.friend_id, u.username, u.profile_image_url, f.created_at
       FROM public.friends f
       JOIN public.users u ON u.user_id = f.friend_id
      WHERE f.user_id = %s
@@ -198,7 +198,8 @@ def get_friends_list(user_id: str) -> List[Dict[str, Any]]:
     """
     with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(sql, (int(user_id),))
-        return [dict(r) for r in cur.fetchall()]
+        friends = cur.fetchall()
+        return [dict(friend) for friend in friends]
 
 
 def get_friendship_status(user1_id: str, user2_username: str) -> Dict[str, Any]:

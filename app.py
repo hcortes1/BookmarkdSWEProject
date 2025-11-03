@@ -143,10 +143,9 @@ def update_page_container(pathname):
     [Output('nav-left-container', 'children'),
      Output('nav-right-container', 'children'),
      Output('mobile-menu-links', 'children')],
-    Input('user-session', 'data'),
-    Input('url', 'pathname')
+    Input('user-session', 'data')
 )
-def update_navigation(user_session, pathname):
+def update_navigation(user_session):
     is_logged_in = user_session.get(
         'logged_in', False) if user_session else False
 
