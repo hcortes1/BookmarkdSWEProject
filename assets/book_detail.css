@@ -540,3 +540,80 @@
     font-weight: bold;
     text-align: center;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+    .book-detail-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .book-cover-large {
+        width: 150px;
+        height: 225px;
+        order: -1; /* Show cover above details */
+    }
+
+    .book-details {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    .action-buttons-section {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .favorite-btn,
+    .bookshelf-btn,
+    .recommend-btn,
+    .read-btn {
+        margin: 5px 0;
+        width: 200px;
+        font-size: 13px;
+        padding: 12px 16px;
+    }
+
+    .page-container {
+        padding: 15px;
+    }
+
+    .other-editions-section {
+        margin-top: 15px;
+    }
+
+    .other-editions-container {
+        padding: 15px;
+    }
+
+    .other-editions-item {
+        flex-direction: column;
+        text-align: center;
+        padding: 12px;
+    }
+
+    .other-editions-image {
+        width: 80px;
+        height: 120px;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+
+    .modal-content {
+        max-width: 95%;
+        padding: 20px;
+    }
+
+    .recommend-modal-content {
+        max-width: 95%;
+        padding: 20px;
+    }
+
+    .friends-list-container {
+        max-height: 150px;
+    }
+}
