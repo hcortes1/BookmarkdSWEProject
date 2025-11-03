@@ -1,9 +1,9 @@
 .header {
   background-color: #2b2f33;
-  height: 64px;
+  height: 56px; /* Reduced from 64px */
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px; /* Reduced padding */
   color: #ffffff;
   position: sticky;
   top: 0;
@@ -29,10 +29,10 @@
 }
 
 .brand-name {
-  font-size: 24px;
+  font-size: 18px; /* Reduced from 20px */
   font-weight: bold;
   color: #007bff;
-  margin-right: 30px;
+  margin-right: 20px;
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -67,9 +67,9 @@
 
 .search-container {
   position: relative;
-  width: 60%;
-  max-width: 520px;
-  min-width: 180px;
+  width: 80%; /* Increased from 70% */
+  max-width: 700px; /* Increased from 600px */
+  min-width: 200px;
 }
 
 .search-type-dropdown .Select-control {
@@ -519,4 +519,215 @@
     display: inline-block;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     cursor: help;
+}
+
+/* Hamburger Menu */
+.hamburger-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    display: none;
+}
+
+.hamburger-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.hamburger-icon {
+    width: 24px;
+    height: 24px;
+    filter: invert(1);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    display: none;
+}
+
+.mobile-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    cursor: pointer;
+}
+
+.mobile-menu-content {
+    position: absolute;
+    top: 56px;
+    right: 0;
+    width: 280px;
+    background: #2b2f33;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 2001;
+}
+
+.mobile-menu-links {
+    padding: 16px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.mobile-menu-link {
+    display: flex;
+    align-items: center;
+    color: #dfe6ea;
+    text-decoration: none;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    transition: background-color 0.2s;
+}
+
+.mobile-menu-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    filter: invert(1);
+}
+
+.mobile-menu-profile-img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+}
+
+.mobile-menu-divider {
+    border: none;
+    border-top: 1px solid #444;
+    margin: 12px 0;
+}
+
+.mobile-menu-logout {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.mobile-menu-logout:hover {
+    background: #c82333;
+}
+
+.mobile-menu-login {
+    background: #007bff;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    font-weight: 500;
+}
+
+.mobile-menu-login:hover {
+    background: #0056b3;
+    color: white;
+}
+
+.close-mobile-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border-radius: 4px;
+}
+
+.close-mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.close-icon {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .header {
+        padding: 0 12px;
+    }
+    
+    .nav {
+        gap: 8px;
+    }
+    
+    .nav-left .nav-link {
+        display: none;
+    }
+    
+    .nav-center {
+        flex: 1;
+        margin: 0 8px;
+    }
+    
+    .search-container {
+        width: 100%;
+        max-width: none;
+        min-width: 120px;
+    }
+    
+    .nav-right .nav-link,
+    .nav-right .user-level,
+    .nav-right .bookshelf-img,
+    .nav-right .profile-circle,
+    .nav-right .notifications-container,
+    .nav-right .settings-menu-container,
+    .nav-right .login-signup-btn {
+        display: none !important;
+    }
+    
+    .hamburger-menu-btn {
+        display: block !important;
+    }
+    
+    .mobile-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2000;
+        display: none;
+    }
+    
+    .mobile-menu-content {
+        position: absolute;
+        top: 56px;
+        right: 8px;
+        width: 280px;
+        max-height: calc(100vh - 72px);
+        z-index: 2001;
+    }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .search-container {
+        width: 50%;
+        max-width: 400px;
+    }
 }

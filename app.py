@@ -22,6 +22,7 @@ app.layout = html.Div([
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
+    dcc.Store(id="mobile-menu-store", storage_type="memory", data={"open": False}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
@@ -58,7 +59,7 @@ app.layout = html.Div([
                             searchable=False,
                             className='search-type-dropdown',
                             style={
-                                'width': '100px',
+                                'width': '80px',  # Reduced from 100px
                                 'margin-right': '8px'
                             }
                         ),
@@ -81,7 +82,6 @@ app.layout = html.Div([
         children=[dash.page_container]
     ),
 
-    # Mobile overlay - only shown on mobile devices
     html.Div(
         id="mobile-overlay",
         className="mobile-overlay",
@@ -94,6 +94,28 @@ app.layout = html.Div([
                 "is better experienced on a PC or tablet",
                 className="mobile-subtext"
             )
+        ]
+    ),
+    
+    # Mobile menu
+    html.Div(
+        id="mobile-menu",
+        className="mobile-menu",
+        children=[
+            html.Div(
+                className="mobile-menu-backdrop",
+                id="mobile-menu-backdrop"
+            ),
+            html.Div(className="mobile-menu-content", children=[
+                html.Div(className="mobile-menu-header", children=[
+                    html.Button(
+                        html.Img(src='/assets/svg/close.svg', className='close-icon'),
+                        id='close-mobile-menu',
+                        className='close-mobile-menu-btn'
+                    )
+                ]),
+                html.Div(id='mobile-menu-links', className='mobile-menu-links')
+            ])
         ]
     )
 ])
@@ -117,7 +139,8 @@ def update_page_container(pathname):
 
 @app.callback(
     [Output('nav-left-container', 'children'),
-     Output('nav-right-container', 'children')],
+     Output('nav-right-container', 'children'),
+     Output('mobile-menu-links', 'children')],
     Input('user-session', 'data'),
     Input('url', 'pathname')
 )
@@ -236,16 +259,61 @@ def update_navigation(user_session, pathname):
                     'display': 'none'
                 })
             ], className='settings-menu-container',
-                style={'position': 'relative', 'display': 'inline-block'})
+                style={'position': 'relative', 'display': 'inline-block'}),
+            html.Button(
+                html.Img(src='/assets/svg/hamburger.svg', className='hamburger-icon'),
+                id='hamburger-menu-btn',
+                className='hamburger-menu-btn',
+                style={'display': 'none'}  # Hidden by default, shown on mobile via CSS
+            )
+        ]
+        
+        # Mobile menu content for logged-in users
+        mobile_menu_content = [
+            # Navigation links
+            dcc.Link('Trending', href='/trending', className='mobile-menu-link'),
+            dcc.Link('Leaderboards', href='/leaderboards', className='mobile-menu-link'),
+            dcc.Link('Showcase', href='/showcase', className='mobile-menu-link'),
+            html.Hr(className='mobile-menu-divider'),
+            # User navigation
+            dcc.Link([
+                html.Img(src='/assets/svg/bookshelf.svg', className='mobile-menu-icon'),
+                html.Span('Bookshelf')
+            ], href='/profile/bookshelf', className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src=profile_image_src, className='mobile-menu-profile-img'),
+                html.Span(f"Profile ({user_session.get('username', '')})")
+            ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src='/assets/svg/bell.svg', className='mobile-menu-icon'),
+                html.Span('Notifications')
+            ], href='/notifications', className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src='/assets/svg/settings.svg', className='mobile-menu-icon'),
+                html.Span('Settings')
+            ], href='/profile/settings', className='mobile-menu-link'),
+            html.Hr(className='mobile-menu-divider'),
+            html.Button('Log Out', id='mobile-logout-button', className='mobile-menu-logout')
         ]
     else:
         # Show login/signup button
         right_nav = [
             dcc.Link('Log In / Sign Up', href='/login',
-                     className='nav-link login-signup-btn')
+                     className='nav-link login-signup-btn'),
+            html.Button(
+                html.Img(src='/assets/svg/hamburger.svg', className='hamburger-icon'),
+                id='hamburger-menu-btn',
+                className='hamburger-menu-btn',
+                style={'display': 'none'}  # Hidden by default, shown on mobile via CSS
+            )
+        ]
+        
+        # Mobile menu content for non-logged-in users
+        mobile_menu_content = [
+            dcc.Link('Log In / Sign Up', href='/login', className='mobile-menu-link mobile-menu-login')
         ]
 
-    return left_nav, right_nav
+    return left_nav, right_nav, mobile_menu_content
 
 
 @app.callback(
@@ -569,13 +637,69 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
 
 
 @app.callback(
-    Output('url', 'pathname', allow_duplicate=True),
-    Output('user-session', 'data', allow_duplicate=True),
-    Input('quick-logout-button', 'n_clicks'),
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    Input('hamburger-menu-btn', 'n_clicks'),
+    State('mobile-menu-store', 'data'),
     prevent_initial_call=True
 )
-def handle_quick_logout(n_clicks):
+def toggle_mobile_menu(n_clicks, menu_data):
     if not n_clicks:
+        return dash.no_update
+    current_open = menu_data.get('open', False)
+    return {"open": not current_open}
+
+
+@app.callback(
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call=True
+)
+def close_mobile_menu_on_navigation(pathname):
+    # Close mobile menu when navigating to a new page
+    return {"open": False}
+
+
+@app.callback(
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    [Input('close-mobile-menu', 'n_clicks'),
+     Input('mobile-menu-backdrop', 'n_clicks')],
+    prevent_initial_call=True
+)
+def close_mobile_menu(n_clicks_close, n_clicks_backdrop):
+    if not n_clicks_close and not n_clicks_backdrop:
+        return dash.no_update
+    return {"open": False}
+
+
+@app.callback(
+    Output('mobile-menu', 'style'),
+    Input('mobile-menu-store', 'data')
+)
+def update_mobile_menu_style(menu_data):
+    is_open = menu_data.get('open', False)
+    if is_open:
+        return {
+            'display': 'block',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'z-index': '2000'
+        }
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    Output('user-session', 'data', allow_duplicate=True),
+    [Input('quick-logout-button', 'n_clicks'),
+     Input('mobile-logout-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def handle_logout(n_clicks_quick, n_clicks_mobile):
+    if not n_clicks_quick and not n_clicks_mobile:
         return dash.no_update, dash.no_update
 
     # Clear session and redirect to home page
