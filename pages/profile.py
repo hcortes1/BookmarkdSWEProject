@@ -627,11 +627,22 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         }
                     )
                 elif status == 'pending_sent':
-                    # Show "Friend Request Sent" (disabled)
-                    friend_request_section = html.Div([
-                        html.Span("Friend Request Sent",
-                                  style={'color': '#6c757d', 'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
-                    ])
+                    # Show "Cancel Friend Request" button
+                    friend_request_section = html.Button(
+                        "Cancel Friend Request",
+                        id={'type': 'cancel-friend-request',
+                            'username': viewed_username},
+                        className='btn-cancel-friend-request',
+                        style={
+                            'background': '#6c757d',
+                            'color': 'white',
+                            'border': 'none',
+                            'padding': '8px 16px',
+                            'border-radius': '6px',
+                            'margin-top': '0px',
+                            'cursor': 'pointer'
+                        }
+                    )
                 elif status == 'pending_received':
                     # Show "Respond to Friend Request" message
                     friend_request_section = html.Div([
@@ -788,11 +799,12 @@ def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
 @callback(
     Output("friend-request-section", "children", allow_duplicate=True),
     [Input({'type': 'send-friend-request', 'username': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'remove-friend', 'username': dash.dependencies.ALL}, 'n_clicks')],
+     Input({'type': 'remove-friend', 'username': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'cancel-friend-request', 'username': dash.dependencies.ALL}, 'n_clicks')],
     State('user-session', 'data'),
     prevent_initial_call=True
 )
-def handle_friend_actions(send_clicks, remove_clicks, user_session):
+def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_session):
     if not user_session or not user_session.get('logged_in', False):
         return dash.no_update
 
@@ -801,7 +813,7 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
         return dash.no_update
 
     # Check if any button was actually clicked
-    all_clicks = (send_clicks or []) + (remove_clicks or [])
+    all_clicks = (send_clicks or []) + (remove_clicks or []) + (cancel_clicks or [])
     if not any(all_clicks):
         return dash.no_update
 
@@ -818,11 +830,21 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
                 receiver_username=target_username
             )
 
-            # Show success message
-            return html.Div([
-                html.Span("Friend request sent!", style={
-                          'color': 'green', 'font-weight': 'bold'})
-            ])
+            # Show cancel button immediately after sending request
+            return html.Button(
+                "Cancel Friend Request",
+                id={'type': 'cancel-friend-request', 'username': target_username},
+                className='btn-cancel-friend-request',
+                style={
+                    'background': '#6c757d',
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '8px 16px',
+                    'border-radius': '6px',
+                    'margin-top': '0px',
+                    'cursor': 'pointer'
+                }
+            )
 
         elif action_type == 'remove-friend':
             # Get the target user's ID first
@@ -837,6 +859,37 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
             result = friends_backend.remove_friend(
                 user_id=str(user_session['user_id']),
                 friend_id=str(target_user_data['user_id'])
+            )
+
+            # Show success message and replace with "Send Friend Request" button
+            return html.Button(
+                "Send Friend Request",
+                id={'type': 'send-friend-request', 'username': target_username},
+                className='btn-send-friend-request',
+                style={
+                    'background': '#007bff',
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '8px 16px',
+                    'border-radius': '6px',
+                    'margin-top': '0px',
+                    'cursor': 'pointer'
+                }
+            )
+
+        elif action_type == 'cancel-friend-request':
+            # Get the target user's ID first
+            target_user_data = profile_backend.get_user_profile_by_username(
+                target_username)
+            if not target_user_data:
+                return html.Div([
+                    html.Span("User not found", style={
+                              'color': 'red', 'font-weight': 'bold'})
+                ])
+
+            result = friends_backend.cancel_friend_request(
+                sender_id=str(user_session['user_id']),
+                receiver_id=str(target_user_data['user_id'])
             )
 
             # Show success message and replace with "Send Friend Request" button

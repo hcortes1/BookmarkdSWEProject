@@ -261,14 +261,18 @@ def update_navigation(user_session):
                 })
             ], className='settings-menu-container',
                 style={'position': 'relative', 'display': 'inline-block'}),
-            html.Button(
-                html.Img(src='/assets/svg/hamburger.svg',
-                         className='hamburger-icon'),
-                id='hamburger-menu-btn',
-                className='hamburger-menu-btn',
-                # Hidden by default, shown on mobile via CSS
-                style={'display': 'none'}
-            )
+            html.Div([
+                html.Button(
+                    html.Img(src='/assets/svg/hamburger.svg',
+                             className='hamburger-icon'),
+                    id='hamburger-menu-btn',
+                    className='hamburger-menu-btn',
+                    # Hidden by default, shown on mobile via CSS
+                    style={'display': 'none'}
+                ),
+                html.Div(id='hamburger-notification-badge', className='hamburger-notification-badge',
+                         style={'display': 'none'})
+            ], className='hamburger-container', style={'position': 'relative', 'display': 'inline-block'})
         ]
 
         # Mobile menu content for logged-in users
@@ -301,7 +305,9 @@ def update_navigation(user_session):
             dcc.Link([
                 html.Img(src='/assets/svg/bell.svg',
                          className='mobile-menu-icon'),
-                html.Span('Notifications')
+                html.Span('Notifications'),
+                html.Div(id='mobile-notification-badge', className='mobile-notification-badge',
+                         style={'display': 'none'})
             ], href='/notifications', className='mobile-menu-link'),
             dcc.Link([
                 html.Img(src='/assets/svg/settings.svg',
@@ -514,7 +520,11 @@ def handle_search(search_value, search_type):
 
 @app.callback(
     [Output('notification-badge', 'children'),
-     Output('notification-badge', 'style')],
+     Output('notification-badge', 'style'),
+     Output('hamburger-notification-badge', 'children'),
+     Output('hamburger-notification-badge', 'style'),
+     Output('mobile-notification-badge', 'children'),
+     Output('mobile-notification-badge', 'style')],
     Input('user-session', 'data')
 )
 def update_notifications(user_session):
@@ -553,9 +563,40 @@ def update_notifications(user_session):
             'text-align': 'center',
             'line-height': '18px'
         }
-        return new_badge_text, badge_style
+        # Hamburger badge style (positioned relative to hamburger button)
+        hamburger_badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-5px',
+            'right': '-5px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '16px',
+            'height': '16px',
+            'font-size': '10px',
+            'text-align': 'center',
+            'line-height': '16px'
+        }
+        # Mobile menu badge style
+        mobile_badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-2px',
+            'right': '-2px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '14px',
+            'height': '14px',
+            'font-size': '9px',
+            'text-align': 'center',
+            'line-height': '14px'
+        }
+        return new_badge_text, badge_style, new_badge_text, hamburger_badge_style, new_badge_text, mobile_badge_style
     else:
-        return '', {'display': 'none'}
+        hidden_style = {'display': 'none'}
+        return '', hidden_style, '', hidden_style, '', hidden_style
 
 
 @app.callback(

@@ -423,6 +423,26 @@
   font-weight: bold;
 }
 
+.hamburger-container {
+    position: relative;
+    display: inline-block;
+}
+
+.mobile-notification-badge {
+  position: absolute;
+  top: 6px;
+  left: 28px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  text-align: center;
+  line-height: 14px;
+  font-weight: bold;
+}
+
 .notifications-dropdown {
     position: absolute;
     top: 100%;
@@ -597,6 +617,7 @@
     border-radius: 6px;
     margin-bottom: 4px;
     transition: background-color 0.2s;
+    position: relative;
 }
 
 .mobile-menu-link:hover {
