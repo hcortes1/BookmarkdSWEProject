@@ -124,6 +124,28 @@ def create_navigation_panel(headers):
     .toc-book-content-fixed {{margin-left: 270px; padding: 20px 20px 20px 0; min-width: 0; box-sizing: border-box;}}
     /* Fallback: if book content is not moved, offset body */
     body:not(:has(.toc-book-content-fixed > *)) {{margin-left: 270px !important;}}
+    
+    /* Mobile responsive styles */
+    @media (max-width: 1024px) {{
+        .nav-panel-fixed {{
+            width: 150px;
+        }}
+        .toc-book-content-fixed {{
+            margin-left: 170px;
+            padding: 15px 15px 15px 0;
+        }}
+        body:not(:has(.toc-book-content-fixed > *)) {{
+            margin-left: 170px !important;
+        }}
+        .nav-panel-fixed h3 {{
+            font-size: 14px;
+            padding: 8px;
+        }}
+        .nav-link {{
+            font-size: 12px !important;
+            padding: 4px 8px !important;
+        }}
+    }}
     </style>
     <div class="nav-panel-fixed">
       <h3 style="padding:10px;margin:0;border-bottom:1px solid #ddd;">Table of Contents</h3>
