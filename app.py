@@ -22,7 +22,8 @@ app.layout = html.Div([
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
-    dcc.Store(id="mobile-menu-store", storage_type="memory", data={"open": False}),
+    dcc.Store(id="mobile-menu-store",
+              storage_type="memory", data={"open": False}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
@@ -96,7 +97,7 @@ app.layout = html.Div([
             )
         ]
     ),
-    
+
     # Mobile menu
     html.Div(
         id="mobile-menu",
@@ -109,7 +110,8 @@ app.layout = html.Div([
             html.Div(className="mobile-menu-content", children=[
                 html.Div(className="mobile-menu-header", children=[
                     html.Button(
-                        html.Img(src='/assets/svg/close.svg', className='close-icon'),
+                        html.Img(src='/assets/svg/close.svg',
+                                 className='close-icon'),
                         id='close-mobile-menu',
                         className='close-mobile-menu-btn'
                     )
@@ -261,39 +263,55 @@ def update_navigation(user_session, pathname):
             ], className='settings-menu-container',
                 style={'position': 'relative', 'display': 'inline-block'}),
             html.Button(
-                html.Img(src='/assets/svg/hamburger.svg', className='hamburger-icon'),
+                html.Img(src='/assets/svg/hamburger.svg',
+                         className='hamburger-icon'),
                 id='hamburger-menu-btn',
                 className='hamburger-menu-btn',
-                style={'display': 'none'}  # Hidden by default, shown on mobile via CSS
+                # Hidden by default, shown on mobile via CSS
+                style={'display': 'none'}
             )
         ]
-        
+
         # Mobile menu content for logged-in users
         mobile_menu_content = [
             # Navigation links
-            dcc.Link('Trending', href='/trending', className='mobile-menu-link'),
-            dcc.Link('Leaderboards', href='/leaderboards', className='mobile-menu-link'),
-            dcc.Link('Showcase', href='/showcase', className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src='/assets/svg/home.svg',
+                         className='mobile-menu-icon'),
+                html.Span('Home')
+            ], href='/', className='mobile-menu-link'),
+            dcc.Link('Trending', href='/trending',
+                     className='mobile-menu-link'),
+            dcc.Link('Leaderboards', href='/leaderboards',
+                     className='mobile-menu-link'),
+            dcc.Link('Showcase', href='/showcase',
+                     className='mobile-menu-link'),
             html.Hr(className='mobile-menu-divider'),
             # User navigation
             dcc.Link([
-                html.Img(src='/assets/svg/bookshelf.svg', className='mobile-menu-icon'),
+                html.Img(src='/assets/svg/bookshelf.svg',
+                         className='mobile-menu-icon'),
                 html.Span('Bookshelf')
             ], href='/profile/bookshelf', className='mobile-menu-link'),
             dcc.Link([
-                html.Img(src=profile_image_src, className='mobile-menu-profile-img'),
-                html.Span(f"Profile ({user_session.get('username', '')})")
+                html.Img(src=profile_image_src,
+                         className='mobile-menu-profile-img'),
+                html.Span(f"Profile ({user_session.get('username', '')})"),
+                html.Span(f"Lvl {level}", className='mobile-level-badge')
             ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
             dcc.Link([
-                html.Img(src='/assets/svg/bell.svg', className='mobile-menu-icon'),
+                html.Img(src='/assets/svg/bell.svg',
+                         className='mobile-menu-icon'),
                 html.Span('Notifications')
             ], href='/notifications', className='mobile-menu-link'),
             dcc.Link([
-                html.Img(src='/assets/svg/settings.svg', className='mobile-menu-icon'),
+                html.Img(src='/assets/svg/settings.svg',
+                         className='mobile-menu-icon'),
                 html.Span('Settings')
             ], href='/profile/settings', className='mobile-menu-link'),
             html.Hr(className='mobile-menu-divider'),
-            html.Button('Log Out', id='mobile-logout-button', className='mobile-menu-logout')
+            html.Button('Log Out', id='mobile-logout-button',
+                        className='mobile-menu-logout')
         ]
     else:
         # Show login/signup button
@@ -301,16 +319,24 @@ def update_navigation(user_session, pathname):
             dcc.Link('Log In / Sign Up', href='/login',
                      className='nav-link login-signup-btn'),
             html.Button(
-                html.Img(src='/assets/svg/hamburger.svg', className='hamburger-icon'),
+                html.Img(src='/assets/svg/hamburger.svg',
+                         className='hamburger-icon'),
                 id='hamburger-menu-btn',
                 className='hamburger-menu-btn',
-                style={'display': 'none'}  # Hidden by default, shown on mobile via CSS
+                # Hidden by default, shown on mobile via CSS
+                style={'display': 'none'}
             )
         ]
-        
+
         # Mobile menu content for non-logged-in users
         mobile_menu_content = [
-            dcc.Link('Log In / Sign Up', href='/login', className='mobile-menu-link mobile-menu-login')
+            dcc.Link([
+                html.Img(src='/assets/svg/home.svg',
+                         className='mobile-menu-icon'),
+                html.Span('Home')
+            ], href='/', className='mobile-menu-link'),
+            dcc.Link('Log In / Sign Up', href='/login',
+                     className='mobile-menu-link mobile-menu-login')
         ]
 
     return left_nav, right_nav, mobile_menu_content
