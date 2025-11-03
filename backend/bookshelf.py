@@ -263,7 +263,7 @@ def get_user_rented_books(user_id):
                 """
                 cursor.execute(query, (user_id,))
                 books = cursor.fetchall()
-                
+
                 return True, "Rented books retrieved successfully", books
 
     except Error as e:

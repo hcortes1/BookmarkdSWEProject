@@ -81,12 +81,13 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
         if expiry_date:
             if isinstance(expiry_date, str):
                 try:
-                    expiry_date = datetime.strptime(expiry_date[:10], '%Y-%m-%d').date()
+                    expiry_date = datetime.strptime(
+                        expiry_date[:10], '%Y-%m-%d').date()
                 except:
                     expiry_date = None
             elif hasattr(expiry_date, 'date'):
                 expiry_date = expiry_date.date()
-            
+
             if expiry_date:
                 days_remaining = (expiry_date - date.today()).days
                 if days_remaining > 0:
@@ -95,7 +96,7 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                     days_remaining_text = "Today"
                 else:
                     days_remaining_text = "Expired"
-                
+
                 expiry_date_text = expiry_date.strftime('%m/%d/%Y')
 
     return html.Div([
@@ -145,11 +146,14 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                     # For rented books: show days remaining and expiry date
                     html.Div([
                         html.Div([
-                            html.Span("Expires in: ", className='expiry-label-small'),
-                            html.Span(days_remaining_text, className='expiry-days')
+                            html.Span("Expires in: ",
+                                      className='expiry-label-small'),
+                            html.Span(days_remaining_text,
+                                      className='expiry-days')
                         ], className='expiry-info'),
                         html.Div([
-                            html.Span(expiry_date_text, className='expiry-date-small')
+                            html.Span(expiry_date_text,
+                                      className='expiry-date-small')
                         ], className='expiry-date-line')
                     ]) if reading_status == 'rented' else
                     # For want-to-read and currently reading: only show date added
@@ -239,11 +243,13 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         ])
 
     user_id = session_data.get('user_id')
-    
+
     if active_tab == 'rented':
-        success, message, books = bookshelf_backend.get_user_rented_books(user_id)
+        success, message, books = bookshelf_backend.get_user_rented_books(
+            user_id)
     else:
-        success, message, bookshelf = bookshelf_backend.get_user_bookshelf(user_id)
+        success, message, bookshelf = bookshelf_backend.get_user_bookshelf(
+            user_id)
         if success:
             # Use shared mappings from backend
             shelf_type = shelf_mapping.get(active_tab, 'to_read')
