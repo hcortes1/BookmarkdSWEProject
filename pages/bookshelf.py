@@ -4,6 +4,7 @@ import backend.bookshelf as bookshelf_backend
 from backend.bookshelf import shelf_mapping, tab_info, empty_messages
 import backend.reviews as reviews_backend
 from backend.favorites import is_book_favorited
+from datetime import datetime, date
 
 dash.register_page(__name__, path='/profile/bookshelf')
 
@@ -18,6 +19,8 @@ layout = html.Div([
             html.Button("Currently Reading",
                         id="bookshelf-reading-tab", className="bookshelf-tab"),
             html.Button("Completed", id="bookshelf-completed-tab",
+                        className="bookshelf-tab"),
+            html.Button("Rented", id="bookshelf-rented-tab",
                         className="bookshelf-tab")
         ], className='bookshelf-tabs-container'),
 
@@ -69,6 +72,32 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
 
     # Determine border styling based on favorite status
     border_style = '3px solid #007bff' if is_favorited else 'none'
+
+    # Calculate days remaining and expiry date text for rented books
+    days_remaining_text = "Unknown"
+    expiry_date_text = "Unknown"
+    if reading_status == 'rented':
+        expiry_date = book.get('expiry_date')
+        if expiry_date:
+            if isinstance(expiry_date, str):
+                try:
+                    expiry_date = datetime.strptime(expiry_date[:10], '%Y-%m-%d').date()
+                except:
+                    expiry_date = None
+            elif hasattr(expiry_date, 'date'):
+                expiry_date = expiry_date.date()
+            
+            if expiry_date:
+                days_remaining = (expiry_date - date.today()).days
+                if days_remaining > 0:
+                    days_remaining_text = f"{days_remaining} days"
+                elif days_remaining == 0:
+                    days_remaining_text = "Today"
+                else:
+                    days_remaining_text = "Expired"
+                
+                expiry_date_text = expiry_date.strftime('%m/%d/%Y')
+
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
@@ -113,6 +142,16 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                             )
                         ], className='added-info')
                     ]) if reading_status == 'finished' else
+                    # For rented books: show days remaining and expiry date
+                    html.Div([
+                        html.Div([
+                            html.Span("Expires in: ", className='expiry-label-small'),
+                            html.Span(days_remaining_text, className='expiry-days')
+                        ], className='expiry-info'),
+                        html.Div([
+                            html.Span(expiry_date_text, className='expiry-date-small')
+                        ], className='expiry-date-line')
+                    ]) if reading_status == 'rented' else
                     # For want-to-read and currently reading: only show date added
                     html.Div([
                         html.Span("Added: ", className='added-label'),
@@ -155,28 +194,32 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
     [Output('bookshelf-want-to-read-tab', 'className'),
      Output('bookshelf-reading-tab', 'className'),
      Output('bookshelf-completed-tab', 'className'),
+     Output('bookshelf-rented-tab', 'className'),
      Output('bookshelf-active-tab', 'data')],
     [Input('bookshelf-want-to-read-tab', 'n_clicks'),
      Input('bookshelf-reading-tab', 'n_clicks'),
-     Input('bookshelf-completed-tab', 'n_clicks')],
+     Input('bookshelf-completed-tab', 'n_clicks'),
+     Input('bookshelf-rented-tab', 'n_clicks')],
     prevent_initial_call=True
 )
-def update_bookshelf_tabs(want_to_read_clicks, reading_clicks, completed_clicks):
+def update_bookshelf_tabs(want_to_read_clicks, reading_clicks, completed_clicks, rented_clicks):
     """Handle tab switching for bookshelf"""
     ctx = dash.callback_context
     if not ctx.triggered:
-        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == 'bookshelf-want-to-read-tab':
-        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+        return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
     elif button_id == 'bookshelf-reading-tab':
-        return 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'reading'
+        return 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'reading'
     elif button_id == 'bookshelf-completed-tab':
-        return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'completed'
+        return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'bookshelf-tab', 'completed'
+    elif button_id == 'bookshelf-rented-tab':
+        return 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab active-tab', 'rented'
 
-    return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
+    return 'bookshelf-tab active-tab', 'bookshelf-tab', 'bookshelf-tab', 'bookshelf-tab', 'want-to-read'
 
 
 # Callback to load bookshelf tab content
@@ -196,7 +239,15 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         ])
 
     user_id = session_data.get('user_id')
-    success, message, bookshelf = bookshelf_backend.get_user_bookshelf(user_id)
+    
+    if active_tab == 'rented':
+        success, message, books = bookshelf_backend.get_user_rented_books(user_id)
+    else:
+        success, message, bookshelf = bookshelf_backend.get_user_bookshelf(user_id)
+        if success:
+            # Use shared mappings from backend
+            shelf_type = shelf_mapping.get(active_tab, 'to_read')
+            books = bookshelf.get(shelf_type, [])
 
     if not success:
         return html.Div([
@@ -204,9 +255,6 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
                 f"Error loading bookshelf: {message}", className='bookshelf-error')
         ])
 
-    # Use shared mappings from backend
-    shelf_type = shelf_mapping.get(active_tab, 'to_read')
-    books = bookshelf.get(shelf_type, [])
     current_tab_info = tab_info.get(active_tab, tab_info['want-to-read'])
 
     if not books:
@@ -220,7 +268,7 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
 
     return html.Div([
         html.Div([
-            create_book_card(book, reading_status=shelf_type, user_id=user_id) for book in books
+            create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type, user_id=user_id, show_status_buttons=active_tab != 'rented') for book in books
         ], className='bookshelf-grid')
     ])
 

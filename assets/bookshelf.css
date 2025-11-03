@@ -148,6 +148,13 @@
 
 .added-info { text-align: center; margin-bottom: 2px; }
 
+/* Expiry info for rented books */
+.expiry-info { text-align: center; margin-bottom: 1px; }
+.expiry-label-small { font-size: 10px; color: #666; }
+.expiry-days { font-size: 11px; color: #666; font-weight: bold; }
+.expiry-date-line { text-align: center; margin-top: 1px; }
+.expiry-date-small { font-size: 9px; color: #666; }
+
 /* Review indicator */
 .book-review-indicator { text-align: center; }
 .review-icon { font-size: 12px; margin-right: 3px; }

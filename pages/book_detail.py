@@ -222,7 +222,8 @@ def layout(book_id=None, **kwargs):
                                 id={'type': 'read-rent-button-container',
                                     'book_id': book_id},
                                 children=[],  # Will be populated by callback
-                                style={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px', 'verticalAlign': 'middle'}
+                                style={'display': 'inline-flex', 'alignItems': 'center',
+                                       'marginRight': '12px', 'verticalAlign': 'middle'}
                             ),
                             html.Div([
                                 html.Div(

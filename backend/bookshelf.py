@@ -9,21 +9,24 @@ import psycopg2
 shelf_mapping = {
     'want-to-read': 'to_read',
     'reading': 'reading',
-    'completed': 'finished'
+    'completed': 'finished',
+    'rented': 'rented'
 }
 
 # Tab titles and colors for UI
 tab_info = {
     'want-to-read': {'title': 'Want to Read', 'color': '#17a2b8'},
     'reading': {'title': 'Currently Reading', 'color': '#ffc107'},
-    'completed': {'title': 'Completed', 'color': '#28a745'}
+    'completed': {'title': 'Completed', 'color': '#28a745'},
+    'rented': {'title': 'Rented', 'color': '#dc3545'}
 }
 
 # Empty messages for each shelf
 empty_messages = {
     'want-to-read': "Your 'Want to Read' shelf is empty. Start building your reading list by adding books from the book detail pages!",
     'reading': "Your reading shelf is empty. Mark a book as 'Currently Reading' to see it here!",
-    'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!"
+    'completed': "Your completed shelf is empty. Finish reading books and mark them as 'Completed' to build your library!",
+    'rented': "You haven't rented any books yet. Browse available books and rent them to see them here!"
 }
 
 
@@ -231,3 +234,38 @@ def get_yearly_reading_stats(user_id, year=None):
             'books_read': 0,
             'pages_read': 0
         }
+
+
+def get_user_rented_books(user_id):
+    """Get user's rented books"""
+    try:
+        with get_conn() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                query = """
+                    SELECT 
+                        b.book_id,
+                        b.title,
+                        a.name as author_name,
+                        b.cover_url,
+                        b.genre,
+                        b.page_count,
+                        b.average_rating,
+                        b.rating_count,
+                        r.rental_date,
+                        r.due_date as expiry_date
+                    FROM rentals r
+                    JOIN books b ON r.book_id = b.book_id
+                    JOIN authors a ON b.author_id = a.author_id
+                    WHERE r.user_id = %s 
+                    AND r.return_date IS NULL
+                    AND r.due_date > CURRENT_DATE
+                    ORDER BY r.rental_date DESC
+                """
+                cursor.execute(query, (user_id,))
+                books = cursor.fetchall()
+                
+                return True, "Rented books retrieved successfully", books
+
+    except Error as e:
+        print(f"Error getting rented books: {e}")
+        return False, f"Error getting rented books: {e}", []
