@@ -17,6 +17,14 @@
     width: 300px; /* Fixed width for consistency */
 }
 
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+    .profile-info {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
 /* Remove gap between username and user info */
 .profile-info #profile-username + #profile-user-info {
     margin-top: 0px; /* Allow normal spacing between username and user info */
@@ -27,6 +35,14 @@
     width: 80%; /* Less wide */
     max-width: 300px; /* Maximum width */
     margin-top: 10px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+    .friends-section-left {
+        width: 100%;
+        max-width: 100%;
+    }
 }
 
 .friends-title-left {
@@ -426,12 +442,75 @@
 
     .profile-tabs {
         justify-content: center;
+        flex-wrap: nowrap; /* Prevent tabs from wrapping to next line */
     }
 
     .profile-tab {
         flex: 1;
-        max-width: 120px;
-        padding: 8px 12px !important;
-        font-size: 0.9rem;
+        max-width: 120px; /* Increased max-width to fit longer text */
+        padding: 6px 10px !important; /* Reduced padding */
+        font-size: 0.75rem; /* Even smaller font */
+    }
+
+    /* Mobile adjustments for favorites */
+    .favorites-list {
+        gap: 5px; /* Reduce gap between items */
+        justify-content: center; /* Center the cards */
+    }
+
+    .favorite-item {
+        width: 80px; /* Smaller card width */
+        padding: 5px; /* Reduce padding */
+    }
+
+    .favorite-item-image {
+        width: 60px; /* Smaller image */
+        height: 80px; /* Maintain aspect ratio */
+        margin-bottom: 4px; /* Reduce margin */
+    }
+
+    .favorite-author-image {
+        width: 60px; /* Smaller author image */
+        height: 60px; /* Square */
+        margin-bottom: 4px; /* Reduce margin */
+    }
+
+    .favorite-item-title {
+        font-size: 0.75rem; /* Smaller title */
+        line-height: 1.2; /* Tighter line height */
+    }
+
+    .favorite-item-author {
+        font-size: 0.65rem; /* Smaller author text */
+        margin-top: 2px; /* Reduce margin */
+    }
+
+    /* Mobile styles for completed books */
+    .completed-book-card {
+        width: 80px !important; /* Smaller card width like favorites */
+        height: 200px !important; /* Reduced height */
+        padding: 5px !important; /* Less padding */
+    }
+
+    .completed-book-card .completed-book-cover {
+        width: 60px !important; /* Smaller image */
+        height: 80px !important; /* Maintain aspect ratio */
+    }
+
+    .completed-book-card h4 {
+        font-size: 0.75rem !important; /* Smaller title */
+        margin: 5px 0 0 0 !important; /* Less margin */
+        line-height: 1.2 !important;
+    }
+
+    .completed-book-card div {
+        font-size: 0.65rem !important; /* Smaller text */
+        margin-top: 2px !important;
+    }
+
+    /* Mobile styles for completed books grid */
+    .completed-books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
+        gap: 5px !important; /* Smaller gap like favorites */
     }
 }

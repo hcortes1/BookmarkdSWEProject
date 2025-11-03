@@ -244,7 +244,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 'grid-template-columns': 'repeat(auto-fill, minmax(160px, 1fr))',
                 'gap': '20px',
                 'padding': '10px 0'
-            })
+            }, className="completed-books-grid")
         ])
     else:
         # No completed books found
