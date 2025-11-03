@@ -138,7 +138,9 @@ def handle_login(n_clicks, username, password):
             "username": user_data["username"],
             "email": user_data["email"],
             "profile_image_url": user_data["profile_image_url"],
-            "created_at": user_data["created_at"]
+            "created_at": user_data["created_at"],
+            "first_login": user_data["first_login"],
+            "favorite_genres": user_data["favorite_genres"]  
         }
 
         # Fetch initial notifications immediately after login
@@ -150,8 +152,14 @@ def handle_login(n_clicks, username, password):
         except Exception as e:
             session_data["notifications"] = {"count": 0, "notifications": []}
 
-        # update session and redirect to home page on successful login
-        return '/', dash.no_update, session_data
+        # Check if first login and redirect accordingly
+        if user_data.get("first_login"):
+            # First time user -> genre selection
+            return '/genre-selection', dash.no_update, session_data
+        else:
+            # Regular user -> home page
+            return '/', dash.no_update, session_data
+            
     else:
         # display error message below the button
         error_message = html.Div(
