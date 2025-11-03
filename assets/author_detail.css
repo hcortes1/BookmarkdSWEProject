@@ -209,3 +209,107 @@
   font-style: italic;
   padding: 20px;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+    .author-detail-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .author-image-large {
+        width: 150px;
+        height: 150px;
+        order: -1; /* Show image above details */
+    }
+
+    .author-details {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    .author-name {
+        font-size: 1.8rem;
+    }
+
+    .page-container {
+        padding: 15px;
+    }
+
+    .author-books-section {
+        margin-top: 20px;
+        padding: 15px;
+    }
+
+    .books-grid {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns on tablet */
+        gap: 15px;
+    }
+
+    .book-card {
+        padding: 10px;
+        min-height: 280px;
+    }
+
+    .book-card img {
+        height: 160px;
+    }
+
+    .book-card-title {
+        font-size: 13px;
+        height: 2.2em;
+    }
+
+    .section-title {
+        font-size: 20px;
+    }
+
+    .pagination-btn {
+        padding: 6px 10px;
+        margin: 0 2px;
+        font-size: 13px;
+    }
+
+    .favorite-btn {
+        width: 200px;
+        margin: 15px auto 0;
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .books-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+        gap: 12px;
+    }
+
+    .book-card {
+        padding: 8px;
+        min-height: 260px;
+    }
+
+    .book-card img {
+        height: 140px;
+    }
+
+    .book-card-title {
+        font-size: 12px;
+        height: 2em;
+    }
+
+    .author-image-large {
+        width: 120px;
+        height: 120px;
+    }
+
+    .author-name {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+}

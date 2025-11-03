@@ -13,29 +13,29 @@ layout = html.Div([
         # Navigation sidebar
         html.Div([
             html.Div("Navigation", style={
-                'font-weight': 'bold', 'margin-bottom': '15px', 'font-size': '14px', 'color': '#666'
+                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': '#666'
             }),
             html.Div([
                 html.A("Profile Settings", href="#profile-settings", style={
-                    'display': 'block', 'padding': '8px 12px', 'margin-bottom': '5px',
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
                     'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
-                    'transition': 'background-color 0.2s'
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Settings", href="#account-settings", style={
-                    'display': 'block', 'padding': '8px 12px', 'margin-bottom': '5px',
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
                     'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
-                    'transition': 'background-color 0.2s'
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Actions", href="#account-actions", style={
-                    'display': 'block', 'padding': '8px 12px', 'margin-bottom': '5px',
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
                     'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
-                    'transition': 'background-color 0.2s'
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
             ], style={'list-style': 'none', 'padding': '0', 'margin': '0'})
-        ], style={
-            'width': '180px', 'background-color': '#f0f0f0', 'padding': '20px',
+        ], className="settings-sidebar", style={
+            'width': '140px', 'background-color': '#f0f0f0', 'padding': '15px',
             'border-radius': '8px', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
-            'margin-right': '40px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
+            'margin-right': '20px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
         }),
 
         # Main content area
@@ -234,7 +234,7 @@ layout = html.Div([
                     html.Div(id='settings-feedback')
                 ], style={'text-align': 'center'})
             ], className='settings-card')
-        ], style={'flex': '1', 'max-width': '800px'})
+        ], className="settings-content", style={'flex': '1', 'max-width': '800px'})
     ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'flex-start', 'max-width': '1200px', 'margin': '0 auto', 'padding': '20px'})
 ], className="settings-page")
 
