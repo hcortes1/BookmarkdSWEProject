@@ -5,6 +5,11 @@ from backend.books import get_book_details, get_books_with_same_title
 from backend.favorites import is_book_favorited, toggle_book_favorite
 from backend.bookshelf import get_book_shelf_status, add_to_bookshelf
 from backend.reviews import get_user_review, create_or_update_review
+from backend.friends import get_friends_list
+from backend.recommendations import create_book_recommendation
+from backend.rewards import award_completion_rating, award_review, award_recommendation
+from backend.gutenberg import search_and_download_gutenberg_html
+from backend.rentals import check_book_rental_status, rent_book, get_rental_info_for_confirmation
 from urllib.parse import unquote, parse_qs
 
 dash.register_page(__name__, path_template="/book/<book_id>")
@@ -60,10 +65,26 @@ def layout(book_id=None, **kwargs):
         if not book_data:
             return html.Div("Book not found", className="error-message")
 
+        # Check if HTML is available from Gutenberg
+        if not book_data.get('html_path'):
+            search_and_download_gutenberg_html(
+                book_data['title'], book_data['author_name'], book_id)
+            # Refresh book data after potential update
+            book_data = get_book_details(book_id)
+
+        # Check rental status (will be updated by callback)
+        rental_status = None  # Will be set by callback
+
         return html.Div([
             # Store for favorite status feedback
             dcc.Store(id={'type': 'book-favorite-store', 'book_id': book_id}),
             dcc.Store(id='book-navigation-store', data={'book_id': book_id}),
+            dcc.Store(id={'type': 'error-modal-visible',
+                      'book_id': book_id}, data=False),
+            dcc.Store(id={'type': 'rental-modal-visible',
+                      'book_id': book_id}, data=False),
+            dcc.Store(id={'type': 'rental-status-store',
+                      'book_id': book_id}, data=None),
 
             html.Div([
                 html.Div([
@@ -78,6 +99,23 @@ def layout(book_id=None, **kwargs):
 
                     # Book details
                     html.Div([
+                        # Favorite button (top right corner of book details)
+                        html.Button(
+                            id={'type': 'book-favorite-btn',
+                                'book_id': book_id},
+                            className="favorite-btn-book-detail",
+                            style={
+                                'position': 'absolute',
+                                'top': '20px',
+                                'right': '20px',
+                                'background': 'none',
+                                'border': 'none',
+                                'font-size': '2rem',
+                                'cursor': 'pointer',
+                                'zIndex': 2
+                            }
+                        ),
+
                         html.H1(book_data['title'], className="book-title"),
                         html.H2([
                             "by ",
@@ -143,17 +181,49 @@ def layout(book_id=None, **kwargs):
 
                         # Action buttons section
                         html.Div([
-                            # Favorite button
-                            html.Button(
-                                id={'type': 'book-favorite-btn',
-                                    'book_id': book_id},
-                                className="favorite-btn"
-                            ),
                             # Bookshelf button
                             html.Button(
                                 id={'type': 'book-bookshelf-btn',
                                     'book_id': book_id},
-                                className="bookshelf-btn"
+                                className="bookshelf-btn",
+                                style={
+                                    'background': '#1976d2',
+                                    'color': 'white',
+                                    'fontSize': '1rem',
+                                    'padding': '10px 24px',
+                                    'borderRadius': '6px',
+                                    'border': 'none',
+                                    'fontWeight': 'bold',
+                                    'marginRight': '12px',
+                                    'cursor': 'pointer',
+                                    'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+                                }
+                            ),
+                            html.Button(
+                                "Recommend",
+                                id={'type': 'book-recommend-btn',
+                                    'book_id': book_id},
+                                className="recommend-btn blue-btn",
+                                style={
+                                    'background': '#1976d2',
+                                    'color': 'white',
+                                    'fontSize': '1rem',
+                                    'padding': '10px 24px',
+                                    'borderRadius': '6px',
+                                    'border': 'none',
+                                    'fontWeight': 'bold',
+                                    'marginRight': '12px',
+                                    'cursor': 'pointer',
+                                    'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+                                }
+                            ),
+                            # Read/Rent button - will be updated by callback
+                            html.Div(
+                                id={'type': 'read-rent-button-container',
+                                    'book_id': book_id},
+                                children=[],  # Will be populated by callback
+                                style={'display': 'inline-flex', 'alignItems': 'center',
+                                       'marginRight': '12px', 'verticalAlign': 'middle'}
                             ),
                             html.Div([
                                 html.Div(
@@ -165,25 +235,34 @@ def layout(book_id=None, **kwargs):
                                     id={'type': 'book-bookshelf-feedback',
                                         'book_id': book_id},
                                     className="feedback-text"
+                                ),
+                                html.Div(
+                                    id={'type': 'book-recommend-feedback',
+                                        'book_id': book_id},
+                                    className="feedback-text"
                                 )
                             ])
-                        ], className="action-buttons-section")
+                        ], className="action-buttons-section", style={'display': 'flex', 'alignItems': 'center'})
 
-                    ], className="book-details")
+                    ], className="book-details", style={'position': 'relative'})
 
                 ], className="book-detail-container secondary-bg"),
 
                 # Store for modal visibility
                 dcc.Store(id={'type': 'modal-visible',
-                          'book_id': book_id}, data=False),
+                              'book_id': book_id}, data=False),
 
                 # Store for review removal confirmation
                 dcc.Store(id={'type': 'review-removal-confirmation-visible',
-                          'book_id': book_id}, data=False),
+                              'book_id': book_id}, data=False),
                 dcc.Store(id={'type': 'pending-status-change',
-                          'book_id': book_id}, data=None),
+                              'book_id': book_id}, data=None),
                 dcc.Store(id={'type': 'modal-mode',
-                          'book_id': book_id}, data='add'),
+                              'book_id': book_id}, data='add'),
+
+                # Store for recommendation modal visibility
+                dcc.Store(id={'type': 'recommend-modal-visible',
+                              'book_id': book_id}, data=False),
 
                 # Bookshelf overlay modal
                 html.Div([
@@ -284,6 +363,103 @@ def layout(book_id=None, **kwargs):
                     ], className="review-removal-modal")
                 ], id={'type': 'review-removal-modal', 'book_id': book_id}, style={'display': 'none'}),
 
+                # Recommendation modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3("Recommend Book",
+                                    className="modal-header"),
+                            html.Button("×", id={'type': 'close-recommend-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+
+                            # Friend selection
+                            html.Div([
+                                html.H4("Select friends to recommend to:",
+                                        className="modal-subheader"),
+                                html.Div(
+                                    id={'type': 'friends-list-container',
+                                        'book_id': book_id},
+                                    children=[
+                                        dcc.Checklist(
+                                            id={'type': 'friends-checklist',
+                                                'book_id': book_id},
+                                            options=[],
+                                            value=[],
+                                            labelStyle={
+                                                'display': 'flex', 'align-items': 'center', 'margin-bottom': '8px'}
+                                        )
+                                    ]
+                                )
+                            ]),
+
+                            # Reason input
+                            html.Div([
+                                html.H4("Reason for recommendation (optional):",
+                                        className="modal-subheader"),
+                                dcc.Textarea(
+                                    id={'type': 'recommend-reason',
+                                        'book_id': book_id},
+                                    placeholder="Tell your friends why you recommend this book...",
+                                    className="recommend-reason-textarea",
+                                    style={'width': '100%', 'height': '80px',
+                                           'resize': 'vertical', 'margin-bottom': '15px'}
+                                )
+                            ], id={'type': 'recommend-reason-section', 'book_id': book_id}),
+
+                            # Action buttons
+                            html.Div([
+                                html.Button("Send Recommendation",
+                                            id={'type': 'send-recommendations',
+                                                'book_id': book_id},
+                                            className="send-recommendations")
+                            ], id={'type': 'recommend-buttons-section', 'book_id': book_id}, className="modal-buttons-right"),
+
+                            html.Div(id={'type': 'recommend-modal-feedback', 'book_id': book_id},
+                                     className="modal-feedback")
+                        ], className='secondary-bg modal-content')
+                    ], id={'type': 'recommend-modal-overlay', 'book_id': book_id}, className="modal-overlay")
+                ], id={'type': 'recommend-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Rental confirmation modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3("Rent Book", className="modal-header"),
+                            html.Button("×", id={'type': 'close-rental-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+                            html.Div([
+                                html.H4("Rental Confirmation",
+                                        className="modal-subheader"),
+                                html.Div(id={'type': 'rental-confirmation-content', 'book_id': book_id},
+                                         className="rental-confirmation-content"),
+                                html.Div([
+                                    html.Button("Confirm Rental",
+                                                id={'type': 'confirm-rental',
+                                                    'book_id': book_id},
+                                                className="confirm-btn",
+                                                style={'background': '#1976d2'})
+                                ], className="modal-buttons-right")
+                            ]),
+                            html.Div(id={'type': 'rental-modal-feedback', 'book_id': book_id},
+                                     className="modal-feedback")
+                        ], className='secondary-bg modal-content', style={'width': '500px'})
+                    ], className="rental-modal-overlay")
+                ], id={'type': 'rental-modal', 'book_id': book_id}, style={'display': 'none'}),
+
+                # Error modal
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.H3(
+                                "Error", className="modal-header error-modal-header"),
+                            html.Button("×", id={'type': 'close-error-modal', 'book_id': book_id},
+                                        className="close-modal-btn"),
+                            html.Div(id={'type': 'error-modal-content', 'book_id': book_id},
+                                     className="error-modal-content")
+                        ], className='secondary-bg modal-content error-modal-content')
+                    ], className="error-modal-overlay")
+                ], id={'type': 'error-modal', 'book_id': book_id}, style={'display': 'none'}),
+
                 # Other editions/versions section
                 html.Div(id='other-editions-section', children=[
                     # This will be populated by a callback
@@ -361,40 +537,28 @@ def set_initial_book_favorite_state(store_id, session_data):
     """Set the initial state of the favorite button"""
     book_id = store_id['book_id']
 
-    # Default styles
-    base_style = {
-        'margin-top': '20px',
-        'padding': '10px 20px',
+    # New absolute top-right style for favorite button
+    abs_style = {
+        'position': 'absolute',
+        'top': '20px',
+        'right': '20px',
+        'background': 'none',
         'border': 'none',
-        'border-radius': '5px',
+        'font-size': '2rem',
         'cursor': 'pointer',
-        'font-size': '14px',
-        'font-weight': 'bold'
+        'zIndex': 2
     }
 
     if not session_data or not session_data.get('logged_in'):
-        return "❤️ Add to Favorites (Login Required)", {
-            **base_style,
-            'background-color': '#ddd',
-            'color': '#666',
-            'cursor': 'not-allowed'
-        }
+        return "❤️", abs_style
 
     user_id = session_data.get('user_id')
     is_favorited = is_book_favorited(user_id, book_id)
 
     if is_favorited:
-        return "💔 Remove from Favorites", {
-            **base_style,
-            'background-color': '#dc3545',
-            'color': 'white'
-        }
+        return "💔", abs_style
     else:
-        return "❤️ Add to Favorites", {
-            **base_style,
-            'background-color': '#28a745',
-            'color': 'white'
-        }
+        return "❤️", abs_style
 
 
 # Callback to set initial bookshelf button state
@@ -417,9 +581,9 @@ def set_initial_bookshelf_button_state(store_id, session_data):
 
     if success and shelf_type:
         status_text = DISPLAY_SHELF_MAPPING.get(shelf_type, shelf_type)
-        return [f"📚 Manage: {status_text}"]
+        return [f"Manage: {status_text}"]
     else:
-        return ["📚 Add to Bookshelf"]
+        return ["Add to Bookshelf"]
 
 
 # Callback to handle bookshelf button clicks (open modal)
@@ -616,7 +780,7 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
                 dash.no_update,
                 dash.no_update,
                 html.Div(message, style={'color': 'green'}),
-                f"📚 Manage: {status_text}",
+                f"Manage: {status_text}",
                 False,  # Close modal
                 dash.no_update,  # Keep confirmation modal hidden
                 dash.no_update,  # Don't change confirmation state
@@ -644,7 +808,11 @@ def handle_status_selection(to_read_clicks, reading_clicks, finished_clicks, ses
             'data', allow_duplicate=True),
      Output({'type': 'rating-dropdown',
             'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True),
-     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value', allow_duplicate=True)],
+     Output({'type': 'review-text', 'book_id': dash.dependencies.MATCH},
+            'value', allow_duplicate=True),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
     Input({'type': 'save-review', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
     [State({'type': 'rating-dropdown', 'book_id': dash.dependencies.MATCH}, 'value'),
      State({'type': 'review-text', 'book_id': dash.dependencies.MATCH}, 'value'),
@@ -659,12 +827,13 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
     if not rating:
         return (
-            html.Div("Please select a rating before submitting.",
-                     style={'color': 'red'}),
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update
+            dash.no_update,  # modal-feedback
+            dash.no_update,  # book-bookshelf-btn
+            dash.no_update,  # modal-visible
+            dash.no_update,  # rating-dropdown
+            dash.no_update,  # review-text
+            True,  # error-modal-visible
+            "Please select a rating before submitting."  # error-modal-content
         )
 
     # Get book_id from callback context
@@ -684,12 +853,14 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
             if not shelf_success:
                 return (
-                    html.Div(f"Error updating bookshelf: {shelf_message}", style={
-                             'color': 'red'}),
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update
+                    dash.no_update,  # modal-feedback
+                    dash.no_update,  # book-bookshelf-btn
+                    dash.no_update,  # modal-visible
+                    dash.no_update,  # rating-dropdown
+                    dash.no_update,  # review-text
+                    True,  # error-modal-visible
+                    # error-modal-content
+                    f"Error updating bookshelf: {shelf_message}"
                 )
 
         # Then save review
@@ -698,28 +869,40 @@ def handle_review_submission(n_clicks, rating, review_text, session_data, mode):
 
         if not review_success:
             return (
-                html.Div(f"Bookshelf updated but error saving review: {review_message}", style={
-                         'color': 'orange'}),
-                "📚 Manage: Finished",
-                dash.no_update,
-                dash.no_update,
-                dash.no_update
+                dash.no_update,  # modal-feedback
+                dash.no_update,  # book-bookshelf-btn
+                dash.no_update,  # modal-visible
+                dash.no_update,  # rating-dropdown
+                dash.no_update,  # review-text
+                True,  # error-modal-visible
+                # error-modal-content
+                f"Bookshelf updated but error saving review: {review_message}"
             )
+
+        # Award points
+        if mode == 'add':
+            award_completion_rating(user_id)
+        if review_text and review_text.strip():
+            award_review(user_id)
 
         return (
             html.Div(feedback_text, style={'color': 'green'}),
-            "📚 Manage: Finished",
+            "Manage: Finished",
             False,  # Close modal
             None,  # Clear rating
-            ""     # Clear review text
+            "",    # Clear review text
+            False,  # error-modal-visible
+            ""      # error-modal-content
         )
     except Exception as e:
         return (
-            html.Div(f"Unexpected error: {str(e)}", style={'color': 'red'}),
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update
+            dash.no_update,  # modal-feedback
+            dash.no_update,  # book-bookshelf-btn
+            dash.no_update,  # modal-visible
+            dash.no_update,  # rating-dropdown
+            dash.no_update,  # review-text
+            True,  # error-modal-visible
+            f"Unexpected error: {str(e)}"  # error-modal-content
         )
 
 
@@ -805,30 +988,23 @@ def handle_book_favorite_click(n_clicks, session_data):
     # Toggle favorite
     result = toggle_book_favorite(user_id, book_id)
 
-    # Base styles
-    base_style = {
-        'margin-top': '20px',
-        'padding': '10px 20px',
+    # New absolute top-right style for favorite button
+    abs_style = {
+        'position': 'absolute',
+        'top': '20px',
+        'right': '20px',
+        'background': 'none',
         'border': 'none',
-        'border-radius': '5px',
+        'font-size': '2rem',
         'cursor': 'pointer',
-        'font-size': '14px',
-        'font-weight': 'bold'
+        'zIndex': 2
     }
 
     if result['success']:
         if result['is_favorited']:
-            return "💔 Remove from Favorites", {
-                **base_style,
-                'background-color': '#dc3545',
-                'color': 'white'
-            }, html.Div(result['message'], style={'color': 'green'})
+            return "💔", abs_style, html.Div(result['message'], style={'color': 'green'})
         else:
-            return "❤️ Add to Favorites", {
-                **base_style,
-                'background-color': '#28a745',
-                'color': 'white'
-            }, html.Div(result['message'], style={'color': 'green'})
+            return "❤️", abs_style, html.Div(result['message'], style={'color': 'green'})
     else:
         return dash.no_update, dash.no_update, html.Div(
             result['message'],
@@ -872,7 +1048,11 @@ def cancel_review_removal(n_clicks):
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
      Output({'type': 'status-selection', 'book_id': dash.dependencies.MATCH},
             'style', allow_duplicate=True),
-     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True)],
+     Output({'type': 'review-form', 'book_id': dash.dependencies.MATCH},
+            'style', allow_duplicate=True),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
     [Input({'type': 'confirm-review-removal',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
     [State({'type': 'pending-status-change', 'book_id': dash.dependencies.MATCH}, 'data'),
@@ -913,26 +1093,30 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             else:
                 return (
                     {'display': 'none'},
-                    html.Div(f"Error updating status: {status_message}", style={
-                             'color': 'red'}),
+                    dash.no_update,
                     dash.no_update,
                     dash.no_update,
                     False,
                     {},
-                    dash.no_update,
-                    dash.no_update
+                    {'display': 'block'},  # status selection
+                    {'display': 'none'},   # review form
+                    True,  # error-modal-visible
+                    # error-modal-content
+                    f"Error updating status: {status_message}"
                 )
         else:
             return (
                 {'display': 'none'},
-                html.Div(f"Error removing review: {review_message}", style={
-                         'color': 'red'}),
+                dash.no_update,
                 dash.no_update,
                 dash.no_update,
                 False,
                 {},
                 dash.no_update,
-                dash.no_update
+                dash.no_update,
+                True,  # error-modal-visible
+                # error-modal-content
+                f"Error removing review: {review_message}"
             )
 
     if not book_id or not new_status:
@@ -960,22 +1144,405 @@ def confirm_review_removal(n_clicks, pending_change, session_data):
             {'display': 'none'},  # Hide confirmation modal
             html.Div("Review removed and status updated successfully.",
                      style={'color': 'green'}),
-            f"📚 Manage: {status_text}",
+            f"Manage: {status_text}",
             False,  # Close main modal
             False,  # Mark confirmation as not visible
             {},  # Clear pending change
             dash.no_update,  # status selection
-            dash.no_update   # review form
+            dash.no_update,  # review form
+            False,  # error-modal-visible
+            ""      # error-modal-content
         )
     else:
         error_msg = f"Error: {review_message if not review_success else status_message}"
         return (
             {'display': 'none'},  # Hide confirmation modal
-            html.Div(error_msg, style={'color': 'red'}),
+            dash.no_update,
             dash.no_update,
             dash.no_update,
             False,  # Mark confirmation as not visible
             {},  # Clear pending change
             dash.no_update,
-            dash.no_update
+            dash.no_update,
+            True,  # error-modal-visible
+            error_msg  # error-modal-content
         )
+
+
+# Recommendation modal callbacks
+@callback(
+    [Output({'type': 'recommend-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'recommend-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'book-recommend-btn', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+     Input({'type': 'close-recommend-modal', 'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'recommend-modal-visible',
+           'book_id': dash.dependencies.MATCH}, 'data')],
+    prevent_initial_call=True
+)
+def toggle_recommend_modal(open_clicks, close_clicks, is_visible):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, is_visible
+
+    triggered_prop = ctx.triggered[0]['prop_id']
+
+    # Check if it's a close action
+    if 'close-recommend-modal' in triggered_prop:
+        return {'display': 'none'}, False
+    elif 'book-recommend-btn' in triggered_prop:
+        return {'display': 'block'}, True
+    else:
+        return dash.no_update, is_visible
+
+
+@callback(
+    [Output({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'options'),
+     Output({'type': 'friends-checklist',
+            'book_id': dash.dependencies.MATCH}, 'value'),
+     Output({'type': 'recommend-reason-section',
+            'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'recommend-buttons-section', 'book_id': dash.dependencies.MATCH}, 'style')],
+    [Input({'type': 'recommend-modal-visible',
+           'book_id': dash.dependencies.MATCH}, 'data')],
+    [State('user-session', 'data'),
+     State('book-navigation-store', 'data')],
+    prevent_initial_call=True
+)
+def populate_friends_list(is_visible, user_session, book_data):
+    if not is_visible or not user_session or not user_session.get('logged_in'):
+        return [], [], {'display': 'none'}, {'display': 'none'}
+
+    user_id = user_session['user_id']
+    friends = get_friends_list(user_id)
+    book_id = book_data.get('book_id')
+
+    if not friends:
+        return [], [], {'display': 'none'}, {'display': 'none'}
+
+    # Create options for checklist
+    options = []
+    for friend in friends:
+        # Check if friend has already completed this book
+        has_completed = False
+        if book_id:
+            success, message, shelf_type = get_book_shelf_status(
+                friend['friend_id'], book_id)
+            has_completed = success and shelf_type == 'completed'
+
+        # Create label with completion status
+        username_display = friend['username']
+        if has_completed:
+            username_display += ' (completed)'
+
+        options.append({
+            'label': [
+                html.Img(
+                    src=friend.get(
+                        'profile_image_url') or '/assets/svg/default-profile.svg',
+                    style={'width': '30px', 'height': '30px', 'border-radius': '50%',
+                           'margin-left': '20px', 'margin-right': '10px', 'vertical-align': 'middle'}
+                ),
+                html.Span(username_display, style={'vertical-align': 'middle'})
+            ],
+            'value': str(friend['friend_id']),
+            'disabled': has_completed  # Disable if already completed
+        })
+
+    return options, [], {'display': 'block'}, {'display': 'block'}
+
+
+@callback(
+    [Output({'type': 'recommend-modal', 'book_id': dash.dependencies.MATCH}, 'style', allow_duplicate=True),
+     Output({'type': 'recommend-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'book-recommend-feedback',
+            'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'recommend-reason',
+            'book_id': dash.dependencies.MATCH}, 'value'),
+     Output({'type': 'error-modal-visible',
+            'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
+    [Input({'type': 'send-recommendations',
+           'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'value'),
+     State({'type': 'recommend-reason', 'book_id': dash.dependencies.MATCH}, 'value'),
+     State('user-session', 'data'),
+     State('book-navigation-store', 'data')],
+    prevent_initial_call=True
+)
+def send_recommendations(send_clicks, selected_friend_ids, reason, user_session, book_data):
+    if not send_clicks or not user_session or not user_session.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Get selected friends
+    selected_friends = [
+        int(fid) for fid in selected_friend_ids] if selected_friend_ids else []
+
+    if not selected_friends:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Please select at least one friend."
+
+    book_id = book_data['book_id']
+    sender_id = user_session['user_id']
+    reason = reason.strip() if reason else ""
+
+    # Send recommendations to selected friends
+    success_count = 0
+    for friend_id in selected_friends:
+        result = create_book_recommendation(
+            sender_id, friend_id, book_id, reason)
+        if result['success']:
+            success_count += 1
+            award_recommendation(sender_id)
+
+    if success_count == len(selected_friends):
+        message = f"Book recommendation sent to {success_count} friend{'s' if success_count != 1 else ''}!"
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), "", False, ""
+    elif success_count > 0:
+        message = f"Book recommendation sent to {success_count} out of {len(selected_friends)} friends."
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), "", False, ""
+    else:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Failed to send recommendations. Please try again."
+
+
+# Callback to control error modal visibility
+@callback(
+    [Output({'type': 'error-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+     Output({'type': 'error-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data')],
+    Input({'type': 'error-modal-visible',
+          'book_id': dash.dependencies.MATCH}, 'data'),
+    prevent_initial_call=False
+)
+def control_error_modal_visibility(is_visible):
+    """Control the visibility of the error modal"""
+    if is_visible:
+        return {'display': 'block'}, is_visible
+    else:
+        return {'display': 'none'}, is_visible
+
+
+# Callback to close error modal
+@callback(
+    [Output({'type': 'error-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children')],
+    Input({'type': 'close-error-modal',
+          'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def close_error_modal(n_clicks):
+    """Close the error modal when X button is clicked"""
+    if n_clicks:
+        return False, ""
+    return dash.no_update, dash.no_update
+
+
+# Callback to set initial rental status and Read/Rent button
+@callback(
+    [Output({'type': 'read-rent-button-container', 'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'data')],
+    [Input({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'id'),
+     Input('user-session', 'data')],
+    [State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=False
+)
+def set_initial_rental_status(store_id, session_data, book_store_id):
+    """Set the initial rental status and show appropriate Read/Rent button"""
+    book_id = store_id['book_id']
+
+    # Check if book has available HTML
+    book_data = get_book_details(book_id)
+    if not book_data or not book_data.get('html_path'):
+        return html.Div(), None
+
+    if not session_data or not session_data.get('logged_in'):
+        # Not logged in - show disabled rent button
+        return html.Button(
+            "Rent Book",
+            className="rent-btn blue-btn",
+            disabled=True,
+            style={
+                'background': '#ccc',
+                'color': '#666',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'cursor': 'not-allowed'
+            }
+        ), None
+
+    user_id = session_data.get('user_id')
+    rental_status = check_book_rental_status(user_id, book_id)
+
+    if rental_status:
+        # User has active rental - show Read button
+        return dcc.Link(
+            "Read",
+            href=f"/read/{book_id}",
+            className="read-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'textDecoration': 'none',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        ), rental_status
+    else:
+        # No active rental - show Rent button
+        return html.Button(
+            "Rent Book",
+            id={'type': 'rent-book-btn', 'book_id': book_id},
+            className="rent-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'marginTop': '20px',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        ), None
+
+
+# Callback to open rental modal
+@callback(
+    [Output({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
+     Output({'type': 'rental-confirmation-content', 'book_id': dash.dependencies.MATCH}, 'children')],
+    [Input({'type': 'rent-book-btn', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+     Input({'type': 'close-rental-modal',
+           'book_id': dash.dependencies.MATCH}, 'n_clicks')],
+    [State({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data'),
+     State('user-session', 'data'),
+     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=False
+)
+def toggle_rental_modal(open_clicks, close_clicks, is_visible, session_data, store_id):
+    """Toggle rental modal visibility and populate confirmation content"""
+    if open_clicks is None and close_clicks is None:
+        return dash.no_update, dash.no_update
+
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    triggered_prop = ctx.triggered[0]['prop_id']
+    book_id = store_id['book_id']
+
+    # Check if it's a close action
+    if 'close-rental-modal' in triggered_prop:
+        return False, dash.no_update
+    elif 'rent-book-btn' in triggered_prop and session_data and session_data.get('logged_in'):
+        # Opening modal - get rental info
+        user_id = session_data['user_id']
+        rental_info = get_rental_info_for_confirmation(user_id, book_id)
+
+        if not rental_info['can_afford']:
+            content = html.Div([
+                html.P("You don't have enough points to rent this book.",
+                       style={'color': 'red'}),
+                html.P(f"Required: {rental_info['cost']} points"),
+                html.P(f"Your balance: {rental_info['current_points']} points")
+            ], style={'marginBottom': '20px'})
+        else:
+            content = html.Div([
+                html.P(f"Cost: {rental_info['cost']} points"),
+                html.P(
+                    f"Rental duration: {rental_info['duration_days']} days"),
+                html.P(
+                    f"Your current balance: {rental_info['current_points']} points"),
+                html.P(f"Balance after rental: {rental_info['points_after']} points",
+                       style={'fontSize': 'smaller', 'fontWeight': 'normal'})
+            ], style={'marginBottom': '20px'})
+
+        return True, content
+
+    return dash.no_update, dash.no_update
+
+
+# Callback to control rental modal visibility
+@callback(
+    Output({'type': 'rental-modal', 'book_id': dash.dependencies.MATCH}, 'style'),
+    Input({'type': 'rental-modal-visible',
+          'book_id': dash.dependencies.MATCH}, 'data'),
+    prevent_initial_call=False
+)
+def control_rental_modal_visibility(is_visible):
+    """Control the visibility of the rental modal"""
+    if is_visible:
+        return {
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background': 'rgba(0,0,0,0.5)',
+            'display': 'flex',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'z-index': '1000'
+        }
+    else:
+        return {'display': 'none'}
+
+
+# Callback to handle rental confirmation
+@callback(
+    [Output({'type': 'rental-modal-visible', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
+     Output({'type': 'rental-modal-feedback',
+            'book_id': dash.dependencies.MATCH}, 'children'),
+     Output({'type': 'read-rent-button-container',
+            'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
+     Output({'type': 'rental-status-store', 'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True)],
+    Input({'type': 'confirm-rental', 'book_id': dash.dependencies.MATCH}, 'n_clicks'),
+    [State('user-session', 'data'),
+     State({'type': 'book-favorite-store', 'book_id': dash.dependencies.MATCH}, 'id')],
+    prevent_initial_call=True
+)
+def confirm_rental(n_clicks, session_data, store_id):
+    """Handle rental confirmation and update UI"""
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    book_id = store_id['book_id']
+    user_id = session_data['user_id']
+
+    success, message = rent_book(user_id, book_id)
+
+    if success:
+        # Update to show Read button
+        read_button = dcc.Link(
+            "Read",
+            href=f"/read/{book_id}",
+            className="read-btn blue-btn",
+            style={
+                'background': '#1976d2',
+                'color': 'white',
+                'fontSize': '1rem',
+                'padding': '10px 24px',
+                'borderRadius': '6px',
+                'border': 'none',
+                'fontWeight': 'bold',
+                'marginRight': '0',
+                'textDecoration': 'none',
+                'cursor': 'pointer',
+                'boxShadow': '0 2px 4px rgba(25, 118, 210, 0.08)'
+            }
+        )
+        return False, html.Div(message, style={'color': 'green'}), read_button, check_book_rental_status(user_id, book_id)
+    else:
+        return False, html.Div(message, style={'color': 'red'}), dash.no_update, dash.no_update

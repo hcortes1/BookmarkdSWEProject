@@ -5,12 +5,19 @@ import time
 import backend.settings as settings_backend
 import backend.profile as profile_backend
 import backend.friends as friends_backend
+import backend.rewards as rewards_backend
 
 
 app = Dash(
     __name__,
     use_pages=True,
-    suppress_callback_exceptions=True
+    suppress_callback_exceptions=True,
+    meta_tags=[
+        {
+            'name': 'viewport',
+            'content': 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes'
+        }
+    ]
 )
 
 app.validation_layout = None
@@ -21,16 +28,16 @@ app.layout = html.Div([
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
+    dcc.Store(id="mobile-menu-store",
+              storage_type="memory", data={"open": False}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
             html.Div(id='nav-left-container', className="nav-left", children=[
                 dcc.Link([
                     html.Span("Bookmarkd", className="brand-name", style={
-                        'font-size': '24px',
                         'font-weight': 'bold',
                         'color': '#007bff',
-                        'margin-right': '30px',
                         'text-decoration': 'none'
                     })
                 ], href='/', className='brand-link', style={'text-decoration': 'none'}),
@@ -56,10 +63,6 @@ app.layout = html.Div([
                             clearable=False,
                             searchable=False,
                             className='search-type-dropdown',
-                            style={
-                                'width': '100px',
-                                'margin-right': '8px'
-                            }
                         ),
                         dcc.Input(id='header-search', placeholder='Search...',
                                   type='text', className='search-input',
@@ -78,6 +81,49 @@ app.layout = html.Div([
     html.Div(
         id="page-container-wrapper",
         children=[dash.page_container]
+    ),
+
+    html.Div(
+        id="mobile-overlay",
+        className="mobile-overlay",
+        children=[
+            html.Div(
+                "Bookmarkd",
+                className="mobile-brand"
+            ),
+            html.Div(
+                "is better experienced on a PC or tablet",
+                className="mobile-subtext"
+            )
+        ]
+    ),
+
+    # Mobile menu
+    html.Div(
+        id="mobile-menu",
+        className="mobile-menu",
+        children=[
+            html.Div(
+                className="mobile-menu-backdrop",
+                id="mobile-menu-backdrop"
+            ),
+            html.Div(className="mobile-menu-content", children=[
+                html.Div(className="mobile-menu-header", children=[
+                    dcc.Link([
+                        html.Img(src='/assets/svg/home.svg',
+                                 className='mobile-menu-icon'),
+                        html.Span('Home')
+                    ], href='/', className='mobile-menu-link mobile-header-link'),
+                    html.Button(
+                        html.Img(src='/assets/svg/close.svg',
+                                 className='close-icon'),
+                        id='close-mobile-menu',
+                        className='close-mobile-menu-btn'
+                    )
+                ]),
+                html.Div(id='mobile-menu-links', className='mobile-menu-links')
+            ])
+        ]
     )
 ])
 
@@ -100,11 +146,11 @@ def update_page_container(pathname):
 
 @app.callback(
     [Output('nav-left-container', 'children'),
-     Output('nav-right-container', 'children')],
-    Input('user-session', 'data'),
-    Input('url', 'pathname')
+     Output('nav-right-container', 'children'),
+     Output('mobile-menu-links', 'children')],
+    Input('user-session', 'data')
 )
-def update_navigation(user_session, pathname):
+def update_navigation(user_session):
     is_logged_in = user_session.get(
         'logged_in', False) if user_session else False
 
@@ -119,8 +165,11 @@ def update_navigation(user_session, pathname):
                 'text-decoration': 'none'
             })
         ], href='/', className='brand-link', style={'text-decoration': 'none'}),
-        dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon',
-                 alt='home'), href='/', className='nav-link'),
+        dcc.Link([
+            html.Img(src='/assets/svg/home.svg',
+                     className='home-icon', alt='home'),
+            html.Span('Home')
+        ], href='/', className='nav-link home-nav-link'),
     ]
 
     # Add trending, leaderboards, showcase only for logged-in users
@@ -141,8 +190,24 @@ def update_navigation(user_session, pathname):
         if profile_image_url and profile_image_url.strip():
             profile_image_src = profile_image_url
 
+        # Get user rewards for level display
+        rewards = rewards_backend.get_user_rewards(user_session.get('user_id'))
+        level = rewards.get('level', 1)
+        xp = rewards.get('xp', 0)
+        points = rewards.get('points', 0)
+        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+            xp)
+
         # Show user navigation (bookshelf, profile, notifications, settings)
         right_nav = [
+            html.Div(
+                html.Span(
+                    f"Lvl {level}",
+                    className='level-badge',
+                    title=f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
+                ),
+                className='user-level'
+            ),
             dcc.Link(html.Img(src='/assets/svg/bookshelf.svg',
                      className='bookshelf-img', alt='bookshelf'), href='/profile/bookshelf'),
             dcc.Link(
@@ -196,23 +261,88 @@ def update_navigation(user_session, pathname):
                     'right': '0',
                     'background': 'white',
                     'border': '1px solid #ddd',
-                    'border-radius': '8px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                    'z-index': '1000',
-                    'min-width': '120px',
+                    'borderRadius': '8px',
+                    'boxShadow': '0 4px 12px rgba(0,0,0,0.15)',
+                    'zIndex': '1000',
+                    'minWidth': '120px',
                     'display': 'none'
                 })
             ], className='settings-menu-container',
-                style={'position': 'relative', 'display': 'inline-block'})
+                style={'position': 'relative', 'display': 'inline-block'}),
+            html.Div([
+                html.Button(
+                    html.Img(src='/assets/svg/hamburger.svg',
+                             className='hamburger-icon'),
+                    id='hamburger-menu-btn',
+                    className='hamburger-menu-btn',
+                    # Hidden by default, shown on mobile via CSS
+                    style={'display': 'none'}
+                ),
+                html.Div(id='hamburger-notification-badge', className='mobile-notification-badge',
+                         style={'display': 'none'})
+            ], className='hamburger-container', style={'position': 'relative', 'display': 'inline-block'})
+        ]
+
+        # Mobile menu content for logged-in users
+        mobile_menu_content = [
+            # Navigation links
+            dcc.Link('Trending', href='/trending',
+                     className='mobile-menu-link'),
+            dcc.Link('Leaderboards', href='/leaderboards',
+                     className='mobile-menu-link'),
+            dcc.Link('Showcase', href='/showcase',
+                     className='mobile-menu-link'),
+            html.Hr(className='mobile-menu-divider'),
+            # User navigation
+            dcc.Link([
+                html.Img(src='/assets/svg/bookshelf.svg',
+                         className='mobile-menu-icon'),
+                html.Span('Bookshelf')
+            ], href='/profile/bookshelf', className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src=profile_image_src,
+                         className='mobile-menu-profile-img'),
+                html.Span(f"Profile ({user_session.get('username', '')})"),
+                html.Span(f"Lvl {level}", className='mobile-level-badge')
+            ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src='/assets/svg/bell.svg',
+                         className='mobile-menu-icon'),
+                html.Span('Notifications'),
+                html.Div(id='mobile-notification-badge', className='mobile-notification-badge',
+                         style={'display': 'none'})
+            ], href='/notifications', className='mobile-menu-link'),
+            dcc.Link([
+                html.Img(src='/assets/svg/settings.svg',
+                         className='mobile-menu-icon'),
+                html.Span('Settings')
+            ], href='/profile/settings', className='mobile-menu-link'),
+            html.Hr(className='mobile-menu-divider'),
+            html.Button('Log Out', id='mobile-logout-button',
+                        className='mobile-menu-logout')
         ]
     else:
         # Show login/signup button
         right_nav = [
             dcc.Link('Log In / Sign Up', href='/login',
-                     className='nav-link login-signup-btn')
+                     className='nav-link login-signup-btn'),
+            html.Button(
+                html.Img(src='/assets/svg/hamburger.svg',
+                         className='hamburger-icon'),
+                id='hamburger-menu-btn',
+                className='hamburger-menu-btn',
+                # Hidden by default, shown on mobile via CSS
+                style={'display': 'none'}
+            )
         ]
 
-    return left_nav, right_nav
+        # Mobile menu content for non-logged-in users
+        mobile_menu_content = [
+            dcc.Link('Log In / Sign Up', href='/login',
+                     className='mobile-menu-link mobile-menu-login')
+        ]
+
+    return left_nav, right_nav, mobile_menu_content
 
 
 @app.callback(
@@ -388,11 +518,14 @@ def handle_search(search_value, search_type):
 
 @app.callback(
     [Output('notification-badge', 'children'),
-     Output('notification-badge', 'style')],
-    Input('user-session', 'data'),
-    State('notification-badge', 'children')
+     Output('notification-badge', 'style'),
+     Output('hamburger-notification-badge', 'children'),
+     Output('hamburger-notification-badge', 'style'),
+     Output('mobile-notification-badge', 'children'),
+     Output('mobile-notification-badge', 'style')],
+    Input('user-session', 'data')
 )
-def update_notifications(user_session, current_badge_text):
+def update_notifications(user_session):
     # Check if user is logged in first
     if not user_session or not user_session.get('logged_in', False):
         return '', {'display': 'none'}
@@ -413,28 +546,55 @@ def update_notifications(user_session, current_badge_text):
     count = notifications_data.get('count', 0)
     new_badge_text = str(count) if count > 0 else ''
 
-    # Only update if the badge content has actually changed
-    if new_badge_text != current_badge_text:
-        if count > 0:
-            badge_style = {
-                'display': 'block',
-                'position': 'absolute',
-                'top': '-5px',
-                'right': '-5px',
-                'background': '#dc3545',
-                'color': 'white',
-                'border-radius': '50%',
-                'width': '18px',
-                'height': '18px',
-                'font-size': '12px',
-                'text-align': 'center',
-                'line-height': '18px'
-            }
-            return new_badge_text, badge_style
-        else:
-            return '', {'display': 'none'}
+    if count > 0:
+        badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-5px',
+            'right': '-5px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '18px',
+            'height': '18px',
+            'font-size': '12px',
+            'text-align': 'center',
+            'line-height': '18px'
+        }
+        # Hamburger badge style (positioned relative to hamburger button)
+        hamburger_badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-5px',
+            'right': '-5px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '16px',
+            'height': '16px',
+            'font-size': '10px',
+            'text-align': 'center',
+            'line-height': '16px'
+        }
+        # Mobile menu badge style
+        mobile_badge_style = {
+            'display': 'block',
+            'position': 'absolute',
+            'top': '-2px',
+            'right': '-2px',
+            'background': '#dc3545',
+            'color': 'white',
+            'border-radius': '50%',
+            'width': '14px',
+            'height': '14px',
+            'font-size': '9px',
+            'text-align': 'center',
+            'line-height': '14px'
+        }
+        return new_badge_text, badge_style, new_badge_text, hamburger_badge_style, new_badge_text, mobile_badge_style
     else:
-        return dash.no_update, dash.no_update
+        hidden_style = {'display': 'none'}
+        return '', hidden_style, '', hidden_style, '', hidden_style
 
 
 @app.callback(
@@ -457,14 +617,15 @@ def clear_search_on_navigation(pathname):
     prevent_initial_call=True
 )
 def handle_search_item_clicks(book_clicks, author_clicks, search_data):
-    print(f"DEBUG: Pattern-matching click handler called")
-    print(f"DEBUG: Book clicks: {book_clicks}")
-    print(f"DEBUG: Author clicks: {author_clicks}")
-    print(f"DEBUG: Search data: {search_data}")
+    print(f"DEBUG APP_handle_search_item_clicks: Pattern-matching click handler called")
+    print(f"DEBUG APP_handle_search_item_clicks: Book clicks: {book_clicks}")
+    print(
+        f"DEBUG APP_handle_search_item_clicks: Author clicks: {author_clicks}")
+    print(f"DEBUG APP_handle_search_item_clicks: Search data: {search_data}")
 
     ctx = dash.callback_context
     if not ctx.triggered:
-        print("DEBUG: No trigger detected")
+        print("DEBUG APP_handle_search_item_clicks: No trigger detected")
         return dash.no_update
 
     # Get the triggered component
@@ -472,10 +633,10 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
     clicked_value = ctx.triggered[0]['value']
 
     print(
-        f"DEBUG: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
+        f"DEBUG APP_handle_search_item_clicks: Triggered prop: {triggered_prop}, clicked_value: {clicked_value}")
 
     if clicked_value is None or clicked_value == 0:
-        print("DEBUG: Click value is None or 0")
+        print("DEBUG APP_handle_search_item_clicks: Click value is None or 0")
         return dash.no_update
 
     try:
@@ -487,12 +648,13 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
         item_type = component_data['type']
         item_index = component_data['index']
 
-        print(f"DEBUG: Item type: {item_type}, index: {item_index}")
+        print(
+            f"DEBUG APP_handle_search_item_clicks: Item type: {item_type}, index: {item_index}")
 
         if item_type == 'search-book':
             books = search_data.get('books', [])
             print(
-                f"DEBUG: Book click, index: {item_index}, books count: {len(books)}")
+                f"DEBUG APP_handle_search_item_clicks: Book click, index: {item_index}, books count: {len(books)}")
 
             if item_index < len(books):
                 book_data = books[item_index]
@@ -510,17 +672,19 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
         elif item_type == 'search-author':
             authors = search_data.get('authors', [])
             print(
-                f"DEBUG: Author click, index: {item_index}, authors count: {len(authors)}")
+                f"DEBUG APP_handle_search_item_clicks: Author click, index: {item_index}, authors count: {len(authors)}")
 
             if item_index < len(authors):
                 author_data = authors[item_index]
-                print(f"DEBUG: Author data: {author_data}")
+                print(
+                    f"DEBUG APP_handle_search_item_clicks: Author data: {author_data}")
 
                 # Store the author and their books in database if it's from API
                 if author_data.get('source') == 'openlibrary':
                     from backend.openlibrary import get_or_create_author_with_books
                     author_id = get_or_create_author_with_books(author_data)
-                    print(f"DEBUG: Got author_id: {author_id}")
+                    print(
+                        f"DEBUG APP_handle_search_item_clicks: Got author_id: {author_id}")
                     if author_id:
                         return f"/author/{author_id}"
                 else:
@@ -537,13 +701,69 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
 
 
 @app.callback(
-    Output('url', 'pathname', allow_duplicate=True),
-    Output('user-session', 'data', allow_duplicate=True),
-    Input('quick-logout-button', 'n_clicks'),
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    Input('hamburger-menu-btn', 'n_clicks'),
+    State('mobile-menu-store', 'data'),
     prevent_initial_call=True
 )
-def handle_quick_logout(n_clicks):
+def toggle_mobile_menu(n_clicks, menu_data):
     if not n_clicks:
+        return dash.no_update
+    current_open = menu_data.get('open', False)
+    return {"open": not current_open}
+
+
+@app.callback(
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    Input('url', 'pathname'),
+    prevent_initial_call=True
+)
+def close_mobile_menu_on_navigation(pathname):
+    # Close mobile menu when navigating to a new page
+    return {"open": False}
+
+
+@app.callback(
+    Output('mobile-menu-store', 'data', allow_duplicate=True),
+    [Input('close-mobile-menu', 'n_clicks'),
+     Input('mobile-menu-backdrop', 'n_clicks')],
+    prevent_initial_call=True
+)
+def close_mobile_menu(n_clicks_close, n_clicks_backdrop):
+    if not n_clicks_close and not n_clicks_backdrop:
+        return dash.no_update
+    return {"open": False}
+
+
+@app.callback(
+    Output('mobile-menu', 'style'),
+    Input('mobile-menu-store', 'data')
+)
+def update_mobile_menu_style(menu_data):
+    is_open = menu_data.get('open', False)
+    if is_open:
+        return {
+            'display': 'block',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'z-index': '2000'
+        }
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    Output('user-session', 'data', allow_duplicate=True),
+    [Input('quick-logout-button', 'n_clicks'),
+     Input('mobile-logout-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def handle_logout(n_clicks_quick, n_clicks_mobile):
+    if not n_clicks_quick and not n_clicks_mobile:
         return dash.no_update, dash.no_update
 
     # Clear session and redirect to home page

@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State, callback
 import backend.profile as profile_backend
 import backend.friends as friends_backend
+import backend.rewards as rewards_backend
 
 # Register only the view path - all profiles use the same structure
 dash.register_page(__name__, path_template='/profile/view/<username>')
@@ -243,7 +244,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 'grid-template-columns': 'repeat(auto-fill, minmax(160px, 1fr))',
                 'gap': '20px',
                 'padding': '10px 0'
-            })
+            }, className="completed-books-grid")
         ])
     else:
         # No completed books found
@@ -291,12 +292,14 @@ def layout(username=None, **kwargs):
                     html.Div(id="friend-request-section",
                              className="friend-request-section"),
 
-                    # Friends list (below friend request button)
+                    # Friends list (below friend request button) - collapsible
                     html.Div([
                         html.H3(id="friends-title", children=friends_title,
-                                className="friends-title-left"),
+                                className="friends-title-left collapsible",
+                                style={'cursor': 'pointer', 'user-select': 'none'}),
                         html.Ul(id="friends-list",
-                                className="friends-list-left secondary-bg")
+                                className="friends-list-left secondary-bg",
+                                style={'display': 'none'})  # Hidden by default
                     ], className="friends-section-left")
                 ], className="profile-info"),
 
@@ -415,6 +418,35 @@ def update_profile_data(session_data, viewed_username, active_tab):
                        style={'margin-top': '0px', 'margin-bottom': '10px', 'padding-top': '0px'})
             ]
 
+            # Add level badge above bio
+            profile_user_id = user_data.get('user_id')
+            rewards = rewards_backend.get_user_rewards(profile_user_id)
+            level = rewards.get('level', 1)
+
+            # Only show XP and points tooltip for own profile
+            level_title = ""
+            level_style = {'cursor': 'default'}
+            if is_own_profile:
+                xp = rewards.get('xp', 0)
+                points = rewards.get('points', 0)
+                _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+                    xp)
+                level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
+                level_style = {'cursor': 'help'}
+
+            user_info_elements.append(
+                html.Div(
+                    html.Span(
+                        f"Lvl {level}",
+                        className='level-badge',
+                        title=level_title if level_title else None,
+                        style=level_style
+                    ),
+                    className='profile-level-badge',
+                    style={'margin-bottom': '10px'}
+                )
+            )
+
             # Add bio if it exists
             bio = user_data.get('bio')
             if bio and bio.strip():
@@ -427,7 +459,6 @@ def update_profile_data(session_data, viewed_username, active_tab):
             from backend.bookshelf import get_yearly_reading_stats
             from datetime import datetime
             current_year = datetime.now().year
-            profile_user_id = user_data.get('user_id')
 
             stats_success, stats_message, yearly_stats = get_yearly_reading_stats(
                 profile_user_id, current_year)
@@ -596,11 +627,22 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         }
                     )
                 elif status == 'pending_sent':
-                    # Show "Friend Request Sent" (disabled)
-                    friend_request_section = html.Div([
-                        html.Span("Friend Request Sent",
-                                  style={'color': '#6c757d', 'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
-                    ])
+                    # Show "Cancel Friend Request" button
+                    friend_request_section = html.Button(
+                        "Cancel Friend Request",
+                        id={'type': 'cancel-friend-request',
+                            'username': viewed_username},
+                        className='btn-cancel-friend-request',
+                        style={
+                            'background': '#6c757d',
+                            'color': 'white',
+                            'border': 'none',
+                            'padding': '8px 16px',
+                            'border-radius': '6px',
+                            'margin-top': '0px',
+                            'cursor': 'pointer'
+                        }
+                    )
                 elif status == 'pending_received':
                     # Show "Respond to Friend Request" message
                     friend_request_section = html.Div([
@@ -636,6 +678,23 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     if not friend_profile_image or not friend_profile_image.strip():
                         friend_profile_image = '/assets/svg/default-profile.svg'
 
+                    # Format the friendship date
+                    created_at = friend.get('created_at')
+                    since_text = 'Unknown'
+                    if created_at:
+                        if hasattr(created_at, 'strftime'):
+                            since_text = created_at.strftime('%m/%d/%Y')
+                        elif isinstance(created_at, str):
+                            # Try to parse the string and reformat
+                            try:
+                                from datetime import datetime
+                                parsed_date = datetime.fromisoformat(
+                                    created_at.replace('Z', '+00:00'))
+                                since_text = parsed_date.strftime('%m/%d/%Y')
+                            except:
+                                since_text = created_at[:10] if len(
+                                    created_at) >= 10 else created_at
+
                     friend_item = html.Li([
                         dcc.Link([
                             html.Img(
@@ -649,8 +708,18 @@ def update_profile_data(session_data, viewed_username, active_tab):
                                     'margin-right': '10px'
                                 }
                             ),
-                            html.Span(friend['username'],
-                                      className='friend-name')
+                            html.Div([
+                                html.Span(friend['username'],
+                                          className='friend-name'),
+                                html.Span(f"since: {since_text}",
+                                          className='friend-since',
+                                          style={
+                                              'font-size': '0.8rem',
+                                              'color': '#888',
+                                              'display': 'block',
+                                              'margin-top': '2px'
+                                })
+                            ], style={'flex': '1'})
                         ],
                             href=f"/profile/view/{friend['username']}",
                             className='friend-link',
@@ -660,6 +729,13 @@ def update_profile_data(session_data, viewed_username, active_tab):
             else:
                 friends_list = [
                     html.Li("No friends yet", className="no-friends")]
+
+            # Update friends title to include count
+            friends_count = len(friends)
+            if is_own_profile:
+                friends_title = f"Your Friends ({friends_count})"
+            else:
+                friends_title = f"{user_data['username']}'s Friends ({friends_count})"
 
             # Ensure we always have a valid profile image URL for the main profile
             profile_image_url = user_data.get('profile_image_url')
@@ -723,11 +799,12 @@ def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
 @callback(
     Output("friend-request-section", "children", allow_duplicate=True),
     [Input({'type': 'send-friend-request', 'username': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'remove-friend', 'username': dash.dependencies.ALL}, 'n_clicks')],
+     Input({'type': 'remove-friend', 'username': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'cancel-friend-request', 'username': dash.dependencies.ALL}, 'n_clicks')],
     State('user-session', 'data'),
     prevent_initial_call=True
 )
-def handle_friend_actions(send_clicks, remove_clicks, user_session):
+def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_session):
     if not user_session or not user_session.get('logged_in', False):
         return dash.no_update
 
@@ -736,7 +813,8 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
         return dash.no_update
 
     # Check if any button was actually clicked
-    all_clicks = (send_clicks or []) + (remove_clicks or [])
+    all_clicks = (send_clicks or []) + \
+        (remove_clicks or []) + (cancel_clicks or [])
     if not any(all_clicks):
         return dash.no_update
 
@@ -753,11 +831,22 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
                 receiver_username=target_username
             )
 
-            # Show success message
-            return html.Div([
-                html.Span("Friend request sent!", style={
-                          'color': 'green', 'font-weight': 'bold'})
-            ])
+            # Show cancel button immediately after sending request
+            return html.Button(
+                "Cancel Friend Request",
+                id={'type': 'cancel-friend-request',
+                    'username': target_username},
+                className='btn-cancel-friend-request',
+                style={
+                    'background': '#6c757d',
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '8px 16px',
+                    'border-radius': '6px',
+                    'margin-top': '0px',
+                    'cursor': 'pointer'
+                }
+            )
 
         elif action_type == 'remove-friend':
             # Get the target user's ID first
@@ -772,6 +861,37 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
             result = friends_backend.remove_friend(
                 user_id=str(user_session['user_id']),
                 friend_id=str(target_user_data['user_id'])
+            )
+
+            # Show success message and replace with "Send Friend Request" button
+            return html.Button(
+                "Send Friend Request",
+                id={'type': 'send-friend-request', 'username': target_username},
+                className='btn-send-friend-request',
+                style={
+                    'background': '#007bff',
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '8px 16px',
+                    'border-radius': '6px',
+                    'margin-top': '0px',
+                    'cursor': 'pointer'
+                }
+            )
+
+        elif action_type == 'cancel-friend-request':
+            # Get the target user's ID first
+            target_user_data = profile_backend.get_user_profile_by_username(
+                target_username)
+            if not target_user_data:
+                return html.Div([
+                    html.Span("User not found", style={
+                              'color': 'red', 'font-weight': 'bold'})
+                ])
+
+            result = friends_backend.cancel_friend_request(
+                sender_id=str(user_session['user_id']),
+                receiver_id=str(target_user_data['user_id'])
             )
 
             # Show success message and replace with "Send Friend Request" button
@@ -807,11 +927,16 @@ def handle_friend_actions(send_clicks, remove_clicks, user_session):
 
 # Handle edit profile button
 @callback(
-    Output('url', 'pathname', allow_duplicate=True),
-    Input('edit-profile-button', 'n_clicks'),
+    Output('friends-list', 'style'),
+    Input('friends-title', 'n_clicks'),
+    State('friends-list', 'style'),
     prevent_initial_call=True
 )
-def handle_edit_profile(edit_clicks):
-    if edit_clicks and edit_clicks > 0:
-        return '/profile/settings'
-    return dash.no_update
+def toggle_friends_list(n_clicks, current_style):
+    if n_clicks and n_clicks > 0:
+        # Toggle between hidden and visible
+        if current_style and current_style.get('display') == 'none':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+    return current_style or {'display': 'none'}

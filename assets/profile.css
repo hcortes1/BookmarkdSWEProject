@@ -17,6 +17,14 @@
     width: 300px; /* Fixed width for consistency */
 }
 
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+    .profile-info {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
 /* Remove gap between username and user info */
 .profile-info #profile-username + #profile-user-info {
     margin-top: 0px; /* Allow normal spacing between username and user info */
@@ -24,15 +32,31 @@
 
 /* Friends section on the left */
 .friends-section-left {
-    width: 100%;
+    width: 80%; /* Less wide */
+    max-width: 300px; /* Maximum width */
     margin-top: 10px;
 }
 
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+    .friends-section-left {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
 .friends-title-left {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    color: #333;
+    font-size: 18px !important; /* Small but readable title */
+    margin-bottom: 6px;
+    color: #666; /* Lighter color */
     text-align: center;
+    font-weight: normal; /* Not bold */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.friends-title-left:hover {
+    color: #007bff; /* Blue on hover to indicate it's clickable */
 }
 
 .friends-list-left {
@@ -48,6 +72,8 @@
 
 .friends-list-left li {
     margin-bottom: 6px;
+    font-size: 0.85rem; /* Smaller list items */
+
     padding: 8px;
     border-radius: 6px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -259,6 +285,7 @@
 
 .friend-name {
     font-weight: 500;
+    font-size: 1.1rem; /* Bigger username */
 }
 
 .no-friends {
@@ -302,4 +329,188 @@
 
 .btn-remove-friend:hover {
     background: #c82333;
+}
+
+/* Tab styles */
+.profile-tab {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    padding: 12px 24px !important;
+}
+
+.tab-section-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 15px !important;
+}
+
+.tab-empty-message {
+    font-size: 1.1rem !important;
+}
+
+/* General profile text improvements */
+.profile-username {
+    font-size: 2.2rem !important;
+}
+
+.user-bio {
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+}
+
+.user-email,
+.user-join-date {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+.friends-title-left {
+    font-size: 1.4rem !important;
+}
+
+.favorites-card-title {
+    font-size: 1.5rem !important;
+}
+
+/* Profile level badge */
+.profile-level-badge {
+    display: flex;
+    justify-content: center;
+}
+
+.profile-level-badge .level-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .profile-info {
+        max-width: 100%;
+        width: 100%;
+        order: -1; /* Put profile info above tabs */
+    }
+
+    .profile-user-image {
+        width: 120px;
+        height: 120px;
+        border-width: 2px;
+    }
+
+    .profile-username {
+        font-size: 1.4rem;
+    }
+
+    .friends-section-left {
+        margin-top: 15px;
+        max-height: 150px; /* Reduce height on mobile */
+        opacity: 0.8; /* Make less prominent */
+        width: 100%; /* Full width on mobile */
+        max-width: none; /* Remove max-width on mobile */
+    }
+
+    .friends-title-left {
+        font-size: 18px !important; /* Small but readable on mobile too */
+        margin-bottom: 4px;
+        color: #777; /* Even lighter on mobile */
+    }
+
+    .friends-list-left {
+        max-height: 120px; /* Smaller list height */
+        padding: 8px; /* Less padding */
+    }
+
+    .friends-list-left li {
+        font-size: 0.8rem; /* Smaller list items on mobile */
+    }
+
+    .profile-right {
+        width: 100%;
+        order: 1; /* Put tabs below profile info */
+    }
+
+    .profile-tabs {
+        justify-content: center;
+        flex-wrap: nowrap; /* Prevent tabs from wrapping to next line */
+    }
+
+    .profile-tab {
+        flex: 1;
+        max-width: 120px; /* Increased max-width to fit longer text */
+        padding: 6px 10px !important; /* Reduced padding */
+        font-size: 0.75rem; /* Even smaller font */
+    }
+
+    /* Mobile adjustments for favorites */
+    .favorites-list {
+        gap: 5px; /* Reduce gap between items */
+        justify-content: center; /* Center the cards */
+    }
+
+    .favorite-item {
+        width: 80px; /* Smaller card width */
+        padding: 5px; /* Reduce padding */
+    }
+
+    .favorite-item-image {
+        width: 60px; /* Smaller image */
+        height: 80px; /* Maintain aspect ratio */
+        margin-bottom: 4px; /* Reduce margin */
+    }
+
+    .favorite-author-image {
+        width: 60px; /* Smaller author image */
+        height: 60px; /* Square */
+        margin-bottom: 4px; /* Reduce margin */
+    }
+
+    .favorite-item-title {
+        font-size: 0.75rem; /* Smaller title */
+        line-height: 1.2; /* Tighter line height */
+    }
+
+    .favorite-item-author {
+        font-size: 0.65rem; /* Smaller author text */
+        margin-top: 2px; /* Reduce margin */
+    }
+
+    /* Mobile styles for completed books */
+    .completed-book-card {
+        width: 80px !important; /* Smaller card width like favorites */
+        height: 200px !important; /* Reduced height */
+        padding: 5px !important; /* Less padding */
+    }
+
+    .completed-book-card .completed-book-cover {
+        width: 60px !important; /* Smaller image */
+        height: 80px !important; /* Maintain aspect ratio */
+    }
+
+    .completed-book-card h4 {
+        font-size: 0.75rem !important; /* Smaller title */
+        margin: 5px 0 0 0 !important; /* Less margin */
+        line-height: 1.2 !important;
+    }
+
+    .completed-book-card div {
+        font-size: 0.65rem !important; /* Smaller text */
+        margin-top: 2px !important;
+    }
+
+    /* Mobile styles for completed books grid */
+    .completed-books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
+        gap: 5px !important; /* Smaller gap like favorites */
+    }
 }

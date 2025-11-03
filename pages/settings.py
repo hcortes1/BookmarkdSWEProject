@@ -6,53 +6,69 @@ import base64
 dash.register_page(__name__, path='/profile/settings')
 
 layout = html.Div([
-    html.H1("Account Settings", style={
+    html.H1("Settings", style={
             'margin': '32px 0 8px 0', 'font-size': '28px', 'font-weight': '600', 'text-align': 'center'}),
-    html.P("Manage your account information", style={
-           'margin': '0 0 32px 0', 'opacity': '0.9', 'font-size': '16px', 'text-align': 'center'}),
-
-    # Account Information Card with Two Columns
+    # Navigation sidebar and content container
     html.Div([
+        # Navigation sidebar
         html.Div([
-            # Username editing (left column)
+            html.Div("Navigation", style={
+                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': '#666'
+            }),
             html.Div([
-                html.H3("Username"),
-                html.Div([
-                    dcc.Input(
-                        id='edit-username-input',
-                        type='text',
-                        placeholder='Enter new username',
-                        className='form-input',
-                        style={'width': '100%', 'margin-bottom': '10px'}
-                    ),
-                    html.Button(
-                        "Update Username",
-                        id="update-username-button",
-                        className='btn-success',
-                        style={'width': '100%', 'margin-bottom': '5px'}
-                    )
-                ]),
-                html.Div(id='username-feedback',
-                         style={'margin-bottom': '0px'}),
+                html.A("Profile Settings", href="#profile-settings", style={
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
+                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
+                }),
+                html.A("Account Settings", href="#account-settings", style={
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
+                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
+                }),
+                html.A("Account Actions", href="#account-actions", style={
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
+                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
+                }),
+            ], style={'list-style': 'none', 'padding': '0', 'margin': '0'})
+        ], className="settings-sidebar", style={
+            'width': '140px', 'background-color': '#f0f0f0', 'padding': '15px',
+            'border-radius': '8px', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
+            'margin-right': '20px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
+        }),
 
-                # Email editing (same column, below username)
-                html.H3("Email"),
+        # Main content area
+        html.Div([
+            # Profile Settings section
+            html.Div([
+                html.H2("Profile Settings", id="profile-settings", style={
+                        'margin-bottom': '20px', 'font-size': '24px', 'font-weight': '500'}),
+                # Profile Picture section
+                html.Img(
+                    id="current-profile-image",
+                    src="/assets/svg/default-profile.svg",
+                    className="profile-image-preview"
+                ),
+                dcc.Upload(
+                    id='profile-image-upload',
+                    children=html.Div([
+                        html.I(className="fas fa-cloud-upload-alt",
+                               style={'margin-right': '8px'}),
+                        'Click or drag to upload new profile picture'
+                    ]),
+                    className='upload-area',
+                    multiple=False,
+                    accept='image/*'
+                ),
                 html.Div([
-                    dcc.Input(
-                        id='edit-email-input',
-                        type='email',
-                        placeholder='Enter new email',
-                        className='form-input',
-                        style={'width': '100%', 'margin-bottom': '10px'}
-                    ),
                     html.Button(
-                        "Update Email",
-                        id="update-email-button",
-                        className='btn-success',
-                        style={'width': '100%'}
+                        "Remove Profile Picture",
+                        id="delete-profile-image-button",
+                        className='btn-danger'
                     )
-                ]),
-                html.Div(id='email-feedback'),
+                ], style={'text-align': 'center', 'margin-bottom': '15px'}),
+                html.Div(id='profile-image-feedback'),
 
                 # Display Name Section
                 html.H3("Display Name", style={'margin-top': '20px'}),
@@ -67,7 +83,7 @@ layout = html.Div([
                     html.Button(
                         "Update",
                         id="update-display-name-button",
-                        className='btn-success',
+                        className='btn-primary',
                         style={'width': '48%', 'margin-right': '4%'}
                     ),
                     html.Button(
@@ -78,124 +94,148 @@ layout = html.Div([
                     )
                 ]),
                 html.Div(id='display-name-feedback',
-                         style={'margin-top': '10px'})
-            ], className='column'),
+                         style={'margin-top': '10px'}),
 
-            # Password editing (right column)
+                # Bio section
+                html.H3("Bio", style={'margin-top': '30px'}),
+                dcc.Textarea(
+                    id='edit-bio-input',
+                    placeholder='Tell others about yourself...',
+                    className='form-input',
+                    style={'width': '100%', 'height': '100px',
+                           'margin-bottom': '10px', 'resize': 'vertical'}
+                ),
+                html.Button(
+                    "Update",
+                    id="update-bio-button",
+                    className='btn-primary',
+                    style={'width': '200px'}
+                ),
+                html.Div(id='bio-feedback', style={'margin-top': '10px'})
+            ], className='settings-card'),
+
+            # Account Settings Card
             html.Div([
-                html.H3("Password"),
+                html.H2("Account Settings", id="account-settings", style={
+                        'margin-bottom': '20px', 'font-size': '24px', 'font-weight': '500'}),
                 html.Div([
-                    dcc.Input(
-                        id='current-password-input',
-                        type='password',
-                        placeholder='Current password',
-                        className='form-input',
-                        style={'width': '100%', 'margin-bottom': '25px'}
-                    ),
-                    dcc.Input(
-                        id='new-password-input',
-                        type='password',
-                        placeholder='New password',
-                        className='form-input',
-                        style={'width': '100%', 'margin-bottom': '8px'}
-                    ),
-                    dcc.Input(
-                        id='confirm-password-input',
-                        type='password',
-                        placeholder='Confirm new password',
-                        className='form-input',
-                        style={'width': '100%', 'margin-bottom': '10px'}
+                    # Username editing (left column)
+                    html.Div([
+                        html.H3("Username"),
+                        html.Div([
+                            dcc.Input(
+                                id='edit-username-input',
+                                type='text',
+                                placeholder='Enter new username',
+                                className='form-input',
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
+                            ),
+                            html.Button(
+                                "Update Username",
+                                id="update-username-button",
+                                className='btn-primary',
+                                style={'width': '100%', 'margin-bottom': '5px'}
+                            )
+                        ]),
+                        html.Div(id='username-feedback',
+                                 style={'margin-bottom': '0px'}),
+
+                        # Email editing (same column, below username)
+                        html.H3("Email"),
+                        html.Div([
+                            dcc.Input(
+                                id='edit-email-input',
+                                type='email',
+                                placeholder='Enter new email',
+                                className='form-input',
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
+                            ),
+                            html.Button(
+                                "Update Email",
+                                id="update-email-button",
+                                className='btn-primary',
+                                style={'width': '100%'}
+                            )
+                        ]),
+                        html.Div(id='email-feedback')
+                    ], className='column'),
+
+                    # Password editing (right column)
+                    html.Div([
+                        html.H3("Password"),
+                        html.Div([
+                            dcc.Input(
+                                id='current-password-input',
+                                type='password',
+                                placeholder='Current password',
+                                className='form-input',
+                                style={'width': '100%',
+                                       'margin-bottom': '25px'}
+                            ),
+                            dcc.Input(
+                                id='new-password-input',
+                                type='password',
+                                placeholder='New password',
+                                className='form-input',
+                                style={'width': '100%', 'margin-bottom': '8px'}
+                            ),
+                            dcc.Input(
+                                id='confirm-password-input',
+                                type='password',
+                                placeholder='Confirm new password',
+                                className='form-input',
+                                style={'width': '100%',
+                                       'margin-bottom': '10px'}
+                            ),
+                            html.Button(
+                                "Update Password",
+                                id="update-password-button",
+                                className='btn-primary',
+                                style={'width': '100%'}
+                            )
+                        ]),
+                        html.Div(id='password-feedback')
+                    ], className='column'),
+                ], className='two-column-container')
+            ], className='settings-card'),
+
+            # Account Actions section
+            html.Div([
+                html.H2("Account Actions", id="account-actions", style={
+                        'margin-bottom': '20px', 'font-size': '24px', 'font-weight': '500'}),
+                html.Div([
+                    html.Button(
+                        "Log Out",
+                        id="logout-button",
+                        className="btn-primary",
+                        style={'margin-right': '15px'}
                     ),
                     html.Button(
-                        "Update Password",
-                        id="update-password-button",
-                        className='btn-success',
-                        style={'width': '100%'}
+                        "Delete My Account",
+                        id="delete-account-button",
+                        className="btn-danger",
+                        disabled=True
                     )
-                ]),
-                html.Div(id='password-feedback')
-            ], className='column'),
-        ], className='two-column-container'),
+                ], style={'text-align': 'center', 'margin-bottom': '20px'}),
 
-        # Bio section (below the two-column layout)
-        html.H3("Bio", style={'margin-top': '30px'}),
-        dcc.Textarea(
-            id='edit-bio-input',
-            placeholder='Tell others about yourself...',
-            className='form-input',
-            style={'width': '100%', 'height': '100px',
-                   'margin-bottom': '10px', 'resize': 'vertical'}
-        ),
-        html.Button(
-            "Update",
-            id="update-bio-button",
-            className='btn-success',
-            style={'width': '200px'}
-        ),
-        html.Div(id='bio-feedback', style={'margin-top': '10px'})
-    ], className='settings-card'),
-
-    # Profile Picture section
-    html.Div([
-        html.H3("Profile Picture", style={
-                'text-align': 'center', 'margin-bottom': '20px'}),
-        html.Img(
-            id="current-profile-image",
-            src="/assets/svg/default-profile.svg",
-            className="profile-image-preview"
-        ),
-        dcc.Upload(
-            id='profile-image-upload',
-            children=html.Div([
-                html.I(className="fas fa-cloud-upload-alt",
-                       style={'margin-right': '8px'}),
-                'Click or drag to upload new profile picture'
-            ]),
-            className='upload-area',
-            multiple=False,
-            accept='image/*'
-        ),
-        html.Div([
-            html.Button(
-                "Remove Profile Picture",
-                id="delete-profile-image-button",
-                className='btn-danger'
-            )
-        ], style={'text-align': 'center', 'margin-bottom': '15px'}),
-        html.Div(id='profile-image-feedback')
-    ], className='settings-card'),
-
-    # Account Actions section
-    html.Div([
-        html.Div([
-            html.Button(
-                "Log Out",
-                id="logout-button",
-                className="btn-primary",
-                style={'margin-right': '15px'}
-            ),
-            html.Button(
-                "Delete My Account",
-                id="delete-account-button",
-                className="btn-danger",
-                disabled=True
-            )
-        ], style={'text-align': 'center', 'margin-bottom': '20px'}),
-
-        # Delete confirmation checkbox
-        html.Div([
-            dcc.Checklist(
-                id="delete-confirmation",
-                options=[
-                    {'label': ' I understand that deleting my account cannot be undone',
-                        'value': 'confirmed'}
-                ],
-                value=[],
-                style={'margin-bottom': '15px'}
-            ),
-            html.Div(id='settings-feedback')
-        ], style={'text-align': 'center'})
-    ], className='settings-card')
+                # Delete confirmation checkbox
+                html.Div([
+                    dcc.Checklist(
+                        id="delete-confirmation",
+                        options=[
+                            {'label': ' I understand that deleting my account cannot be undone',
+                                'value': 'confirmed'}
+                        ],
+                        value=[],
+                        style={'margin-bottom': '15px'}
+                    ),
+                    html.Div(id='settings-feedback')
+                ], style={'text-align': 'center'})
+            ], className='settings-card')
+        ], className="settings-content", style={'flex': '1', 'max-width': '800px'})
+    ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'flex-start', 'max-width': '1200px', 'margin': '0 auto', 'padding': '20px'})
 ], className="settings-page")
 
 

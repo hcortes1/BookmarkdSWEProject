@@ -59,9 +59,9 @@
 .bookshelf-tabs-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 30px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
+  margin-bottom: 0px; /* Remove gap to attach to content */
+  border-bottom: 2px solid #007bff; /* Blue border */
+  padding-bottom: 0px; /* Remove padding to attach tabs to border */
 }
 .bookshelf-tab:not(:last-child) {
   margin-right: 5px;
@@ -148,6 +148,13 @@
 
 .added-info { text-align: center; margin-bottom: 2px; }
 
+/* Expiry info for rented books */
+.expiry-info { text-align: center; margin-bottom: 1px; }
+.expiry-label-small { font-size: 10px; color: #666; }
+.expiry-days { font-size: 11px; color: #666; font-weight: bold; }
+.expiry-date-line { text-align: center; margin-top: 1px; }
+.expiry-date-small { font-size: 9px; color: #666; }
+
 /* Review indicator */
 .book-review-indicator { text-align: center; }
 .review-icon { font-size: 12px; margin-right: 3px; }
@@ -223,4 +230,76 @@
   color: #007bff;
   border-bottom: 3px solid #007bff;
   font-weight: 600;
+}
+
+/* Tab content background */
+#bookshelf-tab-content {
+  background: white;
+}
+
+/* Remove background from book cards to match content background */
+.bookshelf-book-card {
+  background: white !important;
+  box-shadow: none !important; /* Remove shadow */
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+    /* Mobile adjustments for bookshelf grid */
+    .bookshelf-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 0 !important; /* No gap between cards */
+    }
+
+    .bookshelf-book-card {
+        width: 95% !important; /* Slightly wider cards */
+        height: 95% !important; /* Reduced height */
+        padding: 10px !important; /* Less padding */
+    }
+
+    .book-cover {
+        width: 60px !important; /* Smaller image */
+        height: 80px !important; /* Maintain aspect ratio */
+    }
+
+    .bookshelf-book-title {
+        font-size: 0.75rem !important; /* Smaller title */
+        height: auto !important; /* Allow flexible height */
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+    }
+
+    .bookshelf-book-author {
+        font-size: 0.65rem !important; /* Smaller author text */
+        margin: 1px 0 2px 0 !important;
+    }
+
+    .book-rating {
+        font-size: 0.7rem !important; /* Smaller rating */
+    }
+
+    .added-label,
+    .added-date,
+    .expiry-label-small,
+    .expiry-days,
+    .expiry-date-small {
+        font-size: 0.6rem !important; /* Smaller metadata text */
+    }
+
+    .review-text {
+        font-size: 0.65rem !important; /* Smaller review text */
+    }
+
+    /* Mobile adjustments for bookshelf tabs */
+    .bookshelf-tabs-container {
+        flex-wrap: nowrap; /* Prevent tabs from wrapping */
+    }
+
+    .bookshelf-tab {
+        flex: 1;
+        max-width: 120px; /* Limit max width */
+        padding: 6px 10px !important; /* Reduced padding */
+        font-size: 0.75rem !important; /* Smaller font */
+        margin: 0 1px !important; /* Smaller margin */
+    }
 }
