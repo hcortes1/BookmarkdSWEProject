@@ -78,3 +78,54 @@ Guidelines:
     except Exception as e:
         print(f"Error: {e}")
         return False, f"Error: {e}", []
+    
+def get_book_recommendation_chat(user_message, user_genres=None, chat_history=None):
+    """
+    Get book recommendations and answer questions based on user preferences.
+    
+    Args:
+        user_message: The user's question or statement
+        user_genres: List of user's favorite genres from database
+        chat_history: Previous conversation (optional)
+    
+    Returns:
+        tuple: (success, response_text)
+    """
+    
+    # Build system instruction with user's preferences
+    genre_context = ""
+    if user_genres and len(user_genres) > 0:
+        genre_context = f"\nThe user's favorite genres are: {', '.join(user_genres)}. Use this to personalize recommendations."
+    
+    system_instruction = f"""
+You are a knowledgeable book recommendation assistant helping readers discover their next great book.
+
+Your capabilities:
+1. Recommend books based on user preferences and favorite genres
+2. Answer questions about books, authors, and literary topics
+3. Help users explore new genres and authors
+4. Provide spoiler-free summaries
+
+Guidelines:
+- Keep responses concise (2-4 sentences for recommendations, longer for explanations if needed)
+- When recommending books, include: Title, Author, and a brief spoiler-free description
+- All book and author names must be real
+- Be conversational and enthusiastic about reading
+- If asked about specific books, provide accurate information
+{genre_context}
+"""
+
+    try:
+        model = genai.GenerativeModel(
+            'gemini-2.0-flash',
+            system_instruction=system_instruction
+        )
+        
+        response = model.generate_content(user_message)
+        response_text = response.text
+        
+        return True, response_text
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return False, f"Error: {e}"
