@@ -15,7 +15,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 3px;
+  position: relative;
 }
 
 .nav-left {
@@ -25,14 +26,14 @@
 }
 
 .brand-link {
-  margin-right: 20px;
+  margin-right: 0px;
 }
 
 .brand-name {
   font-size: 18px; /* Reduced from 20px */
   font-weight: bold;
   color: #007bff;
-  margin-right: 20px;
+  margin-right: 10px;
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -60,9 +61,9 @@
 }
 
 .nav-center {
-  flex: 1;
   display: flex;
   justify-content: center;
+  flex: 1;
 }
 
 .search-container {
@@ -70,6 +71,12 @@
   width: 80%; /* Increased from 70% */
   max-width: 700px; /* Increased from 600px */
   min-width: 200px;
+  display: flex;
+  gap: 0px;
+}
+
+.search-type-dropdown .Select {
+  margin: 0 !important;
 }
 
 .search-type-dropdown .Select-control {
@@ -77,8 +84,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 18px !important;
   color: #fff !important;
-  font-size: 14px !important;
-  height: 36px !important;
+  font-size: 11px !important;
 }
 
 .search-type-dropdown .Select-value-label {
@@ -91,21 +97,30 @@
 }
 
 .search-type-dropdown .Select-menu-outer {
-  background: white !important;
+  background: #f8f9fa !important;
   border: 1px solid #ddd !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
   z-index: 1002 !important;
+  width: 70% !important;
+}
+
+
+#search-type-dropdown, .dash-dropdown {
+  margin: 0 !important;
+  padding: 0 !important; 
 }
 
 .search-type-dropdown .Select-menu {
-  background: white !important;
+  background: #f8f9fa !important;
   color: #333 !important;
+  font-size: 11px !important;
 }
 
 /* Modern Dash dropdown menu styling */
 .search-type-dropdown .dropdown-menu {
-  background: white !important;
+  background: #f8f9fa !important;
+  font-size: 11px !important;
   color: #333 !important;
   border: 1px solid #ddd !important;
   border-radius: 8px !important;
@@ -114,11 +129,11 @@
 
 .search-type-dropdown .Select-option {
   color: #333 !important;
-  padding: 8px 12px !important;
+  font-size: 11px !important;
 }
 
 .search-type-dropdown .Select-option:hover {
-  background-color: #f8f9fa !important;
+  background-color: #e9ecef !important;
   color: #333 !important;
 }
 
@@ -134,7 +149,7 @@
 
 .search-type-dropdown .dropdown-option:hover {
   color: #333 !important;
-  background-color: #f8f9fa !important;
+  background-color: #e9ecef !important;
 }
 
 /* More specific selectors for modern Dash versions */
@@ -144,7 +159,7 @@
 
 .search-type-dropdown div[role="option"]:hover {
   color: #333 !important;
-  background-color: #f8f9fa !important;
+  background-color: #e9ecef !important;
 }
 
 .search-type-dropdown .dash-dropdown-option {
@@ -153,7 +168,7 @@
 
 .search-type-dropdown .dash-dropdown-option:hover {
   color: #333 !important;
-  background-color: #f8f9fa !important;
+  background-color: #e9ecef !important;
 }
 
 /* Global dropdown text color fix */
@@ -167,7 +182,7 @@
 
 /* Ensure all dropdown text is visible */
 .search-type-dropdown .dropdown-content {
-  background: white !important;
+  background: #f8f9fa !important;
 }
 
 .search-type-dropdown .dropdown-content * {
@@ -194,8 +209,6 @@
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   z-index: 1001;
   margin-top: 4px;
@@ -210,7 +223,6 @@
 .search-user-link {
   display: block;
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s;
 }
 
@@ -443,6 +455,13 @@
   font-weight: bold;
 }
 
+/* Hide mobile notification badge on desktop */
+@media (min-width: 769px) {
+  .mobile-notification-badge {
+    display: none !important;
+  }
+}
+
 .notifications-dropdown {
     position: absolute;
     top: 100%;
@@ -600,12 +619,72 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     z-index: 2001;
+    max-height: calc(100vh - 56px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.mobile-menu-links {
-    padding: 16px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
+.mobile-menu-header {
+    position: relative;
+    min-height: 44px;
+    height: auto;
+    border-bottom: 1px solid #444;
+    background: #2b2f33;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 8px;
+}
+
+.mobile-header-link {
+    color: #dfe6ea !important;
+    text-decoration: none !important;
+    padding: 6px 8px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    margin-right: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+.mobile-header-link:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mobile-header-link .mobile-menu-icon {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 6px !important;
+    filter: invert(1) !important;
+    flex-shrink: 0 !important;
+}
+
+.home-nav-link {
+    margin-right: 12px;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.home-nav-link .home-icon {
+    width: 16px !important;
+    height: 16px !important;
+    margin-right: 6px !important;
+}
+
+/* Hide home nav link on mobile since it's in the mobile menu header */
+@media (max-width: 768px) {
+    .home-nav-link {
+        display: none !important;
+    }
 }
 
 .mobile-menu-link {
@@ -682,11 +761,13 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px;
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    padding: 6px;
+    margin-left: auto;
     border-radius: 4px;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .close-mobile-menu-btn:hover {
@@ -694,34 +775,72 @@
 }
 
 .close-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     filter: invert(1);
 }
 
 /* Mobile/Tablet Responsive Styles */
-@media (max-width: 1100px) {
+@media (max-width: 768px) {
     .header {
         padding: 0 12px;
     }
     
     .nav {
-        gap: 8px;
+        gap: 3px;
     }
+    
+    .brand-link .brand-name {
+        font-size: 18px !important; /* Much smaller on mobile */
+        margin-right: 0px; /* Reduced from 20px for mobile */
+    }
+    
     
     .nav-left .nav-link {
         display: none;
     }
     
     .nav-center {
+        position: static;
+        transform: none;
         flex: 1;
-        margin: 0 8px;
+        margin: 0;
     }
     
     .search-container {
         width: 100%;
         max-width: none;
         min-width: 120px;
+        display: flex;
+        gap: 0;
+        height: 100%;
+    }
+    
+    .search-type-dropdown .Select-control, .Select-option {
+        font-size: 11px !important;
+        width: 65px !important;
+    }
+    
+    .search-input {
+        font-size: 11px !important;
+        height: 36px !important;
+        padding: 6px 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        box-sizing: border-box !important;
+        width: 80px;
+    }
+    
+    .search-type-dropdown {
+        margin-right: 0px !important;
+    }
+    
+    .search-type-dropdown .Select {
+        margin: 0 !important;
+    }
+    
+    .search-type-dropdown .Select-value {
+        margin-right: 0px !important;
     }
     
     .nav-right .nav-link,
@@ -756,11 +875,12 @@
     max-height: calc(100vh - 56px);
         z-index: 2001;
     }
+}
 
 /* For larger screens (desktop / larger tablets) keep a slightly narrower search box
    when available. This ruleset now applies only to screens >=1025px and <=1280px.
    It prevents overlapping rules with the mobile/tablet breakpoint above. */
-@media (min-width: 1101px) and (max-width: 1280px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   .search-container {
     width: 50%;
     max-width: 400px;

@@ -9,24 +9,44 @@ body, html {
   width: 100%;
   scroll-behavior: smooth;
   background-color: #d0d0d0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* Ensure the main app div also has the background */
 #_dash-app-content {
   background-color: #d0d0d0;
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* Ensure content doesn't get hidden behind sticky header */
 #dash-page-content {
   padding-top: 20px;
   background-color: #d0d0d0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .app-container {
   max-width: 80%;
   margin: 40px auto;
   padding: 24px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    max-width: 95%;
+    margin: 20px auto;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    max-width: 98%;
+    margin: 10px auto;
+    padding: 12px;
+  }
 }
 
 /* Unified secondary background color for cards */

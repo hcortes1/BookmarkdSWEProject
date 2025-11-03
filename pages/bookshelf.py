@@ -71,7 +71,7 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
             is_favorited = False
 
     # Determine border styling based on favorite status
-    border_style = '3px solid #007bff' if is_favorited else 'none'
+    border_style = '3px solid #007bff' if is_favorited else '1px solid #ddd'
 
     # Calculate days remaining and expiry date text for rented books
     days_remaining_text = "Unknown"
@@ -167,12 +167,12 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
                         )
                     ], className='added-info')
                 ]),
-                # Show if has review
-                html.Div([
-                    html.Span(
-                        "📝", className='review-icon'),
-                    html.Span("Has review", className='review-text')
-                ], className='book-review-indicator') if book.get('review_text') and book.get('review_text').strip() else html.Div()
+                # Show if has review - REMOVED per user request
+                # html.Div([
+                #     html.Span(
+                #         "📝", className='review-icon'),
+                #     html.Span("Has review", className='review-text')
+                # ], className='book-review-indicator') if book.get('review_text') and book.get('review_text').strip() else html.Div()
             ])
         ], href=f"/book/{book['book_id']}", className='book-link')
 

@@ -11,7 +11,13 @@ import backend.rewards as rewards_backend
 app = Dash(
     __name__,
     use_pages=True,
-    suppress_callback_exceptions=True
+    suppress_callback_exceptions=True,
+    meta_tags=[
+        {
+            'name': 'viewport',
+            'content': 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes'
+        }
+    ]
 )
 
 app.validation_layout = None
@@ -30,10 +36,8 @@ app.layout = html.Div([
             html.Div(id='nav-left-container', className="nav-left", children=[
                 dcc.Link([
                     html.Span("Bookmarkd", className="brand-name", style={
-                        'font-size': '24px',
                         'font-weight': 'bold',
                         'color': '#007bff',
-                        'margin-right': '30px',
                         'text-decoration': 'none'
                     })
                 ], href='/', className='brand-link', style={'text-decoration': 'none'}),
@@ -59,10 +63,6 @@ app.layout = html.Div([
                             clearable=False,
                             searchable=False,
                             className='search-type-dropdown',
-                            style={
-                                'width': '80px',  # Reduced from 100px
-                                'margin-right': '8px'
-                            }
                         ),
                         dcc.Input(id='header-search', placeholder='Search...',
                                   type='text', className='search-input',
@@ -109,6 +109,11 @@ app.layout = html.Div([
             ),
             html.Div(className="mobile-menu-content", children=[
                 html.Div(className="mobile-menu-header", children=[
+                    dcc.Link([
+                        html.Img(src='/assets/svg/home.svg',
+                                 className='mobile-menu-icon'),
+                        html.Span('Home')
+                    ], href='/', className='mobile-menu-link mobile-header-link'),
                     html.Button(
                         html.Img(src='/assets/svg/close.svg',
                                  className='close-icon'),
@@ -160,8 +165,11 @@ def update_navigation(user_session):
                 'text-decoration': 'none'
             })
         ], href='/', className='brand-link', style={'text-decoration': 'none'}),
-        dcc.Link(html.Img(src='/assets/svg/home.svg', className='home-icon',
-                 alt='home'), href='/', className='nav-link'),
+        dcc.Link([
+            html.Img(src='/assets/svg/home.svg',
+                     className='home-icon', alt='home'),
+            html.Span('Home')
+        ], href='/', className='nav-link home-nav-link'),
     ]
 
     # Add trending, leaderboards, showcase only for logged-in users
@@ -270,7 +278,7 @@ def update_navigation(user_session):
                     # Hidden by default, shown on mobile via CSS
                     style={'display': 'none'}
                 ),
-                html.Div(id='hamburger-notification-badge', className='hamburger-notification-badge',
+                html.Div(id='hamburger-notification-badge', className='mobile-notification-badge',
                          style={'display': 'none'})
             ], className='hamburger-container', style={'position': 'relative', 'display': 'inline-block'})
         ]
@@ -278,11 +286,6 @@ def update_navigation(user_session):
         # Mobile menu content for logged-in users
         mobile_menu_content = [
             # Navigation links
-            dcc.Link([
-                html.Img(src='/assets/svg/home.svg',
-                         className='mobile-menu-icon'),
-                html.Span('Home')
-            ], href='/', className='mobile-menu-link'),
             dcc.Link('Trending', href='/trending',
                      className='mobile-menu-link'),
             dcc.Link('Leaderboards', href='/leaderboards',
@@ -335,11 +338,6 @@ def update_navigation(user_session):
 
         # Mobile menu content for non-logged-in users
         mobile_menu_content = [
-            dcc.Link([
-                html.Img(src='/assets/svg/home.svg',
-                         className='mobile-menu-icon'),
-                html.Span('Home')
-            ], href='/', className='mobile-menu-link'),
             dcc.Link('Log In / Sign Up', href='/login',
                      className='mobile-menu-link mobile-menu-login')
         ]
