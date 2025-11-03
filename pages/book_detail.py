@@ -1347,6 +1347,11 @@ def set_initial_rental_status(store_id, session_data, book_store_id):
     """Set the initial rental status and show appropriate Read/Rent button"""
     book_id = store_id['book_id']
 
+    # Check if book has available HTML
+    book_data = get_book_details(book_id)
+    if not book_data or not book_data.get('html_path'):
+        return html.Div(), None
+
     if not session_data or not session_data.get('logged_in'):
         # Not logged in - show disabled rent button
         return html.Button(

@@ -168,8 +168,8 @@ def search_and_download_gutenberg_html(book_title, author_name, book_id):
                     else:
                         full_text = link_text
 
-                    # Check if book title matches (case insensitive, partial match)
-                    if book_title.lower() in full_text.lower() or any(word in full_text.lower() for word in book_title.lower().split()):
+                    # Check if book title matches (case insensitive, substring match)
+                    if book_title.lower() in full_text.lower():
                         book_url = "https://www.gutenberg.org" + href
                         print(
                             f"DEBUG GUTENBERG_search_and_download_gutenberg_html: Found potential book link: {link_text} -> {book_url}")
