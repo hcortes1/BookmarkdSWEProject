@@ -431,7 +431,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 html.Div(
                     html.Span(
                         f"Lvl {level}",
-                        className='level-badge',
+                        className=f'level-badge level-{level}',
                         title=level_title if level_title else None,
                         style=level_style
                     ),
