@@ -162,6 +162,12 @@
   }
 }
 
+@media (max-width: 769px) {
+  .search-type-dropdown .Select-menu-outer {
+    min-width: 60px !important;
+  }
+}
+
 .search-type-dropdown .Select-option.is-focused {
   background-color: #e9ecef !important;
   color: #333 !important;
@@ -843,7 +849,7 @@
     
     .search-type-dropdown .Select-control, .Select-option {
         font-size: 11px !important;
-        width: 65px !important;
+        width: 45px !important;
     }
     
     .search-input {
