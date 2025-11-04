@@ -18,7 +18,7 @@
     --danger-bg: transparent;
     --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
     --link-color: #007bff;
-    --link-hover: #005fa3;
+    --link-hover: #0056b3;
     --tab-hover-bg: #e9ecef;
     --input-field-bg: #ffffff;
     --border-color: #f0f0f0;
@@ -96,8 +96,8 @@ a:hover {
   --danger-bg: transparent;
   --card-bg: #232526;
   --card-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  --link-color: #4ea1ff;
-  --link-hover: #82cfff;
+  --link-color: #007bff;
+  --link-hover: #0056b3;
   --tab-hover-bg: #646464;
   --input-field-bg: #464646;
   --border-color: #727272;

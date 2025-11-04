@@ -204,7 +204,7 @@ def update_navigation(user_session):
             html.Div(
                 html.Span(
                     f"Lvl {level}",
-                    className='level-badge',
+                    className=f'level-badge level-{level}',
                     title=f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
                 ),
                 className='user-level'
@@ -304,7 +304,7 @@ def update_navigation(user_session):
                 html.Img(src=profile_image_src,
                          className='mobile-menu-profile-img'),
                 html.Span(f"Profile ({user_session.get('username', '')})"),
-                html.Span(f"Lvl {level}", className='mobile-level-badge')
+                html.Span(f"Lvl {level}", className=f'mobile-level-badge level-{level}')
             ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
             dcc.Link([
                 html.Img(src='/assets/svg/bell.svg',

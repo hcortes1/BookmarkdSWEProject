@@ -580,7 +580,7 @@
 }
 
 .level-badge {
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    background: linear-gradient(135deg, var(--link-color), var(--link-hover));
     color: white;
     padding: 2px 8px;
     border-radius: 12px;
@@ -589,6 +589,14 @@
     display: inline-block;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     cursor: help;
+}
+
+.level-badge.level-5 {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.level-badge.level-10 {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
 }
 
 .mobile-level-badge {
@@ -602,6 +610,14 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     cursor: help;
     margin-left: 8px;
+}
+
+.mobile-level-badge.level-5 {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.mobile-level-badge.level-10 {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
 }
 
 /* Hamburger Menu */

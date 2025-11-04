@@ -46,7 +46,7 @@
 }
 
 .friends-title-left {
-    font-size: 18px !important; /* Small but readable title */
+    font-size: 15px !important; /* Small but readable title */
     margin-bottom: 6px;
     color: var(--text-color-secondary); /* Lighter color */
     text-align: center;
@@ -217,11 +217,6 @@
     margin: 0;
 }
 
-.friends-title {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-}
-
 .friends-list {
     list-style-type: none;
     padding: 0;
@@ -333,9 +328,9 @@
 
 /* Tab styles */
 .profile-tab {
-    font-size: 1.2rem !important;
-    font-weight: 600 !important;
-    padding: 12px 24px !important;
+    font-size: 1rem !important;
+    font-weight: 450 !important;
+    padding: 12px 12px !important;
     background: var(--secondary-bg) !important;
     color: var(--text-color) !important;
     border: none !important;
@@ -370,9 +365,6 @@
     font-weight: 500 !important;
 }
 
-.friends-title-left {
-    font-size: 1.4rem !important;
-}
 
 .favorites-card-title {
     font-size: 1.5rem !important;
@@ -392,6 +384,14 @@
     font-size: 0.8rem;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.profile-level-badge .level-badge.level-5 {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.profile-level-badge .level-badge.level-10 {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
 }
 
 /* Mobile Responsive Styles */
@@ -426,12 +426,6 @@
         max-width: none; /* Remove max-width on mobile */
     }
 
-    .friends-title-left {
-        font-size: 18px !important; /* Small but readable on mobile too */
-        margin-bottom: 4px;
-    color: var(--text-color-secondary); /* Even lighter on mobile */
-    }
-
     .friends-list-left {
         max-height: 120px; /* Smaller list height */
         padding: 8px; /* Less padding */
@@ -446,20 +440,9 @@
         order: 1; /* Put tabs below profile info */
     }
 
-    .profile-tabs {
-    justify-content: center;
-    flex-wrap: nowrap;
-    background-color: --secondary-bg;
-    border-radius: 8px 8px 0 0;
-    padding: 0 8px;
-    }
 
-    .profile-tab {
-        flex: 1;
-        max-width: 120px; /* Increased max-width to fit longer text */
-        padding: 6px 10px !important; /* Reduced padding */
-        font-size: 0.75rem; /* Even smaller font */
-    }
+
+
 
     /* Mobile adjustments for favorites */
     .favorites-list {
