@@ -31,6 +31,8 @@ def get_db_connection():
         return None
 
 # hash the password for security
+
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -103,7 +105,7 @@ def login_user(username, password):
             "email": user_record[2],
             "profile_image_url": user_record[3],
             "created_at": user_record[4].isoformat() if user_record[4] else None,
-            "first_login":user_record[5],
+            "first_login": user_record[5],
             "favorite_genres": user_record[6],
             "display_mode": user_record[7]
         }
@@ -142,7 +144,7 @@ def refresh_user_session_data(user_id):
                 "email": user_record[2],
                 "profile_image_url": user_record[3],
                 "created_at": user_record[4].isoformat() if user_record[4] else None,
-                "first_login":user_record[5],
+                "first_login": user_record[5],
                 "favorite_genres": user_record[6],
                 "display_mode": user_record[7]
             }
@@ -154,30 +156,33 @@ def refresh_user_session_data(user_id):
         cursor.close()
         connection.close()
         return False, f"Error refreshing session data: {e}", None
-    
+
 # Update User Genre backend
+
+
 def update_user_genres(user_id, favorite_genres):
     """Update user's favorite genres and mark first login as complete"""
     connection = get_db_connection()
     if not connection:
         return False, "Database connection failed"
-    
+
     cursor = connection.cursor()
-    
+
     try:
         update_preference_query = """
             UPDATE users 
             SET favorite_genres = %s, first_login = %s 
             WHERE user_id = %s
         """
-        cursor.execute(update_preference_query, (json.dumps(favorite_genres), False, user_id))
+        cursor.execute(update_preference_query,
+                       (json.dumps(favorite_genres), False, user_id))
         connection.commit()
-        
+
         cursor.close()
         connection.close()
-        
+
         return True, "User's favorite genres have been updated!"
-        
+
     except Error as e:
         cursor.close()
         connection.close()

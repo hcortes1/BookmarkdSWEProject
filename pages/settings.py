@@ -21,6 +21,11 @@ layout = html.Div([
                     'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
+                html.A("Appearance", href="#appearance-settings", style={
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
+                }),
                 html.A("Account Settings", href="#account-settings", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
                     'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
@@ -111,27 +116,30 @@ layout = html.Div([
                     className='btn-primary',
                     style={'width': '200px'}
                 ),
-                html.Div(id='bio-feedback', style={'margin-top': '10px'}),
+                html.Div(id='bio-feedback', style={'margin-top': '10px'})
+            ], className='card settings-card'),
 
-                # Display Mode section
-                html.H3("Display Mode", style={'margin-top': '30px'}),
-                dcc.RadioItems(
-                    id='display-mode-selector',
-                    options=[
-                        {'label': ' Light Mode', 'value': 'light'},
-                        {'label': ' Dark Mode', 'value': 'dark'}
-                    ],
-                    value='light',  # Default to light mode
-                    labelStyle={'display': 'block', 'margin-bottom': '10px'},
-                    inputStyle={'margin-right': '10px'}
-                ),
-                html.Button(
-                    "Update Display Mode",
-                    id="update-display-mode-button",
-                    className='btn-primary',
-                    style={'width': '200px'}
-                ),
-                html.Div(id='display-mode-feedback', style={'margin-top': '10px'})
+            # Appearance Settings Card
+            html.Div([
+                html.H2("Appearance", id="appearance-settings", style={
+                        'margin-bottom': '20px', 'font-size': '24px', 'font-weight': '500'}),
+                html.Div([
+                    html.Div([
+                        html.Label("Display Mode", style={'font-weight': '500', 'margin-bottom': '10px', 'display': 'block'}),
+                        html.Div([
+                            html.Span("Light", style={'margin-right': '15px', 'font-weight': '500'}),
+                            html.Label([
+                                dcc.Checklist(
+                                    id='display-mode-toggle',
+                                    options=[{'label': '', 'value': 'dark'}],
+                                    value=[],  # Empty means light mode, ['dark'] means dark mode
+                                ),
+                                html.Span("Toggle Dark Mode", style={'display': 'none'})  # Hidden label for accessibility
+                            ]),
+                            html.Span("Dark", style={'margin-left': '15px', 'font-weight': '500'})
+                        ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})
+                    ], style={'text-align': 'center'})
+                ])
             ], className='card settings-card'),
 
             # Account Settings Card
@@ -713,16 +721,17 @@ def update_bio(n_clicks, new_bio, session_data):
 
 # Callback to update display mode
 @callback(
-    [Output('display-mode-feedback', 'children'),
-     Output('user-session', 'data', allow_duplicate=True)],
-    Input('update-display-mode-button', 'n_clicks'),
-    [State('display-mode-selector', 'value'),
-     State('user-session', 'data')],
+    Output('user-session', 'data', allow_duplicate=True),
+    Input('display-mode-toggle', 'value'),
+    State('user-session', 'data'),
     prevent_initial_call=True
 )
-def update_display_mode(n_clicks, new_display_mode, session_data):
-    if not n_clicks or not session_data or not session_data.get('logged_in'):
-        return dash.no_update, dash.no_update
+def update_display_mode(toggle_value, session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return dash.no_update
+
+    # Convert toggle value to display mode
+    new_display_mode = 'dark' if toggle_value else 'light'
 
     try:
         success, message = settings_backend.update_display_mode(
@@ -732,12 +741,14 @@ def update_display_mode(n_clicks, new_display_mode, session_data):
             # Update session data with new display mode
             updated_session = session_data.copy()
             updated_session['display_mode'] = new_display_mode
-            return html.Div("Display mode updated successfully!", style={'color': 'green'}), updated_session
+            return updated_session
         else:
-            return html.Div(f"Error: {message}", style={'color': 'red'}), dash.no_update
+            # Return unchanged session data on error (no feedback shown)
+            return dash.no_update
 
     except Exception as e:
-        return html.Div(f"Error updating display mode: {str(e)}", style={'color': 'red'}), dash.no_update
+        # Return unchanged session data on error (no feedback shown)
+        return dash.no_update
 
 
 # Callback to load current display name and bio
@@ -770,12 +781,13 @@ def update_profile_placeholders(session_data):
 
 # Callback to load current display mode
 @callback(
-    Output('display-mode-selector', 'value'),
+    Output('display-mode-toggle', 'value'),
     Input('user-session', 'data'),
     prevent_initial_call=False
 )
 def load_current_display_mode(session_data):
     if not session_data or not session_data.get('logged_in'):
-        return 'light'  # Default to light mode
+        return []  # Default to light mode (unchecked)
 
-    return session_data.get('display_mode', 'light')
+    display_mode = session_data.get('display_mode', 'light')
+    return ['dark'] if display_mode == 'dark' else []

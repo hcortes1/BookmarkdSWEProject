@@ -160,7 +160,7 @@ def handle_login(n_clicks, username, password):
         else:
             # Regular user -> home page
             return '/', dash.no_update, session_data
-            
+
     else:
         # display error message below the button
         error_message = html.Div(

@@ -202,7 +202,7 @@
 }
 
 /* Scroll margin for section headers */
-#profile-settings, #account-settings, #account-actions {
+#profile-settings, #appearance-settings, #account-settings, #account-actions {
   scroll-margin-top: 20vh;
 }
 
@@ -217,4 +217,86 @@
 
 .settings-sidebar {
   box-shadow: var(--card-shadow);
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--secondary-bg);
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-color);
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--link-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Style the checklist as a toggle switch */
+#display-mode-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 50px;
+  height: 24px;
+  background: var(--input-field-bg);
+  border-radius: 24px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.3s;
+}
+
+#display-mode-toggle input[type="checkbox"]:checked {
+  background: var(--link-color);
+}
+
+#display-mode-toggle input[type="checkbox"]:before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--link-color);
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s, background 0.3s;
+}
+
+#display-mode-toggle input[type="checkbox"]:checked:before {
+  transform: translateX(26px);
+  background: var(--background-color);
 }
