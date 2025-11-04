@@ -70,9 +70,9 @@ def create_reviews_content(user_data, is_own_profile):
                         # Book title and author (clickable)
                         dcc.Link([
                             html.H4(review.get('title', 'Unknown Title'),
-                                    style={'margin': '0 0 5px 0', 'color': '#007bff'}),
+                                    className='text-link', style={'margin': '0 0 5px 0'}),
                             html.P(f"by {review.get('author_name', 'Unknown Author')}",
-                                   style={'margin': '0 0 10px 0', 'color': '#666', 'font-size': '0.9rem'})
+                                   className='text-secondary', style={'margin': '0 0 10px 0', 'font-size': '0.9rem'})
                         ], href=f"/book/{review.get('book_id')}", style={'text-decoration': 'none'}),
 
                         # Rating and date
@@ -80,8 +80,8 @@ def create_reviews_content(user_data, is_own_profile):
                             html.Span(rating_text, style={
                                       'font-size': '1rem', 'font-weight': 'bold', 'margin-right': '10px'},
                                       className='rating-color'),
-                            html.Span(date_str, style={
-                                      'color': '#666', 'font-size': '0.9rem'})
+                            html.Span(date_str, className='text-secondary',
+                                      style={'font-size': '0.9rem'})
                         ], style={'margin-bottom': '10px'}),
 
                         # Review text
@@ -165,10 +165,8 @@ def create_completed_books_content(user_data, is_own_profile):
                     'font-weight': 'bold'
                 }, className='rating-color')
             else:
-                rating_display = html.Div("No rating", style={
-                    'color': '#999',
-                    'font-size': '0.9rem'
-                })
+                rating_display = html.Div("No rating", className='text-secondary',
+                    style={'font-size': '0.9rem'})
 
             # Create book card for grid layout
             book_card = html.Div([
@@ -196,7 +194,6 @@ def create_completed_books_content(user_data, is_own_profile):
                     html.H4(book.get('title', 'Unknown Title'),
                             style={
                         'margin': '10px 0 0 0',  # Remove bottom margin to eliminate gap
-                        'color': '#333',
                         'font-size': '0.95rem',
                         'line-height': '1.2',
                         'text-align': 'center',
@@ -205,14 +202,13 @@ def create_completed_books_content(user_data, is_own_profile):
                         '-webkit-line-clamp': '2',
                         '-webkit-box-orient': 'vertical',
                         'max-height': '2.4em'  # Limit height to 2 lines
-                    })
+                    }, className='text-primary')
                 ], href=f"/book/{book.get('book_id')}", style={'text-decoration': 'none'}),
 
                 # Completion date
-                html.Div(f"Completed: {date_str}", style={
+                html.Div(f"Completed: {date_str}", className='text-secondary', style={
                     'text-align': 'center',
                     'margin-top': '5px',
-                    'color': '#666',
                     'font-size': '0.8rem'
                 }),
 
@@ -308,18 +304,15 @@ def layout(username=None, **kwargs):
                     # Tab navigation
                     html.Div([
                         html.Button("Favorites", id="favorites-tab", className="profile-tab active-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#007bff',
-                                           'color': 'white', 'cursor': 'pointer', 'margin-right': '5px',
+                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer', 'margin-right': '5px',
                                            'border-radius': '5px 5px 0 0'}),
-                        html.Button("Reviews", id="reviews-tab", className="profile-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
-                                           'color': '#6c757d', 'cursor': 'pointer', 'margin-right': '5px',
+                        html.Button("Reviews", id="reviews-tab", className="profile-tab text-muted bg-light",
+                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer', 'margin-right': '5px',
                                            'border-radius': '5px 5px 0 0'}),
-                        html.Button("Completed", id="completed-tab", className="profile-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
-                                           'color': '#6c757d', 'cursor': 'pointer',
+                        html.Button("Completed", id="completed-tab", className="profile-tab text-muted bg-light",
+                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer',
                                            'border-radius': '5px 5px 0 0'})
-                    ], className="profile-tabs", style={'margin-bottom': '0', 'border-bottom': '2px solid #007bff'}),
+                    ], className="profile-tabs", style={'margin-bottom': '0', 'border-bottom': '2px solid var(--link-color)'}),
 
                     # Tab content container
                     html.Div(id="tab-content",
@@ -405,8 +398,8 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 username_display = html.Div([
                     html.Div(display_name, className="profile-display-name",
                              style={'font-size': '1.8rem', 'font-weight': 'bold', 'margin-bottom': '5px', 'margin-top': '0px'}),
-                    html.Div(f"@{user_data['username']}", className="profile-username-small",
-                             style={'font-size': '1.2rem', 'color': '#666', 'font-weight': 'normal', 'margin-bottom': '0px', 'margin-top': '0px'})
+                    html.Div(f"@{user_data['username']}", className="profile-username-small text-secondary",
+                             style={'font-size': '1.2rem', 'font-weight': 'normal', 'margin-bottom': '0px', 'margin-top': '0px'})
                 ], style={'margin-bottom': '0px'})
             else:
                 # Show username with @ if no display name
@@ -468,10 +461,10 @@ def update_profile_data(session_data, viewed_username, active_tab):
 
                 user_info_elements.append(
                     html.Div([
-                        html.P(f"Books read this year: {books_count}",
-                               style={'margin': '0px 0 3px 0', 'color': '#333'}),
-                        html.P(f"Pages read this year: {pages_count:,}",
-                               style={'margin': '3px 0 0 0', 'color': '#333'})
+                        html.P(f"Books read this year: {books_count}", className='text-primary',
+                               style={'margin': '0px 0 3px 0'}),
+                        html.P(f"Pages read this year: {pages_count:,}", className='text-primary',
+                               style={'margin': '3px 0 0 0'})
                     ], className="yearly-stats")
                 )
 
@@ -646,8 +639,8 @@ def update_profile_data(session_data, viewed_username, active_tab):
                 elif status == 'pending_received':
                     # Show "Respond to Friend Request" message
                     friend_request_section = html.Div([
-                        html.Span("This user sent you a friend request. Check your notifications!",
-                                  style={'color': '#007bff', 'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
+                        html.Span("This user sent you a friend request. Check your notifications!", className='text-link',
+                                  style={'font-weight': 'bold', 'margin-top': '0px', 'display': 'block'})
                     ])
                 else:  # status == 'none' or 'user_not_found'
                     # Show "Send Friend Request" button
@@ -712,10 +705,9 @@ def update_profile_data(session_data, viewed_username, active_tab):
                                 html.Span(friend['username'],
                                           className='friend-name'),
                                 html.Span(f"since: {since_text}",
-                                          className='friend-since',
+                                          className='friend-since text-secondary',
                                           style={
                                               'font-size': '0.8rem',
-                                              'color': '#888',
                                               'display': 'block',
                                               'margin-top': '2px'
                                 })
@@ -775,8 +767,8 @@ def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
 
     # Base styles for tabs
     active_style = {
-        'padding': '10px 20px', 'border': 'none', 'background': '#007bff',
-        'color': 'white', 'cursor': 'pointer', 'margin-right': '5px',
+        'padding': '10px 20px', 'border': 'none', 'background': 'var(--link-color)',
+        'color': 'var(--button-text-color)', 'cursor': 'pointer', 'margin-right': '5px',
         'border-radius': '5px 5px 0 0'
     }
     inactive_style = {
@@ -940,3 +932,16 @@ def toggle_friends_list(n_clicks, current_style):
         else:
             return {'display': 'none'}
     return current_style or {'display': 'none'}
+
+
+# Handle edit profile button - navigate to settings page
+@callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    Input('edit-profile-button', 'n_clicks'),
+    prevent_initial_call=True
+)
+def handle_edit_profile(n_clicks):
+    """Navigate to settings page when edit profile button is clicked"""
+    if n_clicks and n_clicks > 0:
+        return '/profile/settings'
+    return dash.no_update

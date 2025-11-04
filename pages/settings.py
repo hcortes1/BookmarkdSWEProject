@@ -13,28 +13,28 @@ layout = html.Div([
         # Navigation sidebar
         html.Div([
             html.Div("Navigation", style={
-                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': '#666'
+                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': 'var(--text-color-secondary)'
             }),
             html.Div([
                 html.A("Profile Settings", href="#profile-settings", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Settings", href="#account-settings", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Actions", href="#account-actions", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
             ], style={'list-style': 'none', 'padding': '0', 'margin': '0'})
         ], className="card settings-sidebar", style={
             'width': '140px', 'padding': '15px',
-            'border-radius': '8px', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
+            'border-radius': '8px',
             'margin-right': '20px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
         }),
 

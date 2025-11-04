@@ -241,17 +241,16 @@ def update_notifications_display(notifications_data, user_session):
                 html.Div([
                     html.Div([
                         html.Div([
-                            dcc.Link(html.Strong(sender_username, className='notification-username'),
-                                     href=profile_href, style={'text-decoration': 'none', 'color': '#1976d2'}),
-                            html.Span(' sent you a friend request', className='notification-message', style={
-                                      'margin-left': '6px', 'color': '#333'})
+                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
+                                     href=profile_href, style={'text-decoration': 'none'}),
+                            html.Span(' sent you a friend request', className='notification-message text-primary', style={
+                                      'margin-left': '6px'})
                         ], style={'display': 'flex', 'align-items': 'center'}),
 
                         html.Div(
                             get_relative_time(notification.get('created_at')),
-                            className='notification-time',
-                            style={'font-size': '12px',
-                                   'color': '#666', 'margin-top': '4px'}
+                            className='notification-time text-secondary',
+                            style={'font-size': '12px', 'margin-top': '4px'}
                         )
                     ], className='notification-content'),
 
@@ -260,41 +259,20 @@ def update_notifications_display(notifications_data, user_session):
                             'Accept',
                             id={'type': 'accept-notification',
                                 'notification_id': notification['id']},
-                            className='btn-accept-notification',
-                            style={
-                                'background': '#28a745',
-                                'color': 'white',
-                                'border': 'none',
-                                'padding': '8px 16px',
-                                'border-radius': '4px',
-                                'margin-right': '8px',
-                                'cursor': 'pointer',
-                                'font-size': '14px'
-                            }
+                            className='btn-accept-notification'
                         ),
                         html.Button(
                             'Decline',
                             id={'type': 'decline-notification',
                                 'notification_id': notification['id']},
-                            className='btn-decline-notification',
-                            style={
-                                'background': '#dc3545',
-                                'color': 'white',
-                                'border': 'none',
-                                'padding': '8px 16px',
-                                'border-radius': '4px',
-                                'cursor': 'pointer',
-                                'font-size': '14px'
-                            }
-                        )
+                            className='btn-decline-notification'
+                        ),
                     ], className='notification-actions')
                 ], className='notification-main-content')
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
-                'padding': '16px',
-                'border-bottom': '1px solid #f0f0f0',
-                'background': 'white'
+                'padding': '16px'
             })
 
             notification_items.append(item)
@@ -314,9 +292,9 @@ def update_notifications_display(notifications_data, user_session):
                                 'width': '50px',
                                 'height': '50px',
                                 'border-radius': '8px',
-                                'object-fit': 'contain',
-                                'background-color': '#f5f5f5'
-                            }
+                                'object-fit': 'contain'
+                            },
+                            className='bg-light'
                         )
                     ], className='notification-avatar'),
                     href=book_href,
@@ -326,27 +304,25 @@ def update_notifications_display(notifications_data, user_session):
                 html.Div([
                     html.Div([
                         html.Div([
-                            dcc.Link(html.Strong(notification.get('book_title', 'a book'), className='notification-book-title'),
-                                     href=book_href, style={'text-decoration': 'none', 'color': '#1976d2'}),
-                            html.Span(' was recommended to you by ', className='notification-message', style={
-                                      'margin-left': '4px', 'color': '#333'}),
-                            dcc.Link(html.Strong(sender_username, className='notification-username'),
-                                     href=profile_href, style={'text-decoration': 'none', 'color': '#1976d2', 'margin-left': '4px'})
+                            dcc.Link(html.Strong(notification.get('book_title', 'a book'), className='notification-book-title text-link'),
+                                     href=book_href, style={'text-decoration': 'none'}),
+                            html.Span(' was recommended to you by ', className='notification-message text-primary', style={
+                                      'margin-left': '4px'}),
+                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
+                                     href=profile_href, style={'text-decoration': 'none', 'margin-left': '4px'})
                         ], style={'display': 'flex', 'align-items': 'center', 'flex-wrap': 'wrap'}),
 
                         # Show reason if provided
                         html.Div(
                             f"They said: {notification.get('reason', 'You might like this book!')}",
-                            className='notification-reason',
-                            style={'font-size': '14px', 'color': '#666',
-                                   'margin-top': '6px', 'font-style': 'italic'}
+                            className='notification-reason text-secondary',
+                            style={'font-size': '14px', 'margin-top': '6px', 'font-style': 'italic'}
                         ) if notification.get('reason') else html.Div(),
 
                         html.Div(
                             get_relative_time(notification.get('created_at')),
-                            className='notification-time',
-                            style={'font-size': '12px',
-                                   'color': '#666', 'margin-top': '4px'}
+                            className='notification-time text-secondary',
+                            style={'font-size': '12px', 'margin-top': '4px'}
                         )
                     ], className='notification-content'),
 
@@ -356,40 +332,14 @@ def update_notifications_display(notifications_data, user_session):
                             'Add to Bookshelf',
                             id={'type': 'add-to-bookshelf-notification',
                                 'notification_id': notification['id']},
-                            className='btn-add-to-bookshelf',
-                            style={
-                                'background': '#007bff',
-                                'color': 'white',
-                                'border': 'none',
-                                'padding': '12px 20px',
-                                'border-radius': '6px',
-                                'cursor': 'pointer',
-                                'font-size': '14px',
-                                'font-weight': 'bold',
-                                'margin-right': '10px'
-                            }
+                            className='btn-add-to-bookshelf'
                         ),
                         # Small dismiss button
                         html.Button(
                             '✕',
                             id={'type': 'dismiss-notification',
                                 'notification_id': notification['id']},
-                            className='btn-dismiss-small',
-                            style={
-                                'background': 'transparent',
-                                'color': '#999',
-                                'border': '1px solid #ddd',
-                                'padding': '4px 8px',
-                                'border-radius': '50%',
-                                'cursor': 'pointer',
-                                'font-size': '12px',
-                                'width': '24px',
-                                'height': '24px',
-                                'display': 'flex',
-                                'align-items': 'center',
-                                'justify-content': 'center',
-                                'margin-left': 'auto'
-                            },
+                            className='btn-dismiss-small text-muted',
                             title='Dismiss notification'
                         )
                     ], className='notification-actions')
@@ -397,9 +347,7 @@ def update_notifications_display(notifications_data, user_session):
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
-                'padding': '16px',
-                'border-bottom': '1px solid #f0f0f0',
-                'background': 'white'
+                'padding': '16px'
             })
 
             notification_items.append(item)

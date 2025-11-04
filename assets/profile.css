@@ -48,7 +48,7 @@
 .friends-title-left {
     font-size: 18px !important; /* Small but readable title */
     margin-bottom: 6px;
-    color: #666; /* Lighter color */
+    color: var(--text-color-secondary); /* Lighter color */
     text-align: center;
     font-weight: normal; /* Not bold */
     cursor: pointer;
@@ -56,7 +56,7 @@
 }
 
 .friends-title-left:hover {
-    color: #007bff; /* Blue on hover to indicate it's clickable */
+    color: var(--link-color); /* Blue on hover to indicate it's clickable */
 }
 
 .friends-list-left {
@@ -128,7 +128,7 @@
     font-size: 1.3rem;
     margin-bottom: 15px;
     color: var(--text-color);
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid var(--link-color);
     padding-bottom: 8px;
 }
 
@@ -204,14 +204,14 @@
 
 .favorite-item-author {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--text-color-secondary);
     margin-top: 4px;
     font-style: italic;
 }
 
 .favorites-empty-message {
     font-style: italic;
-    color: #888;
+    color: var(--text-color-secondary);
     text-align: center;
     padding: 20px;
     margin: 0;
@@ -248,7 +248,7 @@
 .user-join-date,
 .user-bio {
     margin: 3px 0; /* 3px between items that belong together */
-    color: #666;
+    color: var(--text-color-secondary);
     font-size: 0.9rem;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -276,7 +276,7 @@
 }
 
 .friend-link:hover {
-    color: #007bff;
+    color: var(--link-color);
 }
 
 .friend-avatar {
@@ -289,7 +289,7 @@
 }
 
 .no-friends {
-    color: #999;
+    color: var(--text-color-secondary);
     font-style: italic;
     text-align: center;
     padding: 20px;
@@ -315,7 +315,7 @@
 
 .btn-send-friend-request {
     background: #007bff;
-    color: #fff;
+    color: var(--button-text-color);
 }
 
 .btn-send-friend-request:hover {
@@ -324,7 +324,7 @@
 
 .btn-remove-friend {
     background: #dc3545;
-    color: #fff;
+    color: var(--button-text-color);
 }
 
 .btn-remove-friend:hover {
@@ -385,8 +385,8 @@
 }
 
 .profile-level-badge .level-badge {
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    color: #fff;
+    background: linear-gradient(135deg, var(--link-color), var(--link-hover));
+    color: var(--button-text-color);
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
@@ -429,7 +429,7 @@
     .friends-title-left {
         font-size: 18px !important; /* Small but readable on mobile too */
         margin-bottom: 4px;
-    color: #777; /* Even lighter on mobile */
+    color: var(--text-color-secondary); /* Even lighter on mobile */
     }
 
     .friends-list-left {
@@ -523,3 +523,10 @@
         gap: 5px !important; /* Smaller gap like favorites */
     }
 }
+
+/* Utility classes for inline styles */
+.text-link { color: var(--link-color); }
+.text-secondary { color: var(--text-color-secondary); }
+.text-primary { color: var(--text-color); }
+.text-muted { color: #6c757d; }
+.bg-light { background-color: #f8f9fa; }

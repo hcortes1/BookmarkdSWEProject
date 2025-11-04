@@ -202,8 +202,8 @@
   width: 90%;
 }
 .confirm-modal-title { margin: 0 0 15px 0; color: var(--text-color); }
-.btn-cancel { padding: 10px 20px; margin-right: 10px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-.btn-remove { padding: 10px 20px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+.btn-cancel { padding: 10px 20px; margin-right: 10px; background: #6c757d; color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
+.btn-remove { padding: 10px 20px; background: #dc3545; color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
 
 /* Bookshelf tab styles */
 .bookshelf-tab {
