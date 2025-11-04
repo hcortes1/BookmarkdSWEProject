@@ -85,6 +85,8 @@
   border-radius: 18px !important;
   color: #fff !important;
   font-size: 11px !important;
+  min-width: 70px !important; /* Ensure control is wide enough for selected text */
+  width: auto !important;
 }
 
 .search-type-dropdown .Select-value-label {
@@ -96,13 +98,16 @@
   border-color: rgba(255, 255, 255, 0.7) transparent transparent !important;
 }
 
-.search-type-dropdown .Select-menu-outer {
+  .search-type-dropdown .Select-menu-outer {
   background: #f8f9fa !important;
   border: 1px solid #ddd !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
   z-index: 1002 !important;
-  width: 70% !important;
+  /* Allow the dropdown to size automatically but ensure it's not too narrow on desktop */
+  width: auto !important;
+  min-width: 240px !important;
+  max-width: 700px !important;
 }
 
 
@@ -115,6 +120,8 @@
   background: #f8f9fa !important;
   color: #333 !important;
   font-size: 11px !important;
+  /* Prevent option text from wrapping/truncating unexpectedly */
+  white-space: nowrap;
 }
 
 /* Modern Dash dropdown menu styling */
@@ -130,11 +137,29 @@
 .search-type-dropdown .Select-option {
   color: #333 !important;
   font-size: 11px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .search-type-dropdown .Select-option:hover {
   background-color: #e9ecef !important;
   color: #333 !important;
+}
+
+/* Also ensure other dropdown constructs inherit a sensible min width */
+.search-type-dropdown .dropdown-menu,
+.search-type-dropdown .dropdown-content {
+  min-width: 90px !important;
+  width: auto !important;
+  white-space: nowrap;
+}
+
+/* Desktop-specific safety: on larger screens, keep dropdown wide enough */
+@media (min-width: 769px) {
+  .search-type-dropdown .Select-menu-outer {
+    min-width: 90px !important;
+  }
 }
 
 .search-type-dropdown .Select-option.is-focused {

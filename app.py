@@ -662,8 +662,8 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
 
                 # Store the book in database if it's from API
                 if book_data.get('source') == 'openlibrary':
-                    from backend.openlibrary import get_or_create_book_with_author_books
-                    book_id = get_or_create_book_with_author_books(book_data)
+                    from backend.openlibrary import get_or_create_book_from_api
+                    book_id = get_or_create_book_from_api(book_data)
                     if book_id:
                         return f"/book/{book_id}"
                 else:
@@ -680,10 +680,10 @@ def handle_search_item_clicks(book_clicks, author_clicks, search_data):
                 print(
                     f"DEBUG APP_handle_search_item_clicks: Author data: {author_data}")
 
-                # Store the author and their books in database if it's from API
+                # Store the author in database if it's from API (books will be fetched in background)
                 if author_data.get('source') == 'openlibrary':
-                    from backend.openlibrary import get_or_create_author_with_books
-                    author_id = get_or_create_author_with_books(author_data)
+                    from backend.openlibrary import get_or_create_author_from_api
+                    author_id = get_or_create_author_from_api(author_data)
                     print(
                         f"DEBUG APP_handle_search_item_clicks: Got author_id: {author_id}")
                     if author_id:
