@@ -15,13 +15,13 @@ layout = html.Div([
         # Tab navigation
         html.Div([
             html.Button("Want to Read", id="bookshelf-want-to-read-tab",
-                        className="bookshelf-tab active-tab"),
+                        className="card bookshelf-tab active-tab"),
             html.Button("Currently Reading",
-                        id="bookshelf-reading-tab", className="bookshelf-tab"),
+                        id="bookshelf-reading-tab", className="card bookshelf-tab"),
             html.Button("Completed", id="bookshelf-completed-tab",
-                        className="bookshelf-tab"),
+                        className="card bookshelf-tab"),
             html.Button("Rented", id="bookshelf-rented-tab",
-                        className="bookshelf-tab")
+                        className="card bookshelf-tab")
         ], className='bookshelf-tabs-container'),
 
         # Tab content

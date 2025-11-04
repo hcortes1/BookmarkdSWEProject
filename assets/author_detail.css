@@ -4,27 +4,27 @@
 .pagination-info {
   margin-bottom: 10px;
   text-align: center;
-  color: #666;
+  color: var(--text-color-secondary);
 }
 
 .pagination-btn {
   margin: 0 5px;
   padding: 8px 12px;
   cursor: pointer;
-  background-color: #f8f9fa;
-  color: black;
+  background-color: var(--background-color);
+  color: var(--text-color);
   border: 1px solid #ddd;
   border-radius: 4px;
   font-weight: normal;
 }
 
 .pagination-btn:hover {
-  background-color: #e9ecef;
+  background-color: var(--tab-hover-bg);
 }
 
 .pagination-btn.active {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--link-color);
+  color: #fff;
   font-weight: bold;
 }
 
@@ -50,6 +50,7 @@
 .author-detail-container {
   display: flex;
   max-width: 1600px;
+  background-color: var(--secondary-bg);
   margin: 0 auto;
   padding: 30px;
   border-radius: 12px;
@@ -61,13 +62,17 @@
   font-size: 14px;
 }
 
+.author-info span {
+  color: var(--text-color-secondary);
+}
+
 .author-info-block {
   margin-bottom: 15px;
 }
 
 .author-name {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* Favorite Button */
@@ -90,17 +95,21 @@
 
 .favorite-btn.add {
   background-color: #28a745;
-  color: white;
+  color: #fff;
 }
 
 .favorite-btn.remove {
   background-color: #dc3545;
-  color: white;
+  color: #fff;
 }
 
 .favorite-feedback {
   margin-top: 10px;
   font-size: 12px;
+}
+
+.author-bio {
+  color: var(--text-color-secondary);
 }
 
 /* Books Section */
@@ -109,6 +118,7 @@
   margin: 30px auto 0;
   padding: 20px;
   border-radius: 12px;
+  background-color: var(--secondary-bg);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
@@ -121,7 +131,7 @@
 
 .section-title {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
   font-size: 24px;
 }
 
@@ -135,6 +145,7 @@
   min-height: 320px;
   display: flex;
   flex-direction: column;
+  background-color: var(--background-color);
 }
 
 .book-card:hover {
@@ -155,7 +166,7 @@
   padding: 0;
   line-height: 1.2;
   font-weight: bold;
-  color: #333;
+  color: var(--text-color);
   text-align: center;
   word-wrap: break-word;
   word-break: break-word;
@@ -177,7 +188,7 @@
 
 .book-year {
   text-align: center;
-  color: #888;
+  color: var(--text-color-secondary);
   font-size: 12px;
   margin: 5px 0;
 }
@@ -185,7 +196,7 @@
 /* Page Container */
 .page-container {
   padding: 30px;
-  background: #d0d0d0;
+  background: var(--background-color);
   min-height: 100vh;
 }
 

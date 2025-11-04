@@ -50,7 +50,7 @@ def layout(book_id=None, **kwargs):
                                     book_data['title'],
                                     href=f"/book/{book_id}",
                                     style={
-                                        'color': '#007bff',
+                                        'color': 'var(--link-color)',
                                         'text-decoration': 'none'
                                     }
                                 )
@@ -66,14 +66,14 @@ def layout(book_id=None, **kwargs):
                                     href=f"/author/{book_data.get('author_id')}" if book_data.get(
                                         'author_id') else "#",
                                     style={
-                                        'color': '#007bff',
+                                        'color': 'var(--link-color)',
                                         'text-decoration': 'none'
                                     }
                                 ) if book_data.get('author_id') else book_data.get('author_name', 'Unknown Author')
                             ], style={
                                 'margin': '0 0 15px 0',
                                 'font-size': '18px',
-                                'color': '#666'
+                                'color': 'var(--text-color-secondary)'
                             }),
                             # Rating summary
                             html.Div([
@@ -84,7 +84,8 @@ def layout(book_id=None, **kwargs):
                                     className='rating-color'
                                 ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 else html.Span(
                                     "No ratings yet",
-                                    style={'color': '#666'}
+                                    style={
+                                        'color': 'var(--text-color-secondary)'}
                                 )
                             ], style={
                                 'margin-bottom': '15px',
@@ -96,7 +97,7 @@ def layout(book_id=None, **kwargs):
                         'align-items': 'flex-start',
                         'padding': '20px',
                         'border-radius': '12px',
-                        'box-shadow': '0 4px 12px rgba(0,0,0,0.1)',
+                        'box-shadow': 'var(--card-shadow)',
                         'margin-bottom': '30px'
                     }, className='secondary-bg')
                 ]),
@@ -104,7 +105,7 @@ def layout(book_id=None, **kwargs):
                 # Reviews section
                 html.Div([
                     html.H3("All Reviews", style={
-                        'color': '#333',
+                        'color': 'var(--text-color)',
                         'margin-bottom': '20px',
                         'font-size': '20px'
                     }),
@@ -112,7 +113,7 @@ def layout(book_id=None, **kwargs):
                     # Reviews container - will be populated by callback
                     html.Div(id='reviews-container', children=[
                         html.Div("Loading reviews...", style={
-                                 'text-align': 'center', 'color': '#666'})
+                                 'text-align': 'center', 'color': 'var(--text-color-secondary)'})
                     ]),
 
                     # Pagination controls
@@ -128,7 +129,7 @@ def layout(book_id=None, **kwargs):
                 ], style={
                     'padding': '20px',
                     'border-radius': '12px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.1)'
+                    'box-shadow': 'var(--card-shadow)'
                 }, className='secondary-bg')
 
             ], style={
@@ -137,7 +138,7 @@ def layout(book_id=None, **kwargs):
                 'padding': '30px'
             })
         ], style={
-            'background': '#f5f5f5',
+            'background': 'var(--background-color)',
             'min-height': '100vh'
         })
 
@@ -208,7 +209,7 @@ def create_review_card(review: Dict[str, Any]):
                         'username') else "#",
                     style={
                         'font-weight': 'bold',
-                        'color': '#007bff',
+                        'color': 'var(--link-color)',
                         'text-decoration': 'none',
                         'font-size': '16px'
                     }
@@ -219,7 +220,7 @@ def create_review_card(review: Dict[str, Any]):
                         'margin-right': '10px'
                     }, className='rating-color'),
                     html.Span(formatted_date, style={
-                        'color': '#888',
+                        'color': 'var(--text-color-secondary)',
                         'font-size': '14px'
                     })
                 ], style={'margin-top': '5px'})
@@ -234,24 +235,24 @@ def create_review_card(review: Dict[str, Any]):
         html.Div(
             review.get('review_text', ''),
             style={
-                'color': '#333',
+                'color': 'var(--text-color)',
                 'line-height': '1.6',
                 'white-space': 'pre-wrap'
             }
         ) if review.get('review_text') else html.Div(
             "No written review",
             style={
-                'color': '#999',
+                'color': 'var(--text-color-secondary)',
                 'font-style': 'italic'
             }
         )
 
     ], style={
-        'background': '#f8f9fa',
+        'background': 'var(--background-color)',
         'border-radius': '8px',
         'padding': '20px',
         'margin-bottom': '20px',
-        'border-left': '4px solid #007bff'
+        'border-left': '4px solid var(--link-color)'
     })
 
 
@@ -271,8 +272,8 @@ def create_pagination_controls(current_page, total_pages, book_id):
                 style={
                     'margin': '0 5px',
                     'padding': '8px 16px',
-                    'background': '#007bff',
-                    'color': 'white',
+                    'background': 'var(--link-color)',
+                    'color': 'var(--button-text-color)',
                     'border': 'none',
                     'border-radius': '4px',
                     'cursor': 'pointer'
@@ -293,9 +294,9 @@ def create_pagination_controls(current_page, total_pages, book_id):
                 style={
                     'margin': '0 2px',
                     'padding': '8px 12px',
-                    'background': '#007bff' if is_current else '#f8f9fa',
-                    'color': 'white' if is_current else '#333',
-                    'border': '1px solid #dee2e6' if not is_current else 'none',
+                    'background': 'var(--link-color)' if is_current else 'var(--secondary-bg)',
+                    'color': 'var(--button-text-color)' if is_current else 'var(--text-color)',
+                    'border': '1px solid var(--border-color)' if not is_current else 'none',
                     'border-radius': '4px',
                     'cursor': 'pointer',
                     'font-weight': 'bold' if is_current else 'normal'
@@ -312,8 +313,8 @@ def create_pagination_controls(current_page, total_pages, book_id):
                 style={
                     'margin': '0 5px',
                     'padding': '8px 16px',
-                    'background': '#007bff',
-                    'color': 'white',
+                    'background': 'var(--link-color)',
+                    'color': 'var(--button-text-color)',
                     'border': 'none',
                     'border-radius': '4px',
                     'cursor': 'pointer'
@@ -351,7 +352,7 @@ def load_reviews(book_data, page_data):
     if not success or not data:
         return [html.Div("No reviews found for this book.", style={
             'text-align': 'center',
-            'color': '#666',
+            'color': 'var(--text-color-secondary)',
             'padding': '40px'
         })], []
 
@@ -361,7 +362,7 @@ def load_reviews(book_data, page_data):
     if not reviews:
         return [html.Div("No reviews found for this book.", style={
             'text-align': 'center',
-            'color': '#666',
+            'color': 'var(--text-color-secondary)',
             'padding': '40px'
         })], []
 

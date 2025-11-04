@@ -11,32 +11,38 @@
   align-items: center;
   margin-bottom: 20px;
   padding: 20px;
-  background: white;
+  background: var(--secondary-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .page-title {
   font-size: 2rem;
-  color: #333;
+  color: var(--text-color);
   margin: 0;
 }
 
 .notification-count-header {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--text-color-secondary);
   font-weight: 500;
 }
 
 .notifications-list {
-  background: white;
+  background: var(--secondary-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
 }
 
 .notification-item {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--background-color);
+  transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+  background-color: var(--tab-hover-bg);
 }
 
 .notification-item:last-child {
@@ -61,13 +67,13 @@
 
 .notification-message {
   font-size: 1rem;
-  color: #333;
+  color: var(--text-color);
   line-height: 1.4;
 }
 
 .notification-time {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-color-secondary);
   margin-top: 4px;
 }
 
@@ -87,12 +93,23 @@
   transition: background-color 0.2s;
 }
 
+.btn-accept-notification {
+  background-color: var(--link-color);
+  color: var(--button-text-color);
+}
+
+.btn-decline-notification {
+  background-color: transparent;
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+}
+
 .btn-accept-notification:hover {
-  background-color: #218838 !important;
+  background-color: var(--link-hover) !important;
 }
 
 .btn-decline-notification:hover {
-  background-color: #c82333 !important;
+  background-color: var(--danger-bg) !important;
 }
 
 .notifications-link {
@@ -104,8 +121,8 @@
 /* Bookshelf modal styles */
 .save-bookshelf-btn {
   padding: 12px 24px;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--link-color);
+  color: var(--button-text-color);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -114,13 +131,43 @@
 }
 
 .save-bookshelf-btn:hover {
-  background-color: #0056b3;
+  background-color: var(--link-hover);
 }
 
 .btn-add-to-bookshelf {
-  background-color: #007bff !important;
+  background-color: var(--link-color) !important;
 }
 
 .btn-add-to-bookshelf:hover {
-  background-color: #0056b3 !important;
+  background-color: var(--link-hover) !important;
 }
+
+/* Small dismiss button */
+.btn-dismiss-small {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: var(--text-color);
+}
+
+.btn-dismiss-small:hover {
+  background-color: var(--danger-bg);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+/* Utility classes for inline styles */
+.text-link { color: var(--link-color); }
+.text-primary { color: var(--text-color); }
+.text-secondary { color: var(--text-color-secondary); }
+.text-muted { color: var(--text-muted); }
+.bg-light { background-color: var(--bg-light); }

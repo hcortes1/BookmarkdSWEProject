@@ -6,31 +6,40 @@
 }
 
 .tab {
-    background: #f8f9fa;
-    border: 1px solid #ccc;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
     border-bottom: none;
     border-radius: 8px 8px 0 0;
     padding: 10px 18px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    color: var(--text-color);
+    background-color: var(--secondary-bg);
+}
+
+.leader-app-container {
+
+    margin: 30px;
+
 }
 
 .tab:hover {
-    background: #e9ecef;
+    background: var(--background-color);
+    color: var(--text-color);
 }
 
 .active-tab {
-    background: white;
-    border-bottom: 2px solid #007bff;
-    color: #007bff;
+    background: var(--link-color);
+    border-bottom: 2px solid var(--link-color);
+    color: var(--button-text-color);
 }
 
 /* Card Container */
 .leaderboard-card {
-    background: white;
+    background: var(--secondary-bg);
     border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: var(--card-shadow);
     padding: 25px;
 }
 
@@ -39,15 +48,18 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid var(--link-color);
     padding-bottom: 8px;
     margin-bottom: 15px;
     font-size: 1.3rem;
-    color: #333;
+    color: var(--text-color);
 }
 
 .time-dropdown {
     width: 150px;
+    color: var(--text-color);
+    border-radius: 4px;
+    padding: 8px 12px;
 }
 
 /* Leaderboard rows */
@@ -63,23 +75,22 @@
     justify-content: space-between;
     padding: 12px 15px;
     border-radius: 8px;
-    background: #f8f9fa;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: var(--background-color);
+    box-shadow: var(--card-shadow);
     transition: background 0.2s ease;
 }
 
 .leaderboard-row:hover {
-    background: #f1f3f5;
+    background: var(--secondary-bg);
 }
 
 /* Highlight current user row */
 .current-user-row {
-    background-color: #e7f1ff !important;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--link-color);
 }
 
 .current-user-row:hover {
-    background-color: #d9e9ff !important;
+    background-color: var(--secondary-bg) !important;
 }
 
 /* Clickable avatar + username */
@@ -93,7 +104,7 @@
 }
 
 .leaderboard-user-link:hover .leaderboard-username-link {
-    color: #007bff;
+    color: var(--link-color);
     text-decoration: underline;
 }
 
@@ -110,6 +121,7 @@
 .leaderboard-username-link {
     font-weight: 500;
     font-size: 1rem;
+    color: var(--text-color);
 }
 
 /* Rank & Count */
@@ -117,18 +129,19 @@
     font-weight: bold;
     width: 40px;
     text-align: center;
+    color: var(--text-color);
 }
 
 .leaderboard-count {
     font-weight: bold;
-    color: #007bff;
+    color: var(--link-color);
     min-width: 40px;
     text-align: right;
 }
 
 /* Subtitle */
 .lb-main-subtitle {
-    color: #555;
+    color: var(--text-color-secondary);
     font-size: 1.1rem;
     margin-top: -10px;
     margin-bottom: 25px;

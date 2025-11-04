@@ -13,28 +13,33 @@ layout = html.Div([
         # Navigation sidebar
         html.Div([
             html.Div("Navigation", style={
-                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': '#666'
+                'font-weight': 'bold', 'margin-bottom': '12px', 'font-size': '13px', 'color': 'var(--text-color-secondary)'
             }),
             html.Div([
                 html.A("Profile Settings", href="#profile-settings", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
+                    'transition': 'background-color 0.2s', 'font-size': '13px'
+                }),
+                html.A("Appearance", href="#appearance-settings", style={
+                    'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Settings", href="#account-settings", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
                 html.A("Account Actions", href="#account-actions", style={
                     'display': 'block', 'padding': '6px 10px', 'margin-bottom': '3px',
-                    'text-decoration': 'none', 'color': '#007bff', 'border-radius': '4px',
+                    'text-decoration': 'none', 'color': 'var(--link-color)', 'border-radius': '4px',
                     'transition': 'background-color 0.2s', 'font-size': '13px'
                 }),
             ], style={'list-style': 'none', 'padding': '0', 'margin': '0'})
-        ], className="settings-sidebar", style={
-            'width': '140px', 'background-color': '#f0f0f0', 'padding': '15px',
-            'border-radius': '8px', 'box-shadow': '0 2px 10px rgba(0,0,0,0.1)',
+        ], className="card settings-sidebar", style={
+            'width': '140px', 'padding': '15px',
+            'border-radius': '8px',
             'margin-right': '20px', 'height': 'fit-content', 'position': 'sticky', 'top': '20px'
         }),
 
@@ -112,7 +117,30 @@ layout = html.Div([
                     style={'width': '200px'}
                 ),
                 html.Div(id='bio-feedback', style={'margin-top': '10px'})
-            ], className='settings-card'),
+            ], className='card settings-card'),
+
+            # Appearance Settings Card
+            html.Div([
+                html.H2("Appearance", id="appearance-settings", style={
+                        'margin-bottom': '20px', 'font-size': '24px', 'font-weight': '500'}),
+                html.Div([
+                    html.Div([
+                        html.Label("Display Mode", style={'font-weight': '500', 'margin-bottom': '10px', 'display': 'block'}),
+                        html.Div([
+                            html.Span("Light", style={'margin-right': '15px', 'font-weight': '500'}),
+                            html.Label([
+                                dcc.Checklist(
+                                    id='display-mode-toggle',
+                                    options=[{'label': '', 'value': 'dark'}],
+                                    value=[],  # Empty means light mode, ['dark'] means dark mode
+                                ),
+                                html.Span("Toggle Dark Mode", style={'display': 'none'})  # Hidden label for accessibility
+                            ]),
+                            html.Span("Dark", style={'margin-left': '15px', 'font-weight': '500'})
+                        ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center'})
+                    ], style={'text-align': 'center'})
+                ])
+            ], className='card settings-card'),
 
             # Account Settings Card
             html.Div([
@@ -199,7 +227,7 @@ layout = html.Div([
                         html.Div(id='password-feedback')
                     ], className='column'),
                 ], className='two-column-container')
-            ], className='settings-card'),
+            ], className='card settings-card'),
 
             # Account Actions section
             html.Div([
@@ -233,7 +261,7 @@ layout = html.Div([
                     ),
                     html.Div(id='settings-feedback')
                 ], style={'text-align': 'center'})
-            ], className='settings-card')
+            ], className='card settings-card')
         ], className="settings-content", style={'flex': '1', 'max-width': '800px'})
     ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'flex-start', 'max-width': '1200px', 'margin': '0 auto', 'padding': '20px'})
 ], className="settings-page")
@@ -691,6 +719,38 @@ def update_bio(n_clicks, new_bio, session_data):
         return html.Div(f"Error updating bio: {str(e)}", style={'color': 'red'}), dash.no_update
 
 
+# Callback to update display mode
+@callback(
+    Output('user-session', 'data', allow_duplicate=True),
+    Input('display-mode-toggle', 'value'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def update_display_mode(toggle_value, session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return dash.no_update
+
+    # Convert toggle value to display mode
+    new_display_mode = 'dark' if toggle_value else 'light'
+
+    try:
+        success, message = settings_backend.update_display_mode(
+            session_data['user_id'], new_display_mode)
+
+        if success:
+            # Update session data with new display mode
+            updated_session = session_data.copy()
+            updated_session['display_mode'] = new_display_mode
+            return updated_session
+        else:
+            # Return unchanged session data on error (no feedback shown)
+            return dash.no_update
+
+    except Exception as e:
+        # Return unchanged session data on error (no feedback shown)
+        return dash.no_update
+
+
 # Callback to load current display name and bio
 @callback(
     [Output('edit-display-name-input', 'placeholder'),
@@ -717,3 +777,17 @@ def update_profile_placeholders(session_data):
 
     except Exception as e:
         return "Enter display name", "Tell others about yourself..."
+
+
+# Callback to load current display mode
+@callback(
+    Output('display-mode-toggle', 'value'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def load_current_display_mode(session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return []  # Default to light mode (unchecked)
+
+    display_mode = session_data.get('display_mode', 'light')
+    return ['dark'] if display_mode == 'dark' else []

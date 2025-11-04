@@ -1,18 +1,18 @@
 /* Settings Page Styles */
 
-.settings-page {
+#settings-page {
   min-height: 100vh;
-  background-color: #d0d0d0;
-  padding: 32px 20px;
-  display: flex;
+  background: var(--background-color);
+  padding: 40px 0;
+}
   flex-direction: column;
   align-items: center;
 }
 
 .settings-card {
-  background: #f0f0f0;
+  background: var(--background-color);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   padding: 30px;
   margin-bottom: 24px;
   max-width: 800px;
@@ -41,9 +41,11 @@
 
 .form-input {
   padding: 10px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
+  background-color: var(--input-field-bg);
+  color: var(--text-color);
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
@@ -54,9 +56,9 @@
 }
 
 .btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
-  color: white;
+  background-color: var(--link-color);
+  border-color: var(--link-color);
+  color: var(--button-text-color);
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -66,15 +68,15 @@
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background-color: var(--link-hover);
+  border-color: var(--link-hover);
   transform: translateY(-1px);
 }
 
 .btn-success {
   background-color: #28a745;
   border-color: #28a745;
-  color: white;
+  color: var(--button-text-color);
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -90,9 +92,9 @@
 }
 
 .btn-danger {
-  background-color: #fef2f2;
-  border: 1px solid #dc3545;
-  color: #dc3545;
+  background-color: var(--danger-btn-bg);
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -101,9 +103,9 @@
 }
 
 .btn-danger:hover {
-  background-color: #fce8e8;
-  border-color: #c82333;
-  color: #c82333;
+  background-color: var(--danger-btn-bg-hover);
+  border-color: var(--danger-btn-border-hover);
+  color: var(--danger-btn-text-hover);
   transform: translateY(-1px);
 }
 
@@ -115,8 +117,8 @@
   border: 3px solid #dee2e6;
   margin: 0 auto 20px auto;
   display: block;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background-color: var(--background-color);
+  box-shadow: var(--card-shadow);
 }
 
 .upload-area {
@@ -130,17 +132,17 @@
 }
 
 .upload-area:hover {
-  border-color: #007bff;
-  background-color: #f8f9fa;
+  border-color: var(--link-color);
+  background-color: var(--background-color);
 }
 
 .danger-zone {
-  border-color: #dc3545 !important;
-  background-color: #fff5f5 !important;
+  border-color: var(--danger-color) !important;
+  background-color: var(--danger-bg) !important;
 }
 
 .danger-zone h3 {
-  color: #dc3545 !important;
+  color: var(--danger-color) !important;
 }
 
 @media (max-width: 1024px) {
@@ -200,6 +202,101 @@
 }
 
 /* Scroll margin for section headers */
-#profile-settings, #account-settings, #account-actions {
+#profile-settings, #appearance-settings, #account-settings, #account-actions {
   scroll-margin-top: 20vh;
+}
+
+/* Text color classes for inline styles */
+.text-secondary {
+  color: var(--text-color-secondary);
+}
+
+.text-link {
+  color: var(--link-color);
+}
+
+.settings-sidebar {
+  box-shadow: var(--card-shadow);
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--secondary-bg);
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-color);
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--link-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Style the checklist as a toggle switch */
+#display-mode-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 50px;
+  height: 24px;
+  background: var(--input-field-bg);
+  border-radius: 24px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.3s;
+}
+
+#display-mode-toggle input[type="checkbox"]:checked {
+  background: var(--link-color);
+}
+
+#display-mode-toggle input[type="checkbox"]:before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--link-color);
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s, background 0.3s;
+}
+
+#display-mode-toggle input[type="checkbox"]:checked:before {
+  transform: translateX(26px);
+  background: var(--background-color);
 }

@@ -140,7 +140,8 @@ def handle_login(n_clicks, username, password):
             "profile_image_url": user_data["profile_image_url"],
             "created_at": user_data["created_at"],
             "first_login": user_data["first_login"],
-            "favorite_genres": user_data["favorite_genres"]  
+            "favorite_genres": user_data["favorite_genres"],
+            "display_mode": user_data.get("display_mode", "light")
         }
 
         # Fetch initial notifications immediately after login
@@ -159,7 +160,7 @@ def handle_login(n_clicks, username, password):
         else:
             # Regular user -> home page
             return '/', dash.no_update, session_data
-            
+
     else:
         # display error message below the button
         error_message = html.Div(

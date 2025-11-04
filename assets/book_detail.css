@@ -9,7 +9,7 @@
 }
 
 .author-link {
-    color: #007bff;
+    color: var(--link-color);
     text-decoration: none;
 }
 
@@ -38,8 +38,8 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
-    background-color: #007bff;
-    color: white;
+    background-color: var(--link-color);
+    color: #fff;
 }
 
 .recommend-btn {
@@ -50,8 +50,7 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
-    background-color: #28a745;
-    color: white;
+    color: #fff;
 }
 
 .read-btn {
@@ -63,18 +62,12 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
-    background-color: #6f42c1;
-    color: white;
+    color: #fff;
     text-decoration: none;
     display: inline-block;
     text-align: center;
 }
 
-.read-btn:hover {
-    background-color: #5a359a;
-    text-decoration: none;
-    color: white;
-}
 
 .action-buttons-section {
     display: flex;
@@ -94,7 +87,11 @@
     margin: 0 auto;
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: var(--card-shadow);
+    background-color: var(--secondary-bg);
+}
+.book-info span {
+    color: var(--text-color-secondary);
 }
 
 .book-details {
@@ -104,7 +101,7 @@
 
 .page-container {
     padding: 30px;
-    background: #d0d0d0;
+    background: var(--background-color);
     min-height: 100vh;
 }
 
@@ -140,7 +137,7 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #666;
+    color: var(--text-color);
 }
 
 .status-btn {
@@ -149,7 +146,7 @@
     margin-bottom: 10px;
     padding: 12px;
     background: #007bff;
-    color: white;
+    color: #fff;
     border: 2px solid #007bff;
     border-radius: 5px;
     cursor: pointer;
@@ -158,13 +155,13 @@
 
 .status-btn.reading {
     background: transparent;
-    color: #007bff;
+    color: var(--link-color);
     border: 2px solid #007bff;
 }
 
 .status-btn.finished {
     background: #007bff;
-    color: white;
+    color: #fff;
     border: 2px solid #007bff;
 }
 
@@ -187,7 +184,7 @@
     width: 100%;
     padding: 12px;
     background: #007bff;
-    color: white;
+    color: #fff;
     border: 2px solid #007bff;
     border-radius: 5px;
     cursor: pointer;
@@ -199,7 +196,7 @@
     width: 100%;
     padding: 12px;
     background: transparent;
-    color: #007bff;
+    color: var(--link-color);
     border: 2px solid #007bff;
     border-radius: 5px;
     cursor: pointer;
@@ -238,7 +235,7 @@
     display: flex;
     align-items: flex-start;
     padding: 15px;
-    background: #f8f9fa;
+    background: var(--background-color);
     border-radius: 8px;
     margin-bottom: 10px;
     transition: background-color 0.2s;
@@ -262,7 +259,7 @@
 .other-editions-title {
     margin: 0 0 5px 0;
     font-size: 16px;
-    color: #333;
+    color: var(--text-color);
 }
 
 .other-editions-author {
@@ -284,7 +281,7 @@
 }
 
 .other-editions-header {
-    color: #333;
+    color: var(--text-color);
     margin-bottom: 15px;
     font-size: 18px;
 }
@@ -303,7 +300,7 @@
     padding: 10px 20px;
     margin-right: 10px;
     background: #6c757d;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -312,7 +309,7 @@
 .confirm-btn {
     padding: 10px 20px;
     background: #dc3545;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -329,7 +326,7 @@
 
 .modal-header {
     margin: 0 0 20px 0;
-    color: #333;
+    color: var(--text-color);
 }
 
 .review-removal-header {
