@@ -13,8 +13,10 @@ def welcome_layout():
             html.P("Discover, track, and share your favorite books with friends.",
                    className="welcome-subtitle"),
             html.Div([
-                dcc.Link(html.Button("Log In", className="welcome-login-btn"), href='/login'),
-                dcc.Link(html.Button("Sign Up", className="welcome-signup-btn"), href='/login?mode=signup')
+                dcc.Link(html.Button(
+                    "Log In", className="welcome-login-btn"), href='/login'),
+                dcc.Link(html.Button(
+                    "Sign Up", className="welcome-signup-btn"), href='/login?mode=signup')
             ], className="welcome-buttons")
         ], className="welcome-container")
     ], className="welcome-page")
@@ -29,8 +31,10 @@ def leaderboards_layout():
 
             # Tabs (Friends / Global)
             html.Div([
-                html.Button("Friends", id="friends-tab", n_clicks=0, className="tab active-tab"),
-                html.Button("Global", id="global-tab", n_clicks=0, className="tab"),
+                html.Button("Friends", id="friends-tab",
+                            n_clicks=0, className="tab active-tab"),
+                html.Button("Global", id="global-tab",
+                            n_clicks=0, className="tab"),
             ], className="leaderboard-tabs"),
 
             # Section title + time dropdown ("This: Month/Week/Year")
@@ -52,7 +56,8 @@ def leaderboards_layout():
             ], className="leaderboard-section"),
 
             # Leaderboard display
-            html.Div(id='leaderboard-table', className='leaderboard-card'),
+            html.Div(id='leaderboard-table',
+                     className='card leaderboard-card'),
 
             # Hidden store for selected tab
             dcc.Store(id='leaderboard-scope', data='friends'),
@@ -75,7 +80,8 @@ def layout():
     Input('user-session', 'data')
 )
 def update_leaderboards_content(_, user_session):
-    is_logged_in = user_session.get('logged_in', False) if user_session else False
+    is_logged_in = user_session.get(
+        'logged_in', False) if user_session else False
     return leaderboards_layout() if is_logged_in else welcome_layout()
 
 
@@ -131,7 +137,8 @@ def update_leaderboard(time_window, scope, user_session):
         # Clickable avatar + username
         user_link = dcc.Link([
             html.Img(
-                src=entry.get('profile_image_url', '/assets/svg/default-profile.svg'),
+                src=entry.get('profile_image_url',
+                              '/assets/svg/default-profile.svg'),
                 className="leaderboard-avatar"
             ),
             html.Span(username, className="leaderboard-username-link")
@@ -145,7 +152,8 @@ def update_leaderboard(time_window, scope, user_session):
             html.Div([
                 html.Span(f"#{rank}", className="leaderboard-rank"),
                 user_link,
-                html.Span(str(entry.get('books_completed', 0)), className="leaderboard-count")
+                html.Span(str(entry.get('books_completed', 0)),
+                          className="leaderboard-count")
             ], className=row_class)
         )
 

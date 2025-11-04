@@ -75,10 +75,10 @@ def layout():
             html.H1("Notifications", className="page-title"),
             html.Div(id='notification-count-display',
                      className='notification-count-header')
-        ], className='notifications-header'),
+        ], className='card notifications-header'),
 
         # Notifications list
-        html.Div(id='notifications-list', className='notifications-list'),
+        html.Div(id='notifications-list', className='card notifications-list'),
 
         # Bookshelf modal
         html.Div([
@@ -289,7 +289,7 @@ def update_notifications_display(notifications_data, user_session):
                         )
                     ], className='notification-actions')
                 ], className='notification-main-content')
-            ], className='notification-item', style={
+            ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
                 'padding': '16px',
@@ -394,7 +394,7 @@ def update_notifications_display(notifications_data, user_session):
                         )
                     ], className='notification-actions')
                 ], className='notification-main-content')
-            ], className='notification-item', style={
+            ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
                 'padding': '16px',

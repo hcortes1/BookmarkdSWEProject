@@ -1,7 +1,7 @@
 /* Bookshelf remove button hover effect */
 .remove-btn-hover:hover {
   opacity: 1 !important;
-  background: rgba(220, 53, 69, 0.2) !important;
+  background: rgba(220, 53, 69, 0.2) !important; /* error/warning background, keep as is */
   transform: scale(1.1);
 }
 
@@ -20,7 +20,7 @@
   border: none;
   border-radius: 50%;
   background: rgba(128, 128, 128, 0.7);
-  color: white;
+  color: #fff;
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
@@ -52,7 +52,7 @@
 .bookshelf-main-title {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* Tabs container tweaks */
@@ -60,7 +60,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: 0px; /* Remove gap to attach to content */
-  border-bottom: 2px solid #007bff; /* Blue border */
+  border-bottom: 2px solid #007bff; /* Blue border, keep as is */
   padding-bottom: 0px; /* Remove padding to attach tabs to border */
 }
 .bookshelf-tab:not(:last-child) {
@@ -98,7 +98,7 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: transform 0.2s;
   display: block;
-  background-color: #f8f9fa;
+  background-color: var(--background-color);
   margin: 0 auto;
 }
 
@@ -106,7 +106,7 @@
 .bookshelf-book-title {
   margin: 0;
   font-size: 14px;
-  color: #333;
+  color: var(--text-color);
   font-weight: 600;
   line-height: 1.2;
   height: 2.4em;
@@ -201,16 +201,16 @@
   max-width: 400px;
   width: 90%;
 }
-.confirm-modal-title { margin: 0 0 15px 0; color: #333; }
-.btn-cancel { padding: 10px 20px; margin-right: 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.btn-remove { padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.confirm-modal-title { margin: 0 0 15px 0; color: var(--text-color); }
+.btn-cancel { padding: 10px 20px; margin-right: 10px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+.btn-remove { padding: 10px 20px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 
 /* Bookshelf tab styles */
 .bookshelf-tab {
   padding: 12px 24px;
   margin: 0 2px;
   border: none;
-  background: #f8f9fa;
+  background: var(--secondary-bg);
   color: #666;
   cursor: pointer;
   border-radius: 8px 8px 0 0;
@@ -222,24 +222,24 @@
 
 .bookshelf-tab:hover {
   background: #e9ecef;
-  color: #333;
+  color: var(--text-color);
 }
 
 .bookshelf-tab.active-tab {
-  background: white;
-  color: #007bff;
+  background: #007bff;
+  color: white;
   border-bottom: 3px solid #007bff;
   font-weight: 600;
 }
 
 /* Tab content background */
 #bookshelf-tab-content {
-  background: white;
+  background: var(--secondary-bg);
 }
 
 /* Remove background from book cards to match content background */
 .bookshelf-book-card {
-  background: white !important;
+  background: var(--secondary-bg) !important;
   box-shadow: none !important; /* Remove shadow */
 }
 

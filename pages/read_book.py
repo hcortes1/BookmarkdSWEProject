@@ -97,12 +97,11 @@ def create_navigation_panel(headers):
     for i, header in enumerate(headers):
         indent_class = f"nav-indent-{header['level']}"
         nav_items.append(
-            '<a href="#{id}" class="nav-link {indent_class}" style="display:block;padding:5px 10px;text-decoration:none;color:#333;border-left:{border_left}px solid #ddd;margin-left:{margin_left}px;cursor:pointer;">{text}</a>'.format(
-                id=header["id"],
-                indent_class=indent_class,
-                border_left=header["level"]*2,
-                margin_left=(header["level"]-1)*10,
-                text=header["text"][:50] +
+            '<a href="#{}" class="nav-link {}" style="display:block;padding:5px 10px;text-decoration:none;color:#333;cursor:pointer;margin-left:{}px;">{}</a>'.format(
+                header["id"],
+                indent_class,
+                (header["level"]-1)*16,
+                header["text"][:50] +
                 ("..." if len(header["text"]) > 50 else "")
             )
         )
@@ -110,6 +109,9 @@ def create_navigation_panel(headers):
     # Fixed sidebar TOC, always visible on the left
     nav_html = '''
     <style>
+    .nav-panel-fixed, html, body {{
+        background: var(--secondary-bg, #f5f5f5) !important;
+    }}
     .nav-panel-fixed {{
         position: fixed;
         top: 0;
@@ -118,10 +120,16 @@ def create_navigation_panel(headers):
         height: 100vh;
         overflow-y: auto;
         border-right: 1px solid #ddd;
-        background: #f9f9f9;
         z-index: 1000;
+        background: var(--secondary-bg) !important;
     }}
-    .toc-book-content-fixed {{margin-left: 270px; padding: 20px 20px 20px 0; min-width: 0; box-sizing: border-box;}}
+    .toc-book-content-fixed {{
+        margin-left: 270px;
+        padding: 20px 20px 20px 0;
+        min-width: 0;
+        box-sizing: border-box;
+        background: var(--secondary-bg) !important;
+    }}
     /* Fallback: if book content is not moved, offset body */
     body:not(:has(.toc-book-content-fixed > *)) {{margin-left: 270px !important;}}
     
@@ -147,11 +155,11 @@ def create_navigation_panel(headers):
         }}
     }}
     </style>
-    <div class="nav-panel-fixed">
-      <h3 style="padding:10px;margin:0;border-bottom:1px solid #ddd;">Table of Contents</h3>
+    <div class="card nav-panel-fixed">
+      <h3 style="padding:10px;margin:0;border-bottom:1px solid #ddd;background:var(--secondary-bg, #f5f5f5);">Table of Contents</h3>
       <div class="nav-links">{nav_items}</div>
     </div>
-    <div class="toc-book-content-fixed" id="toc-book-content-fixed">
+    <div class="card toc-book-content-fixed" id="toc-book-content-fixed" style="background:var(--secondary-bg, #f5f5f5);">
       <!-- BOOK CONTENT WILL BE MOVED HERE BY JS -->
     </div>
     <script>
@@ -260,16 +268,17 @@ def layout(book_id=None, **kwargs):
             </script>
             '''
 
-            # Add the script and base tag to ensure proper link handling
+            # Add the script and base tag to ensure proper link handling, and set body background to secondary color
+            bg_css = 'html, body { background: var(--secondary-bg, #f5f5f5) !important; }'
             if '<head>' in html_content:
                 html_content = html_content.replace(
-                    '<head>', f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}', 1)
+                    '<head>', f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}', 1)
             elif '<html>' in html_content:
                 html_content = html_content.replace(
-                    '<html>', f'<html><head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}</head>', 1)
+                    '<html>', f'<html><head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}</head>', 1)
             else:
                 # If no head tag, add one at the beginning
-                html_content = f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}</head>{html_content}'
+                html_content = f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}</head>{html_content}'
 
             # Fix navigation links - only external links should open in new tabs
             # Internal anchor links (starting with #) should work within the iframe
@@ -300,15 +309,17 @@ def layout(book_id=None, **kwargs):
                         f"Reading: {book_data['title']}", className="reading-title"),
                     html.H2(
                         f"by {book_data.get('author_name', 'Unknown Author')}", className="reading-author")
-                ], className="reading-header")
-            ], className="reading-header-container"),
-            html.Iframe(
-                srcDoc=html_content,
-                style={'width': '100%', 'height': '70vh', 'border': 'none'},
-                className="book-content-iframe",
-                sandbox="allow-scripts allow-same-origin",
-                key=str(hash(html_content))
-            )
+                ], className="reading-header", style={"background": "var(--secondary-color, var(--secondary-bg))"})
+            ], className="reading-header-container", style={"background": "var(--secondary-color, var(--secondary-bg))"}),
+            html.Div([
+                html.Iframe(
+                    srcDoc=html_content,
+                    style={'width': '100%', 'height': '70vh', 'border': 'none'},
+                    className="book-content-iframe",
+                    sandbox="allow-scripts allow-same-origin",
+                    key=str(hash(html_content))
+                )
+            ], style={"background": "var(--secondary-color, var(--secondary-bg))", "padding": "0 0 20px 0"})
         ], className="reading-page")
 
     except Exception as e:
@@ -406,16 +417,17 @@ def check_rental_and_show_content(book_data, session_data):
         </script>
         '''
 
-        # Add the script and base tag to ensure proper link handling
+        # Add the script and base tag to ensure proper link handling, and set body background to secondary color
+        bg_css = 'html, body { background: var(--secondary-bg) !important; }'
         if '<head>' in html_content:
             html_content = html_content.replace(
-                '<head>', f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}', 1)
+                '<head>', f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}', 1)
         elif '<html>' in html_content:
             html_content = html_content.replace(
-                '<html>', f'<html><head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}</head>', 1)
+                '<html>', f'<html><head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}</head>', 1)
         else:
             # If no head tag, add one at the beginning
-            html_content = f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }}</style>{anchor_script}</head>{html_content}'
+            html_content = f'<head><base target="_self"><style>html {{ scroll-behavior: smooth; }} {bg_css}</style>{anchor_script}</head>{html_content}'
 
         # Fix navigation links - only external links should open in new tabs
         # Internal anchor links (starting with #) should work within the iframe
@@ -446,13 +458,15 @@ def check_rental_and_show_content(book_data, session_data):
                     f"Reading: {book_data['title']}", className="reading-title"),
                 html.H2(
                     f"by {book_data.get('author_name', 'Unknown Author')}", className="reading-author")
-            ], className="reading-header")
-        ], className="reading-header-container"),
-        html.Iframe(
-            srcDoc=html_content,
-            style={'width': '100%', 'height': '70vh', 'border': 'none'},
-            className="book-content-iframe",
-            sandbox="allow-scripts allow-same-origin",
-            key=str(hash(html_content))
-        )
+            ], className="reading-header", style={"background": "var(--secondary-color, var(--secondary-bg))"})
+        ], className="reading-header-container", style={"background": "var(--secondary-color, var(--secondary-bg))"}),
+        html.Div([
+            html.Iframe(
+                srcDoc=html_content,
+                style={'width': '100%', 'height': '70vh', 'border': 'none'},
+                className="card book-content-iframe",
+                sandbox="allow-scripts allow-same-origin",
+                key=str(hash(html_content))
+            )
+        ], style={"padding": "0 0 20px 0"})
     ], className="reading-page")

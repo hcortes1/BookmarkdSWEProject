@@ -11,14 +11,14 @@
   align-items: center;
   margin-bottom: 20px;
   padding: 20px;
-  background: white;
+  background: var(--secondary-bg);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .page-title {
   font-size: 2rem;
-  color: #333;
+  color: var(--text-color);
   margin: 0;
 }
 
@@ -29,7 +29,7 @@
 }
 
 .notifications-list {
-  background: white;
+  background: var(--secondary-bg);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   overflow: hidden;
@@ -61,7 +61,7 @@
 
 .notification-message {
   font-size: 1rem;
-  color: #333;
+  color: var(--text-color);
   line-height: 1.4;
 }
 
@@ -105,7 +105,7 @@
 .save-bookshelf-btn {
   padding: 12px 24px;
   background-color: #007bff;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;

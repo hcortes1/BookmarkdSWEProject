@@ -11,8 +11,8 @@
   margin: 0 5px;
   padding: 8px 12px;
   cursor: pointer;
-  background-color: #f8f9fa;
-  color: black;
+  background-color: var(--background-color);
+  color: var(--text-color);
   border: 1px solid #ddd;
   border-radius: 4px;
   font-weight: normal;
@@ -24,7 +24,7 @@
 
 .pagination-btn.active {
   background-color: #007bff;
-  color: white;
+  color: #fff;
   font-weight: bold;
 }
 
@@ -67,7 +67,7 @@
 
 .author-name {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* Favorite Button */
@@ -90,12 +90,12 @@
 
 .favorite-btn.add {
   background-color: #28a745;
-  color: white;
+  color: #fff;
 }
 
 .favorite-btn.remove {
   background-color: #dc3545;
-  color: white;
+  color: #fff;
 }
 
 .favorite-feedback {
@@ -121,7 +121,7 @@
 
 .section-title {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
   font-size: 24px;
 }
 
@@ -155,7 +155,7 @@
   padding: 0;
   line-height: 1.2;
   font-weight: bold;
-  color: #333;
+  color: var(--text-color);
   text-align: center;
   word-wrap: break-word;
   word-break: break-word;

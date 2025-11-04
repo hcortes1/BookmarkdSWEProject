@@ -95,7 +95,7 @@ def create_reviews_content(user_data, is_own_profile):
                     'border': '1px solid #ddd',
                     'border-radius': '8px',
                     'margin-bottom': '15px'
-                }, className='lighter-bg')
+                }, className='card lighter-bg')
             ])
 
             reviews_content.append(review_card)
@@ -232,7 +232,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 'width': '160px',
                 'height': '300px',  # Increased height to accommodate completion date
                 'cursor': 'pointer'
-            }, className="completed-book-card lighter-bg")
+            }, className="card completed-book-card lighter-bg")
 
             books_content.append(book_card)
 
@@ -323,7 +323,7 @@ def layout(username=None, **kwargs):
 
                     # Tab content container
                     html.Div(id="tab-content",
-                             className="tab-content-container secondary-bg",
+                             className="tab-content-container card",
                              style={'padding': '20px', 'border-radius': '0 0 10px 10px',
                                     'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'})
                 ], className="profile-right")
@@ -555,12 +555,12 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
                         books_card_content
-                    ], className="favorites-card lighter-bg"),
+                    ], className="card favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
                         authors_card_content
-                    ], className="favorites-card lighter-bg")
+                    ], className="card favorites-card lighter-bg")
                 ], className="favorites-container")
             elif active_tab == 'reviews':
                 # Create reviews content
@@ -576,12 +576,12 @@ def update_profile_data(session_data, viewed_username, active_tab):
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
                         books_card_content
-                    ], className="favorites-card lighter-bg"),
+                    ], className="card favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
                         authors_card_content
-                    ], className="favorites-card lighter-bg")
+                    ], className="card favorites-card lighter-bg")
                 ], className="favorites-container")
 
             # Friend request/Edit profile section
@@ -724,7 +724,7 @@ def update_profile_data(session_data, viewed_username, active_tab):
                             href=f"/profile/view/{friend['username']}",
                             className='friend-link',
                             style={'text-decoration': 'none', 'color': 'inherit'})
-                    ], className="friend-item lighter-bg")
+                    ], className="card friend-item lighter-bg")
                     friends_list.append(friend_item)
             else:
                 friends_list = [

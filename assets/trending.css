@@ -1,6 +1,6 @@
 /* Scrollable rounded container */
 .trending-books-container {
-    background-color: #f2f2f2;
+    background-color: var(--secondary-bg);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -9,7 +9,7 @@
     max-height: 600px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #ccc #f2f2f2;
+    scrollbar-color: #ccc var(--secondary-bg);
 }
 
 /* Grid layout for books */
@@ -22,7 +22,7 @@
 
 /* Book card design */
 .trending-book-card {
-    background: white;
+    background: var(--background-color);
     border-radius: 10px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     padding: 15px;
@@ -48,7 +48,7 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin: 0;
-    color: #333;
+    color: var(--text-color);
 }
 
 .trending-book-author {
@@ -62,7 +62,7 @@
     display: block;
     font-size: 0.8rem;
     margin-top: 8px;
-    color: #007bff;
+    color: var(--link-color);
     font-weight: 500;
 }
 

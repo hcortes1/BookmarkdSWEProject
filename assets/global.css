@@ -2,61 +2,90 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+
 }
 
-body, html {
-  height: 100%;
-  width: 100%;
-  scroll-behavior: smooth;
-  background-color: #d0d0d0;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+
+/* Global CSS Variables for Light/Dark Modes */
+:root {
+  /* Light mode colors */
+  --background-color: #dcdcdc;
+  --secondary-bg: #f5f5f5;
+  --text-color: #222;
+  --card-bg: #fff;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  --link-color: #0077cc;
+  --link-hover: #005fa3;
+  /* Header and button colors remain the same in both modes */
 }
 
-/* Ensure the main app div also has the background */
-#_dash-app-content {
-  background-color: #d0d0d0;
-  min-height: 100vh;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
 }
 
-/* Ensure content doesn't get hidden behind sticky header */
-#dash-page-content {
-  padding-top: 20px;
-  background-color: #d0d0d0;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+a {
+  color: var(--link-color);
+  text-decoration: none;
 }
 
-.app-container {
-  max-width: 80%;
-  margin: 40px auto;
+a:hover {
+  text-decoration: underline;
+  color: var(--link-hover);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background: var(--secondary-bg);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
   padding: 24px;
+  margin-bottom: 24px;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
-  .app-container {
-    max-width: 95%;
-    margin: 20px auto;
-    padding: 16px;
-  }
+/* Header and .button styles remain unchanged for both modes */
+.button {
+  background-color: #0077cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
 }
 
-@media (max-width: 480px) {
-  .app-container {
-    max-width: 98%;
-    margin: 10px auto;
-    padding: 12px;
-  }
+.button:hover {
+  background-color: #005fa3;
 }
 
-/* Unified secondary background color for cards */
-.secondary-bg {
-  background-color: #e5e5e5;
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Unified lighter background color for profile elements */
-.lighter-bg {
-  background-color: #f0f0f0;
+.hidden {
+  display: none;
+}
+
+/* Dark mode override */
+.dark-mode {
+  --background-color: #181a1b;
+  --secondary-bg: #232526; /* Dark gray for standout elements */
+  --text-color: #f5f5f5;
+  --card-bg: #232526;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  --link-color: #4ea1ff;
+  --link-hover: #82cfff;
 }
 
 /* Unified rating color for consistent rating display across the app */
