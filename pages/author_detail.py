@@ -194,9 +194,9 @@ def layout(author_id=None, **kwargs):
             # Interval for refreshing books list after background search
             dcc.Interval(
                 id={'type': 'author-books-refresh', 'author_id': author_id},
-                interval=5000,  # Check every 5 seconds
+                interval=10000,  # Check every 10 seconds
                 n_intervals=0,
-                max_intervals=12  # Stop after 1 minute
+                max_intervals=6  # Stop after 1 minute
             ),
 
             html.Div([
@@ -516,9 +516,16 @@ def handle_pagination_click(clicks_list, n_intervals, page_data):
     total_books = len(books)
     total_pages = max(1, (total_books + books_per_page - 1) // books_per_page)
 
+    # Check if this is a refresh and no new books
+    previous_total = page_data.get('total_books', 0)
+    is_refresh = 'author-books-refresh' in triggered['prop_id']
+    if is_refresh and total_books == previous_total:
+        # No new books, don't update the grid to avoid unnecessary loading
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
     # Ensure new_page is within valid range
     new_page = max(1, min(new_page, total_pages))
-    updated_page_data['current_page'] = new_page
+    updated_page_data = {**page_data, 'current_page': new_page, 'total_books': total_books}
 
     # Calculate start and end indices for new page
     start_idx = (new_page - 1) * books_per_page

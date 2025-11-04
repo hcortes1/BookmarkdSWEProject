@@ -1408,6 +1408,7 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
         offset = 0
         limit = 50  # Max per request
         max_works = 500  # Limit total works to fetch
+        batch_size = 10
 
         while len(all_works) < max_works:
             # Get works list with retry
@@ -1461,6 +1462,72 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
             print(
                 f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Fetched {len(current_works)} works, {len(new_works)} new at offset {offset}, total new so far: {len(all_works)}")
 
+            # Process batches of 10 as we collect them
+            while len(all_works) >= batch_size:
+                batch = all_works[:batch_size]
+                all_works = all_works[batch_size:]
+                batch_num = (offset // limit) + 1  # Approximate batch num
+
+                print(
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing incremental batch of {len(batch)} works")
+
+                # Process this batch concurrently
+                batch_results = []
+                failed_works = []
+
+                # First attempt
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    future_to_work = {
+                        executor.submit(fetch_work_details_with_retry, work): work
+                        for work in batch
+                    }
+
+                    for future in as_completed(future_to_work):
+                        work = future_to_work[future]
+                        try:
+                            book_data = future.result()
+                            if book_data:
+                                batch_results.append(book_data)
+                            else:
+                                failed_works.append(work)
+                        except Exception as e:
+                            print(
+                                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Failed to process work {work.get('key', 'unknown')}: {e}")
+                            failed_works.append(work)
+
+                # Retry failed works
+                if failed_works:
+                    print(
+                        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Retrying {len(failed_works)} failed works")
+                    retry_results = []
+
+                    with ThreadPoolExecutor(max_workers=3) as executor:
+                        future_to_work = {
+                            executor.submit(fetch_work_details_with_retry, work): work
+                            for work in failed_works
+                        }
+
+                        for future in as_completed(future_to_work):
+                            work = future_to_work[future]
+                            try:
+                                book_data = future.result()
+                                if book_data:
+                                    retry_results.append(book_data)
+                            except Exception as e:
+                                print(
+                                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Final failure for work {work.get('key', 'unknown')}: {e}")
+
+                    batch_results.extend(retry_results)
+
+                # Bulk insert this batch
+                if batch_results:
+                    print(
+                        f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Bulk inserting {len(batch_results)} books from incremental batch")
+                    bulk_insert_books(batch_results, author_id)
+
+                # Delay between batches
+                time.sleep(1.0)
+
             # If we got fewer works than the limit, we've reached the end
             if len(current_works) < limit:
                 print(
@@ -1474,58 +1541,21 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                 break
 
             offset += limit
-            # Small delay between requests to be respectful to the API
+            # Small delay between requests
             time.sleep(0.5)
 
-        print(
-            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Total new works to process: {len(all_works)}")
-
-        if not all_works:
+        # Process any remaining works
+        if all_works:
             print(
-                "DEBUG OPENLIBRARY_get_or_create_author_with_books: No new works to process")
-            return author_id
+                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing remaining {len(all_works)} works")
 
-        # Collect all book data before inserting using concurrent processing
-        books_to_insert = []
-
-        print(
-            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing {len(all_works)} works concurrently...")
-
-        # Adaptive batch sizing based on total number of works - optimized for API limits
-        if len(all_works) <= 100:
-            batch_size = 30
-            max_workers = 12
-        elif len(all_works) <= 500:
-            batch_size = 35
-            max_workers = 15
-        elif len(all_works) <= 1000:
-            batch_size = 40
-            max_workers = 18
-        else:  # 1000+ works
-            batch_size = 45
-            max_workers = 20
-
-        print(
-            f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Using batch_size={batch_size}, max_workers={max_workers} for {len(all_works)} works (optimized for API limits)")
-
-        # Process works in batches with concurrent requests
-        for i in range(0, len(all_works), batch_size):
-            batch = all_works[i:i + batch_size]
-            batch_num = i//batch_size + 1
-            total_batches = (len(all_works) + batch_size - 1)//batch_size
-
-            print(
-                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Processing batch {batch_num}/{total_batches} ({len(batch)} works) - {len(books_to_insert)} books collected so far")
-
-            # Process this batch concurrently with retry for failed works
             batch_results = []
             failed_works = []
 
-            # First attempt
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            with ThreadPoolExecutor(max_workers=5) as executor:
                 future_to_work = {
                     executor.submit(fetch_work_details_with_retry, work): work
-                    for work in batch
+                    for work in all_works
                 }
 
                 for future in as_completed(future_to_work):
@@ -1541,13 +1571,9 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                             f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Failed to process work {work.get('key', 'unknown')}: {e}")
                         failed_works.append(work)
 
-            # Retry failed works with smaller concurrency
             if failed_works:
-                print(
-                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Retrying {len(failed_works)} failed works from batch {batch_num}")
                 retry_results = []
-
-                with ThreadPoolExecutor(max_workers=min(10, max_workers//2)) as executor:
+                with ThreadPoolExecutor(max_workers=3) as executor:
                     future_to_work = {
                         executor.submit(fetch_work_details_with_retry, work): work
                         for work in failed_works
@@ -1564,23 +1590,11 @@ def get_or_create_author_with_books(author_data: Dict[str, Any]) -> Optional[int
                                 f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Final failure for work {work.get('key', 'unknown')}: {e}")
 
                 batch_results.extend(retry_results)
+
+            if batch_results:
                 print(
-                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Recovered {len(retry_results)} books from {len(failed_works)} failed works")
-
-            books_to_insert.extend(batch_results)
-            success_rate = len(batch_results) / len(batch) * 100
-            print(
-                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Batch {batch_num} completed: +{len(batch_results)} books (total: {len(books_to_insert)}, success rate: {success_rate:.1f}%)")
-
-            # Longer delay between batches to respect API limits
-            if batch_num < total_batches:  # Don't delay after the last batch
-                time.sleep(1.0)  # Increased delay to be more respectful to API
-
-        # Bulk insert books
-        if books_to_insert:
-            print(
-                f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Bulk inserting {len(books_to_insert)} books")
-            bulk_insert_books(books_to_insert, author_id)
+                    f"DEBUG OPENLIBRARY_get_or_create_author_with_books: Bulk inserting remaining {len(batch_results)} books")
+                bulk_insert_books(batch_results, author_id)
 
     except Exception as e:
         logger.error(f"Error fetching author's works: {e}")
@@ -1748,6 +1762,8 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
                     print(
                         f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added additional book: {title}")
                     existing_titles.add(title_lower)
+                    # Small delay to respect API limits
+                    time.sleep(0.5)
             except Exception as e:
                 print(f"Error saving additional book {title}: {e}")
 
@@ -1778,6 +1794,8 @@ def search_additional_books_by_author(author_name: str, author_id: int) -> None:
                     print(
                         f"DEBUG OPENLIBRARY_search_additional_books_by_author: Added Gutenberg book: {title}")
                     existing_titles.add(title_lower)
+                    # Small delay to respect API limits
+                    time.sleep(0.5)
             except Exception as e:
                 print(f"Error saving Gutenberg book {title}: {e}")
 
