@@ -166,7 +166,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 }, className='rating-color')
             else:
                 rating_display = html.Div("No rating", className='text-secondary',
-                    style={'font-size': '0.9rem'})
+                                          style={'font-size': '0.9rem'})
 
             # Create book card for grid layout
             book_card = html.Div([

@@ -1,14 +1,14 @@
 /* Bookshelf remove button hover effect */
 .remove-btn-hover:hover {
   opacity: 1 !important;
-  background: rgba(220, 53, 69, 0.2) !important; /* error/warning background, keep as is */
+  background: var(--danger-bg) !important; /* error/warning background */
   transform: scale(1.1);
 }
 
 /* Bookshelf grid styles */
 .bookshelf-book-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: var(--card-shadow);
 }
 
 .bookshelf-remove-btn {
@@ -19,8 +19,8 @@
   height: 20px;
   border: none;
   border-radius: 50%;
-  background: rgba(128, 128, 128, 0.7);
-  color: #fff;
+  background: var(--text-color-secondary);
+  color: var(--button-text-color);
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
@@ -29,7 +29,7 @@
   justify-content: center;
   z-index: 10;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: var(--card-shadow);
   opacity: 0;
 }
 
@@ -51,7 +51,6 @@
 /* Page title */
 .bookshelf-main-title {
   text-align: center;
-  margin-bottom: 30px;
   color: var(--text-color);
 }
 
@@ -60,7 +59,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: 0px; /* Remove gap to attach to content */
-  border-bottom: 2px solid #007bff; /* Blue border, keep as is */
+  border-bottom: 2px solid var(--link-color); /* Blue border */
   padding-bottom: 0px; /* Remove padding to attach tabs to border */
 }
 .bookshelf-tab:not(:last-child) {
@@ -75,9 +74,9 @@
   align-items: center;
   padding: 10px;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   transition: all 0.2s ease;
-  height: 300px;
+  height: 100%;
   overflow: hidden;
   width: 160px;
   margin: 0 auto;
@@ -95,7 +94,7 @@
   height: 180px;
   object-fit: contain;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s;
   display: block;
   background-color: var(--background-color);
@@ -108,8 +107,8 @@
   font-size: 14px;
   color: var(--text-color);
   font-weight: 600;
-  line-height: 1.2;
-  height: 2.4em;
+  line-height: 1;
+  height: 2em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -120,7 +119,7 @@
 .bookshelf-book-author {
   margin: 1px 0 3px 0;
   font-size: 12px;
-  color: #666;
+  color: var(--text-color-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -136,29 +135,26 @@
   font-size: 11px;
   font-weight: bold;
 }
-.rating-color {
-  color: #ff9500;
-}
 .not-rated {
   font-size: 10px;
-  color: #999;
+  color: var(--text-color-secondary);
 }
-.added-label { font-size: 9px; color: #888; }
-.added-date { font-size: 9px; color: #666; }
+.added-label { font-size: 9px; color: var(--text-color-secondary); }
+.added-date { font-size: 9px; color: var(--text-color-secondary); }
 
 .added-info { text-align: center; margin-bottom: 2px; }
 
 /* Expiry info for rented books */
 .expiry-info { text-align: center; margin-bottom: 1px; }
-.expiry-label-small { font-size: 10px; color: #666; }
-.expiry-days { font-size: 11px; color: #666; font-weight: bold; }
+.expiry-label-small { font-size: 10px; color: var(--text-color-secondary); }
+.expiry-days { font-size: 11px; color: var(--text-color-secondary); font-weight: bold; }
 .expiry-date-line { text-align: center; margin-top: 1px; }
-.expiry-date-small { font-size: 9px; color: #666; }
+.expiry-date-small { font-size: 9px; color: var(--text-color-secondary); }
 
 /* Review indicator */
 .book-review-indicator { text-align: center; }
 .review-icon { font-size: 12px; margin-right: 3px; }
-.review-text { font-size: 10px; color: #28a745; }
+.review-text { font-size: 10px; color: var(--success-color); }
 
 /* Link wrapper */
 .book-link { text-decoration: none; color: inherit; display: block; }
@@ -175,11 +171,11 @@
 .bookshelf-login-message,
 .bookshelf-empty-message,
 .bookshelf-error { text-align: center; }
-.bookshelf-login-message { color: #666; margin-top: 50px; }
-.bookshelf-error { color: red; margin-top: 50px; }
-.bookshelf-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 80px; }
-.bookshelf-empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
-.bookshelf-empty-message { color: #666; font-size: 16px; line-height: 1.5; max-width: 400px; }
+.bookshelf-login-message { color: var(--text-color-secondary);}
+.bookshelf-error { color: var(--danger-color);}
+.bookshelf-empty { display: flex; flex-direction: column; align-items: center; justify-content: center;}
+.bookshelf-empty-icon { font-size: 4rem; opacity: 0.3; }
+.bookshelf-empty-message { color: var(--text-color-secondary); font-size: 16px; line-height: 1.5; max-width: 400px; }
 
 /* Modal styles */
 .remove-confirmation-modal {
@@ -188,7 +184,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -197,13 +193,13 @@
 .remove-modal-content {
   padding: 25px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: var(--card-shadow);
   max-width: 400px;
   width: 90%;
 }
 .confirm-modal-title { margin: 0 0 15px 0; color: var(--text-color); }
-.btn-cancel { padding: 10px 20px; margin-right: 10px; background: #6c757d; color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
-.btn-remove { padding: 10px 20px; background: #dc3545; color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
+.btn-cancel { padding: 10px 20px; margin-right: 10px; background: var(--text-color-secondary); color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
+.btn-remove { padding: 10px 20px; background: var(--danger-color); color: var(--button-text-color); border: none; border-radius: 4px; cursor: pointer; }
 
 /* Bookshelf tab styles */
 .bookshelf-tab {
@@ -211,7 +207,7 @@
   margin: 0 2px;
   border: none;
   background: var(--secondary-bg);
-  color: #666;
+  color: var(--text-color-secondary);
   cursor: pointer;
   border-radius: 8px 8px 0 0;
   font-size: 14px;
@@ -221,14 +217,14 @@
 }
 
 .bookshelf-tab:hover {
-  background: #e9ecef;
+  background: var(--tab-hover-bg);
   color: var(--text-color);
 }
 
 .bookshelf-tab.active-tab {
-  background: #007bff;
-  color: white;
-  border-bottom: 3px solid #007bff;
+  background: var(--link-color);
+  color: var(--button-text-color);
+  border-bottom: 3px solid var(--link-color);
   font-weight: 600;
 }
 

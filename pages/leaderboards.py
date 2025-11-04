@@ -62,7 +62,7 @@ def leaderboards_layout():
             # Hidden store for selected tab
             dcc.Store(id='leaderboard-scope', data='friends'),
 
-        ], className="app-container")
+        ], className="leader-app-container")
     ])
 
 

@@ -7,26 +7,22 @@
 
 
 /* Global CSS Variables for Light/Dark Modes */
-:root {
-  /* Light mode colors */
-  --background-color: #d81c1c;
-  --secondary-bg: #2cac16;
-  --text-color: #ff0bef;
-  --text-color-secondary: #fffc50;
-  --button-text-color: #fff;
-  --danger-color: #dc3545;
-  --danger-bg: transparent;
-  --success-color: #28a745;
-  --success-color-hover: #218838;
-  --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  --link-color: #ff8164;
-  --link-hover: #004707;
-  --tab-hover-bg: #ff4d01;
-  --input-field-bg: #53c3ff;
-  --border-color: #f0f0f0;
-  --text-muted: #999;
-  --bg-light: #f5f5f5;
-}
+  :root {
+    /* Light mode colors */
+    --background-color: #eeeeee;
+    --secondary-bg: #e3e1e1;
+    --text-color: #161616;
+    --text-color-secondary: #575757;
+    --button-text-color: #fff;
+    --danger-color: #dc3545;
+    --danger-bg: transparent;
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    --link-color: #007bff;
+    --link-hover: #005fa3;
+    --tab-hover-bg: #e9ecef;
+    --input-field-bg: #ffffff;
+    --border-color: #f0f0f0;
+  }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -58,6 +54,10 @@ a:hover {
   box-shadow: var(--card-shadow);
   padding: 24px;
   margin-bottom: 24px;
+}
+
+.secondary-bg {
+  background: var(--secondary-bg);
 }
 
 /* Header and .button styles remain unchanged for both modes */

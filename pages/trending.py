@@ -37,7 +37,7 @@ def trending_layout():
 
             # Container for trending book cards
             html.Div(id='trending-books-container', className='trending-books-container')
-        ], className="app-container")
+        ], className="trending-app-container")
     ])
 
 

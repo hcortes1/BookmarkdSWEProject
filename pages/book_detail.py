@@ -136,7 +136,7 @@ def layout(book_id=None, **kwargs):
                                 className='rating-color rating-link'
                             ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 and book_data.get('rating_count', 0) > 0 else html.Span(
                                 "No ratings yet",
-                                style={'color': '#666'}
+                                style={'color': 'var(--text-color-secondary)'}
                             )
                         ], className="book-info"),
 
@@ -187,7 +187,7 @@ def layout(book_id=None, **kwargs):
                                     'book_id': book_id},
                                 className="bookshelf-btn",
                                 style={
-                                    'background': '#1976d2',
+                                    'background': 'var(--link-color)',
                                     'color': 'white',
                                     'fontSize': '1rem',
                                     'padding': '10px 24px',
@@ -205,7 +205,7 @@ def layout(book_id=None, **kwargs):
                                     'book_id': book_id},
                                 className="recommend-btn blue-btn",
                                 style={
-                                    'background': '#1976d2',
+                                    'background': 'var(--link-color)',
                                     'color': 'white',
                                     'fontSize': '1rem',
                                     'padding': '10px 24px',
@@ -437,7 +437,7 @@ def layout(book_id=None, **kwargs):
                                                 id={'type': 'confirm-rental',
                                                     'book_id': book_id},
                                                 className="confirm-btn",
-                                                style={'background': '#1976d2'})
+                                                style={'background': 'var(--link-color)'})
                                 ], className="modal-buttons-right")
                             ]),
                             html.Div(id={'type': 'rental-modal-feedback', 'book_id': book_id},
@@ -1383,7 +1383,7 @@ def set_initial_rental_status(store_id, session_data, book_store_id):
             href=f"/read/{book_id}",
             className="read-btn blue-btn",
             style={
-                'background': '#1976d2',
+                'background': 'var(--link-color)',
                 'color': 'white',
                 'fontSize': '1rem',
                 'padding': '10px 24px',
@@ -1404,7 +1404,7 @@ def set_initial_rental_status(store_id, session_data, book_store_id):
             id={'type': 'rent-book-btn', 'book_id': book_id},
             className="rent-btn blue-btn",
             style={
-                'background': '#1976d2',
+                'background': 'var(--link-color)',
                 'color': 'white',
                 'fontSize': '1rem',
                 'padding': '10px 24px',
@@ -1530,7 +1530,7 @@ def confirm_rental(n_clicks, session_data, store_id):
             href=f"/read/{book_id}",
             className="read-btn blue-btn",
             style={
-                'background': '#1976d2',
+                'background': 'var(--link-color)',
                 'color': 'white',
                 'fontSize': '1rem',
                 'padding': '10px 24px',

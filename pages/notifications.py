@@ -316,7 +316,8 @@ def update_notifications_display(notifications_data, user_session):
                         html.Div(
                             f"They said: {notification.get('reason', 'You might like this book!')}",
                             className='notification-reason text-secondary',
-                            style={'font-size': '14px', 'margin-top': '6px', 'font-style': 'italic'}
+                            style={'font-size': '14px',
+                                   'margin-top': '6px', 'font-style': 'italic'}
                         ) if notification.get('reason') else html.Div(),
 
                         html.Div(
