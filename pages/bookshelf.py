@@ -71,7 +71,7 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
             is_favorited = False
 
     # Determine border styling based on favorite status
-    border_style = '3px solid #007bff' if is_favorited else '1px solid #ddd'
+    border_style = '3px solid var(--link-color)' if is_favorited else '1px solid var(--border-color)'
 
     # Calculate days remaining and expiry date text for rented books
     days_remaining_text = "Unknown"

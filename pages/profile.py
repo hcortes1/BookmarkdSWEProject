@@ -92,7 +92,7 @@ def create_reviews_content(user_data, is_own_profile):
                     'display': 'flex',
                     'align-items': 'flex-start',
                     'padding': '15px',
-                    'border': '1px solid #ddd',
+                    'border': '1px solid var(--border-color)',
                     'border-radius': '8px',
                     'margin-bottom': '15px'
                 }, className='card lighter-bg')
@@ -221,7 +221,7 @@ def create_completed_books_content(user_data, is_own_profile):
                 'flex-direction': 'column',
                 'align-items': 'center',
                 'padding': '15px',
-                'border': '1px solid #e0e0e0',
+                'border': '1px solid var(--border-color)',
                 'border-radius': '10px',
                 'box-shadow': '0 2px 4px rgba(0,0,0,0.05)',
                 'transition': 'box-shadow 0.2s, transform 0.2s',

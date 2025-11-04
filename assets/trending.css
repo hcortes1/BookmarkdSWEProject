@@ -30,6 +30,7 @@
 .trending-book-card {
     background: var(--background-color);
     border-radius: 10px;
+    border: 1px solid var(--border-color);
     box-shadow: var(--card-shadow);
     padding: 15px;
     text-align: center;
