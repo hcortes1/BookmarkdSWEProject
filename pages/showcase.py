@@ -1,5 +1,6 @@
 import dash
 from dash import html, dcc, Input, Output
+import backend.showcase as showcase_backend
 
 dash.register_page(__name__, path='/showcase')
 
@@ -32,32 +33,84 @@ def showcase_layout():
         html.Div([
             html.H1("Book Showcase", className="main-title"),
             html.P("Explore featured and sponsored books.",
-                   className="page-subtitle")
+                   className="showcase-page-subtitle"),
+            html.Hr(className="showcase-divider"),
+
+            # Scrollable book section
+            html.Div(id='showcase-books-container', className='showcase-books-container')
         ], className="app-container")
     ])
 
 
 def layout():
     return html.Div([
-        # Store for checking login status
         dcc.Store(id='showcase-session-check', data={}),
-
-        # Content will be dynamically loaded based on login status
         html.Div(id='showcase-content')
     ])
 
 
-# Callback to check login status and show appropriate content
+# Handle login state 
 @dash.callback(
     Output('showcase-content', 'children'),
     Input('showcase-session-check', 'data'),
     Input('user-session', 'data')
 )
 def update_showcase_content(dummy, user_session):
-    is_logged_in = user_session.get(
-        'logged_in', False) if user_session else False
+    is_logged_in = user_session.get('logged_in', False) if user_session else False
 
     if is_logged_in:
         return showcase_layout()
     else:
         return welcome_layout()
+
+
+# display showcase books
+@dash.callback(
+    Output('showcase-books-container', 'children'),
+    Input('user-session', 'data')
+)
+def update_showcase_books(user_session):
+    if not user_session or not user_session.get('logged_in'):
+        return html.Div(
+            html.P("Please log in to view showcase books.", className="error-message"),
+            className="showcase-books-grid"
+        )
+
+    books = showcase_backend.get_showcase_books(limit=30)
+
+    # Empty state
+    if not books:
+        return html.Div([
+            html.Div([
+                html.P("No sponsored books available right now.",
+                       className="empty-message-main"),
+                html.P("Check back soon for new featured titles!",
+                       className="empty-message-sub")
+            ], className="showcase-empty-state")
+        ], className="showcase-books-grid")
+
+    # Display books
+    return html.Div([
+        html.Div([
+            html.Div([
+                dcc.Link([
+                    html.Div("Sponsored", className="showcase-badge"),
+                    html.Img(
+                        src=book.get('cover_url', '/assets/svg/default-book.svg'),
+                        className='showcase-book-cover'
+                    ),
+                    html.H4(book.get('title', 'Unknown Title'),
+                            className='showcase-book-title'),
+                    html.P(f"by {book.get('author_name', 'Unknown Author')}",
+                           className='showcase-book-author'),
+                    html.Span(f"Sponsored by {book.get('sponsor_name', 'Unknown')}",
+                              className='showcase-book-sponsor'),
+                    html.Span(f"{book.get('start_date', '')} → {book.get('end_date', 'Ongoing')}",
+                              className='showcase-book-dates')
+                ],
+                    href=f"/book/{book.get('book_id')}",
+                    style={'textDecoration': 'none', 'color': 'inherit'})
+            ], className='showcase-book-card')
+            for book in books
+        ], className='showcase-books-grid')
+    ])
