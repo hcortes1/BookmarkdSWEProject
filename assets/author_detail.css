@@ -140,6 +140,7 @@
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color);
   transition: transform 0.2s ease;
   cursor: pointer;
   min-height: 320px;
