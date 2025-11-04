@@ -61,8 +61,8 @@ def signup_user(username, email, password):
 
     # insert new user
     insert_query = """
-        INSERT INTO users (username, email, password) 
-        VALUES (%s, %s, %s)
+        INSERT INTO users (username, email, password, display_mode) 
+        VALUES (%s, %s, %s, 'light')
     """
     cursor.execute(insert_query, (username, email, hashed_password))
 
@@ -85,7 +85,7 @@ def login_user(username, password):
 
     # check login credentials and get all user data
     login_query = """
-        SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres
+        SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres, display_mode
         FROM users 
         WHERE username = %s AND password = %s
     """
@@ -104,7 +104,8 @@ def login_user(username, password):
             "profile_image_url": user_record[3],
             "created_at": user_record[4].isoformat() if user_record[4] else None,
             "first_login":user_record[5],
-            "favorite_genres": user_record[6]
+            "favorite_genres": user_record[6],
+            "display_mode": user_record[7]
         }
         return True, "Login successful", user_data
     else:
@@ -122,7 +123,7 @@ def refresh_user_session_data(user_id):
     try:
         # Get all user data
         query = """
-            SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres
+            SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres, display_mode
             FROM users 
             WHERE user_id = %s
         """
@@ -142,7 +143,8 @@ def refresh_user_session_data(user_id):
                 "profile_image_url": user_record[3],
                 "created_at": user_record[4].isoformat() if user_record[4] else None,
                 "first_login":user_record[5],
-                "favorite_genres": user_record[6]
+                "favorite_genres": user_record[6],
+                "display_mode": user_record[7]
             }
             return True, "Session data refreshed successfully", session_data
         else:

@@ -23,13 +23,14 @@ app = Dash(
 app.validation_layout = None
 
 
-app.layout = html.Div([
+app.layout = html.Div(id="main-app-container", children=[
     dcc.Location(id="url"),
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
     dcc.Store(id="mobile-menu-store",
               storage_type="memory", data={"open": False}),
+    html.Div(id='dummy-output', style={'display': 'none'}),
 
     html.Div(id='header', className="header", children=[
         html.Nav(className="nav", children=[
@@ -775,6 +776,36 @@ def handle_logout(n_clicks_quick, n_clicks_mobile):
         "profile_image_url": None,
         "created_at": None
     }
+
+
+@app.callback(
+    Output('main-app-container', 'className'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def apply_display_mode(session_data):
+    if session_data and session_data.get('logged_in') and session_data.get('display_mode') == 'dark':
+        return 'dark-mode'
+    return ''
+
+
+# Clientside callback to apply dark mode class to body
+app.clientside_callback(
+    """
+    function(session_data) {
+        const body = document.body;
+        if (session_data && session_data.logged_in && session_data.display_mode === 'dark') {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
+        return '';
+    }
+    """,
+    Output('dummy-output', 'children'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
 
 
 if __name__ == "__main__":

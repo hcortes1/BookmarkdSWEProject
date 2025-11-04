@@ -62,7 +62,7 @@ a:hover {
 
 /* Header and .button styles remain unchanged for both modes */
 .button {
-  background-color: #0077cc;
+  background-color: var(--link-color);
   color: var(--button-text-color);
   border: none;
   border-radius: 4px;
@@ -73,7 +73,7 @@ a:hover {
 }
 
 .button:hover {
-  background-color: #005fa3;
+  background-color: var(--link-hover);
 }
 
 .center {
@@ -100,6 +100,7 @@ a:hover {
   --link-hover: #82cfff;
   --tab-hover-bg: #646464;
   --input-field-bg: #464646;
+  --border-color: #999999;
 }
 
 /* Unified rating color for consistent rating display across the app */
@@ -123,7 +124,7 @@ a:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #d0d0d0;
+  background-color: var(--secondary-bg);
   padding: 40px;
 }
 
@@ -135,7 +136,7 @@ a:hover {
 
 .welcome-title {
   font-size: 6rem;
-  color: #007bff;
+  color: var(--link-color);
   margin-bottom: 40px;
   font-weight: bold;
   text-align: center;
@@ -143,7 +144,7 @@ a:hover {
 
 .welcome-subtitle {
   font-size: 1.5rem;
-  color: #333;
+  color: var(--text-color);
   margin-bottom: 60px;
   line-height: 1.6;
   text-align: center;
@@ -163,7 +164,7 @@ a:hover {
 .welcome-login-btn,
 .welcome-signup-btn {
   padding: 16px 32px;
-  border: 2px solid #007bff;
+  border: 2px solid var(--link-color);
   border-radius: 8px;
   font-size: 1.2rem;
   font-weight: 600;
@@ -171,14 +172,14 @@ a:hover {
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
-  background: white;
-  color: #007bff;
+  background: var(--background-color);
+  color: var(--link-color);
 }
 
 .welcome-login-btn:hover,
 .welcome-signup-btn:hover {
-  background: #007bff;
-  color: white;
+  background: var(--link-color);
+  color: var(--button-text-color);
   transform: translateY(-2px);
 }
 

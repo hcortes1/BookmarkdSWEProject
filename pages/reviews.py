@@ -49,10 +49,10 @@ def layout(book_id=None, **kwargs):
                                 dcc.Link(
                                     book_data['title'],
                                     href=f"/book/{book_id}",
-                                        style={
-                                            'color': 'var(--link-color)',
-                                            'text-decoration': 'none'
-                                        }
+                                    style={
+                                        'color': 'var(--link-color)',
+                                        'text-decoration': 'none'
+                                    }
                                 )
                             ], style={
                                 'margin': '0 0 10px 0',
@@ -73,7 +73,7 @@ def layout(book_id=None, **kwargs):
                             ], style={
                                 'margin': '0 0 15px 0',
                                 'font-size': '18px',
-                                    'color': 'var(--text-color-secondary)'
+                                'color': 'var(--text-color-secondary)'
                             }),
                             # Rating summary
                             html.Div([
@@ -84,7 +84,8 @@ def layout(book_id=None, **kwargs):
                                     className='rating-color'
                                 ) if book_data.get('average_rating') and book_data.get('average_rating') > 0 else html.Span(
                                     "No ratings yet",
-                                        style={'color': 'var(--text-color-secondary)'}
+                                    style={
+                                        'color': 'var(--text-color-secondary)'}
                                 )
                             ], style={
                                 'margin-bottom': '15px',
@@ -94,10 +95,10 @@ def layout(book_id=None, **kwargs):
                     ], style={
                         'display': 'flex',
                         'align-items': 'flex-start',
-                            'padding': '20px',
-                            'border-radius': '12px',
-                            'box-shadow': 'var(--card-shadow)',
-                            'margin-bottom': '30px'
+                        'padding': '20px',
+                        'border-radius': '12px',
+                        'box-shadow': 'var(--card-shadow)',
+                        'margin-bottom': '30px'
                     }, className='secondary-bg')
                 ]),
 
@@ -206,22 +207,22 @@ def create_review_card(review: Dict[str, Any]):
                         'username', 'Anonymous'),
                     href=f"/profile/view/{review.get('username')}" if review.get(
                         'username') else "#",
-                        style={
-                            'font-weight': 'bold',
-                            'color': 'var(--link-color)',
-                            'text-decoration': 'none',
-                            'font-size': '16px'
-                        }
+                    style={
+                        'font-weight': 'bold',
+                        'color': 'var(--link-color)',
+                        'text-decoration': 'none',
+                        'font-size': '16px'
+                    }
                 ),
                 html.Div([
                     html.Span(f"{rating}/5.0", style={
                         'font-weight': 'bold',
                         'margin-right': '10px'
                     }, className='rating-color'),
-                        html.Span(formatted_date, style={
-                            'color': 'var(--text-color-secondary)',
-                            'font-size': '14px'
-                        })
+                    html.Span(formatted_date, style={
+                        'color': 'var(--text-color-secondary)',
+                        'font-size': '14px'
+                    })
                 ], style={'margin-top': '5px'})
             ], style={'flex': '1'})
         ], style={

@@ -401,3 +401,40 @@ def update_email(user_id, new_email):
         cursor.close()
         connection.close()
         return False, f"Error updating email: {e}"
+
+
+def update_display_mode(user_id, display_mode):
+    """
+    Update user's display mode preference (light/dark)
+    """
+    if display_mode not in ['light', 'dark']:
+        return False, "Invalid display mode. Must be 'light' or 'dark'"
+
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed"
+
+    cursor = connection.cursor()
+
+    try:
+        # Update display mode
+        cursor.execute("UPDATE users SET display_mode = %s WHERE user_id = %s",
+                       (display_mode, user_id))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return False, "User not found"
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return True, "Display mode updated successfully"
+
+    except Error as e:
+        connection.rollback()
+        cursor.close()
+        connection.close()
+        return False, f"Error updating display mode: {e}"

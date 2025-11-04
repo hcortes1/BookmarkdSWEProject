@@ -111,7 +111,27 @@ layout = html.Div([
                     className='btn-primary',
                     style={'width': '200px'}
                 ),
-                html.Div(id='bio-feedback', style={'margin-top': '10px'})
+                html.Div(id='bio-feedback', style={'margin-top': '10px'}),
+
+                # Display Mode section
+                html.H3("Display Mode", style={'margin-top': '30px'}),
+                dcc.RadioItems(
+                    id='display-mode-selector',
+                    options=[
+                        {'label': ' Light Mode', 'value': 'light'},
+                        {'label': ' Dark Mode', 'value': 'dark'}
+                    ],
+                    value='light',  # Default to light mode
+                    labelStyle={'display': 'block', 'margin-bottom': '10px'},
+                    inputStyle={'margin-right': '10px'}
+                ),
+                html.Button(
+                    "Update Display Mode",
+                    id="update-display-mode-button",
+                    className='btn-primary',
+                    style={'width': '200px'}
+                ),
+                html.Div(id='display-mode-feedback', style={'margin-top': '10px'})
             ], className='card settings-card'),
 
             # Account Settings Card
@@ -691,6 +711,35 @@ def update_bio(n_clicks, new_bio, session_data):
         return html.Div(f"Error updating bio: {str(e)}", style={'color': 'red'}), dash.no_update
 
 
+# Callback to update display mode
+@callback(
+    [Output('display-mode-feedback', 'children'),
+     Output('user-session', 'data', allow_duplicate=True)],
+    Input('update-display-mode-button', 'n_clicks'),
+    [State('display-mode-selector', 'value'),
+     State('user-session', 'data')],
+    prevent_initial_call=True
+)
+def update_display_mode(n_clicks, new_display_mode, session_data):
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update
+
+    try:
+        success, message = settings_backend.update_display_mode(
+            session_data['user_id'], new_display_mode)
+
+        if success:
+            # Update session data with new display mode
+            updated_session = session_data.copy()
+            updated_session['display_mode'] = new_display_mode
+            return html.Div("Display mode updated successfully!", style={'color': 'green'}), updated_session
+        else:
+            return html.Div(f"Error: {message}", style={'color': 'red'}), dash.no_update
+
+    except Exception as e:
+        return html.Div(f"Error updating display mode: {str(e)}", style={'color': 'red'}), dash.no_update
+
+
 # Callback to load current display name and bio
 @callback(
     [Output('edit-display-name-input', 'placeholder'),
@@ -717,3 +766,16 @@ def update_profile_placeholders(session_data):
 
     except Exception as e:
         return "Enter display name", "Tell others about yourself..."
+
+
+# Callback to load current display mode
+@callback(
+    Output('display-mode-selector', 'value'),
+    Input('user-session', 'data'),
+    prevent_initial_call=False
+)
+def load_current_display_mode(session_data):
+    if not session_data or not session_data.get('logged_in'):
+        return 'light'  # Default to light mode
+
+    return session_data.get('display_mode', 'light')

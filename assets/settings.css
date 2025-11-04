@@ -41,10 +41,11 @@
 
 .form-input {
   padding: 10px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   background-color: var(--input-field-bg);
+  color: var(--text-color);
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
