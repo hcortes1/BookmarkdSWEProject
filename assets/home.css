@@ -1,0 +1,318 @@
+/* General Styles */
+
+.homefeed-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-color-secondary);
+    text-align: center;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.home-divider {
+    border: none;
+    border-top: 2px solid var(--link-color);
+    margin: 15px 0 25px 0;
+}
+
+/* Section Styles */
+
+/* Grid layout for reviews + activity side by side */
+.home-sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+/* For single wide sections like AI Recommendations */
+.home-section {
+    background-color: var(--secondary-bg);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    padding: 20px 25px;
+}
+
+/* Add space between Recommended Books and the grid below */
+.home-section + .home-sections-grid {
+    margin-top: 25px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--link-color);
+    padding-bottom: 5px;
+}
+
+/* Scrollable Content */
+
+.home-section-container {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc var(--secondary-bg);
+}
+
+/* WebKit scrollbar for Chrome/Safari */
+.home-section-container::-webkit-scrollbar {
+    width: 8px;
+}
+.home-section-container::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+}
+.home-section-container::-webkit-scrollbar-thumb:hover {
+    background-color: #999;
+}
+
+/* Activity Cards (used for both reviews and friend activity) */
+
+.activity-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--secondary-bg);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    padding: 12px;
+    margin-bottom: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.activity-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* Inner layout for card content */
+.activity-card-content {
+    display: flex;
+    gap: 15px;
+}
+
+/* Avatar + username row */
+.activity-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+/* Small avatar with breathing room */
+.activity-avatar-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-right: 8px; /* Added breathing room */
+}
+
+/* Username link */
+.activity-username {
+    font-weight: 600;
+    color: var(--link-color);
+}
+
+/* Action text ("reviewed", "rated", "finished") */
+.activity-action {
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+}
+
+/* Book cover */
+.activity-book-cover {
+    width: 70px;
+    height: 100px;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+/* Book info column */
+.activity-book-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Book title */
+.activity-book-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 3px 0;
+    color: var(--text-color);
+}
+
+/* Review snippet */
+.activity-snippet {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Rating and labels */
+.activity-rating {
+    color: var(--link-color);
+    font-weight: 600;
+}
+
+.activity-review-label {
+    color: var(--text-color-secondary);
+    font-size: 0.85rem;
+}
+
+/* Timestamp */
+.activity-timestamp {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin-top: 5px;
+    align-self: flex-end;
+}
+
+/* Empty State */
+
+.home-empty-message {
+    color: var(--text-color-secondary);
+    text-align: center;
+    font-style: italic;
+    background: var(--secondary-bg);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* AI Recommendation Placeholder */
+
+.home-placeholder-message {
+    text-align: center;
+    color: var(--link-color);
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Floating Chat Assistant */
+
+#chat-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--link-color);
+    color: var(--button-text-color);
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 3000;
+}
+
+#home-chat-window {
+    display: none;
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    background-color: var(--secondary-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 2999;
+}
+
+/* Chat bubbles */
+.chat-bubble {
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 8px 0;
+    max-width: 70%;
+    font-size: 14px;
+    word-wrap: break-word;
+}
+
+.user-bubble {
+    background-color: var(--link-color);
+    color: var(--button-text-color);
+    margin-left: auto;
+}
+
+.ai-bubble {
+    background-color: var(--input-field-bg);
+    color: var(--text-color);
+}
+
+/* Responsive Tweaks */
+
+@media (max-width: 900px) {
+    .home-sections-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .home-section-container {
+        max-height: 400px;
+    }
+
+    .section-title {
+        font-size: 1.15rem;
+    }
+
+    .home-activity-item {
+        font-size: 0.9rem;
+    }
+
+    .activity-book-cover {
+        width: 60px;
+        height: 90px;
+    }
+
+    .activity-avatar-small {
+        width: 25px;
+        height: 25px;
+    }
+}
+/* AI Recommendation Cards */
+.rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    padding-right: 10px;
+}
+
+.rec-card {
+    background-color: var(--secondary-bg);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rec-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
+.rec-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 6px;
+}
+
+.rec-author {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
+}
+
+.rec-cover {
+    width: 100px;
+    height: 140px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
