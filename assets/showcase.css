@@ -1,15 +1,15 @@
 /* Scrollable rounded container */
 .showcase-books-container {
-    background-color: #f2f2f2;
+    background-color: var(--secondary-bg);
     border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--card-shadow);
     margin-top: 20px;
 
     max-height: 600px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #ccc #f2f2f2;
+    scrollbar-color: var(--border-color) var(--secondary-bg);
 }
 
 /* Scrollbar styling for WebKit browsers */
@@ -17,17 +17,17 @@
     width: 8px;
 }
 .showcase-books-container::-webkit-scrollbar-thumb {
-    background-color: #ccc;
+    background-color: var(--border-color);
     border-radius: 10px;
 }
 .showcase-books-container::-webkit-scrollbar-thumb:hover {
-    background-color: #999;
+    background-color: var(--text-color-secondary);
 }
 
 /* Subtitle styling */
 .showcase-page-subtitle {
     font-size: 1.1rem;
-    color: #666;
+    color: var(--text-color-secondary);
     margin-top: 8px;
     text-align: center;
     font-style: italic;
@@ -35,7 +35,7 @@
 
 .showcase-divider {
     border: none;
-    border-top: 2px solid #007bff;
+    border-top: 2px solid var(--link-color);
     margin: 10px 0 20px 0;
     width: 100%;
 }
@@ -50,9 +50,9 @@
 
 /* Book cards */
 .showcase-book-card {
-    background: white;
+    background: var(--background-color);
     border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-shadow: var(--card-shadow);
     padding: 15px;
     text-align: center;
     position: relative;
@@ -60,7 +60,7 @@
 }
 .showcase-book-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
 }
 
 /* Sponsored badge */
@@ -68,8 +68,8 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #007bff;
-    color: white;
+    background-color: var(--link-color);
+    color: var(--button-text-color);
     padding: 3px 8px;
     border-radius: 5px;
     font-size: 0.75rem;
@@ -90,11 +90,11 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin: 0;
-    color: #333;
+    color: var(--text-color);
 }
 .showcase-book-author {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-color-secondary);
     margin-top: 4px;
     font-style: italic;
 }
@@ -102,18 +102,17 @@
     display: block;
     font-size: 0.8rem;
     margin-top: 8px;
-    color: #007bff;
+    color: var(--link-color);
     font-weight: 500;
 }
 .showcase-book-dates {
     display: block;
     font-size: 0.75rem;
-    color: #777;
+    color: var(--text-color-secondary);
     margin-top: 5px;
 }
 
-/* Empty state styling*/
-
+/* Empty state styling */
 .showcase-books-container:has(.showcase-empty-state) {
     display: block;
     padding: 25px;
@@ -133,19 +132,19 @@
 
 /* Main message box */
 .empty-message-main {
-    color: #333;
+    color: var(--text-color);
     font-size: 1.1rem;
     font-weight: 600;
-    background-color: white;
+    background-color: var(--background-color);
     padding: 20px 50px;
     border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    box-shadow: var(--card-shadow);
     margin-bottom: 12px;
 }
 
 /* Subtext */
 .empty-message-sub {
-    color: #007bff;
+    color: var(--link-color);
     font-size: 0.95rem;
     font-style: italic;
 }

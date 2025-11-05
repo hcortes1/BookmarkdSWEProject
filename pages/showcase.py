@@ -49,7 +49,6 @@ def layout():
     ])
 
 
-# Handle login state 
 @dash.callback(
     Output('showcase-content', 'children'),
     Input('showcase-session-check', 'data'),
@@ -57,14 +56,9 @@ def layout():
 )
 def update_showcase_content(dummy, user_session):
     is_logged_in = user_session.get('logged_in', False) if user_session else False
-
-    if is_logged_in:
-        return showcase_layout()
-    else:
-        return welcome_layout()
+    return showcase_layout() if is_logged_in else welcome_layout()
 
 
-# display showcase books
 @dash.callback(
     Output('showcase-books-container', 'children'),
     Input('user-session', 'data')
@@ -87,30 +81,28 @@ def update_showcase_books(user_session):
                 html.P("Check back soon for new featured titles!",
                        className="empty-message-sub")
             ], className="showcase-empty-state")
-        ], className="showcase-books-grid")
+        ], className="showcase-books-container")
 
     # Display books
     return html.Div([
         html.Div([
-            html.Div([
-                dcc.Link([
-                    html.Div("Sponsored", className="showcase-badge"),
-                    html.Img(
-                        src=book.get('cover_url', '/assets/svg/default-book.svg'),
-                        className='showcase-book-cover'
-                    ),
-                    html.H4(book.get('title', 'Unknown Title'),
-                            className='showcase-book-title'),
-                    html.P(f"by {book.get('author_name', 'Unknown Author')}",
-                           className='showcase-book-author'),
-                    html.Span(f"Sponsored by {book.get('sponsor_name', 'Unknown')}",
-                              className='showcase-book-sponsor'),
-                    html.Span(f"{book.get('start_date', '')} → {book.get('end_date', 'Ongoing')}",
-                              className='showcase-book-dates')
-                ],
-                    href=f"/book/{book.get('book_id')}",
-                    style={'textDecoration': 'none', 'color': 'inherit'})
-            ], className='showcase-book-card')
-            for book in books
-        ], className='showcase-books-grid')
-    ])
+            dcc.Link([
+                html.Div("Sponsored", className="showcase-badge"),
+                html.Img(
+                    src=book.get('cover_url', '/assets/svg/default-book.svg'),
+                    className='showcase-book-cover'
+                ),
+                html.H4(book.get('title', 'Unknown Title'),
+                        className='showcase-book-title'),
+                html.P(f"by {book.get('author_name', 'Unknown Author')}",
+                       className='showcase-book-author'),
+                html.Span(f"Sponsored by {book.get('sponsor_name', 'Unknown')}",
+                          className='showcase-book-sponsor'),
+                html.Span(f"{book.get('start_date', '')} → {book.get('end_date', 'Ongoing')}",
+                          className='showcase-book-dates')
+            ],
+                href=f"/book/{book.get('book_id')}",
+                style={'textDecoration': 'none', 'color': 'inherit'})
+        ], className='showcase-book-card')
+        for book in books
+    ], className='showcase-books-grid')
