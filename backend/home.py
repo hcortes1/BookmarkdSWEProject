@@ -2,12 +2,10 @@ import psycopg2.extras
 from datetime import datetime, timezone
 from backend.db import get_conn
 from datetime import datetime, timezone
+from backend.gemini_helper import get_book_recommendation_chat
+import difflib
 
 def format_timestamp(dt):
-    """
-    - If < 24 hours: 'x hours/minutes ago'
-    - Else: formatted date (e.g. 'Nov 3, 2025')
-    """
     if not dt:
         return ""
 
@@ -30,11 +28,6 @@ def format_timestamp(dt):
         return f"{int(seconds // 3600)}h ago"
 
 def get_friend_activity(user_id, limit=10):
-    """
-    Return recent bookshelf activity for a user's friends.
-    Includes actions such as marking a book as completed,
-    currently reading, or planning to read.
-    """
     sql = """
         SELECT 
             u.username,
@@ -81,10 +74,6 @@ def get_friend_activity(user_id, limit=10):
 
 
 def get_recent_reviews(limit=10):
-    """
-    Return the most recent user reviews site-wide,
-    including whether it's just a rating or a full review.
-    """
     sql = """
         SELECT 
             r.review_id,
@@ -119,14 +108,7 @@ def get_recent_reviews(limit=10):
 
     return records
 
-#  AI Recommendations Helper
-from backend.gemini_helper import get_book_recommendation_chat
-
-def get_ai_recommendations(user_genres, limit=12):
-    """
-    Generate AI-powered book recommendations based on user's favorite genres.
-    Cross-references with your books table to fetch covers and IDs.
-    """
+def get_ai_recommendations(user_genres, limit=10):
     if not user_genres:
         return []
 
@@ -138,10 +120,9 @@ def get_ai_recommendations(user_genres, limit=12):
     )
 
     success, response_text = get_book_recommendation_chat(prompt, user_genres, [])
-    if not success:
+    if not success or not response_text:
         return []
 
-    # Parse Gemini’s response
     recs = []
     for line in response_text.split("\n"):
         if " by " in line:
@@ -150,34 +131,47 @@ def get_ai_recommendations(user_genres, limit=12):
         if len(recs) >= limit:
             break
 
-    # --- Cross-reference with database ---
-    matched = []
-    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        for r in recs:
-            cur.execute("""
-                SELECT book_id, title, cover_url, a.name AS author_name
-                FROM public.books b
-                LEFT JOIN public.authors a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) ILIKE LOWER(%s)
-                ORDER BY LENGTH(b.title) ASC
-                LIMIT 1;
-            """, (f"%{r['title'].strip('*\"')}%",))
-            db_book = cur.fetchone()
+    if not recs:
+        return []
 
-            if db_book:
-                matched.append({
-                    "book_id": db_book["book_id"],
-                    "title": db_book["title"],
-                    "author": db_book["author_name"] or r["author"],
-                    "cover_url": db_book["cover_url"]
-                })
-            else:
-                # Fallback: AI-only result
-                matched.append({
-                    "book_id": None,
-                    "title": r["title"],
-                    "author": r["author"],
-                    "cover_url": None
-                })
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT 
+                b.book_id, 
+                b.title, 
+                COALESCE(b.cover_url, '/assets/svg/default-book.svg') AS cover_url,
+                COALESCE(a.name, '') AS author_name
+            FROM public.books b
+            LEFT JOIN public.authors a ON b.author_id = a.author_id;
+        """)
+        all_books = cur.fetchall()
+
+    if not all_books:
+        return []
+
+    all_titles = [b["title"].lower() for b in all_books]
+
+    matched = []
+    for r in recs:
+        title_lower = r["title"].lower()
+
+        best_match = difflib.get_close_matches(title_lower, all_titles, n=1, cutoff=0.55)
+
+        if best_match:
+            match_title = best_match[0]
+            db_book = next(b for b in all_books if b["title"].lower() == match_title)
+            matched.append({
+                "book_id": db_book["book_id"],
+                "title": db_book["title"],
+                "author": db_book["author_name"] or r["author"],
+                "cover_url": db_book["cover_url"] or "/assets/svg/default-book.svg"
+            })
+        else:
+            matched.append({
+                "book_id": None,
+                "title": r["title"],
+                "author": r["author"],
+                "cover_url": "/assets/svg/default-book.svg"
+            })
 
     return matched
