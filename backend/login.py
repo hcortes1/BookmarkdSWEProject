@@ -4,6 +4,7 @@ import psycopg2
 import json
 from dotenv import load_dotenv
 from psycopg2 import Error
+from backend.moderation import moderate_review  
 
 # load environment variables from .env file
 load_dotenv()
@@ -43,6 +44,13 @@ def signup_user(username, email, password):
         return False, "Database connection failed"
 
     cursor = connection.cursor()
+
+    # Moderate Username
+    is_approved, reason, layer = moderate_review(username)
+    if not is_approved:
+        cursor.close()
+        connection.close()
+        return False, "Username contains inappropriate content. Please choose another."
 
     # if username already exists
     cursor.execute(

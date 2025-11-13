@@ -9,15 +9,18 @@ load_dotenv()
 # Layer 1: Banned words list
 BANNED_WORDS = [
     # Profanity
-    'fuck', 'shit', 'bitch', 'ass', 'damn', 'hell',
+    'fuck', 'shit', 'bitch', 'ass', 'damn', 'hell', 'crap', 'piss',
     'bastard', 'cock', 'dick', 'pussy', 'cunt', 'whore', 'slut',
+    
     # Racial slurs (partial list - add more as needed)
-    'nigger', 'nigga', 'chink', 'spic', 'kike', 'wetback', 'gook', 'beaner',
+    'nigger', 'nigga', 'chink', 'spic', 'kike', 'wetback', 'gook',
+    'towelhead', 'raghead', 'beaner',
+    
     # Homophobic slurs
     'faggot', 'fag', 'dyke', 'tranny',
+    
     # Other offensive terms
     'retard', 'retarded', 'rape', 'nazi'
-    # NEED TO ADD MORE WORDS!!!!
 ]
 
 # Allowlist - legitimate words that might get caught
@@ -55,7 +58,7 @@ def normalize_text(text):
     return re.sub(r'\s+', ' ', text.lower().strip())
 
 
-def check_allowlist(text):
+def check_allowList(text):
     """Check if text contains allowlisted phrases"""
     normalized = normalize_text(text)
     for allowed_phrase in ALLOWLIST:
@@ -89,7 +92,7 @@ def simple_text_filter(text):
     flagged_words = []
     
     # Check allowlist first
-    if check_allowlist(text):
+    if check_allowList(text):
         return True, []
     
     # Check for obfuscation patterns
@@ -125,6 +128,7 @@ REJECT if the text contains:
 - Spam patterns (repeated characters, promotional links, unrelated content)
 - Threats or harassment
 - Content completely unrelated to books
+- Self harm or declarations of harming others 
 
 APPROVE if:
 - It's a genuine book review or comment
@@ -169,7 +173,7 @@ OR
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {e}")
         print(f"Response was: {response_text}")
-        # If can't parse, be safe and approve (avoid false positives)
+        # If we can't parse, be safe and approve (avoid false positives)
         return True, ""
     except Exception as e:
         print(f"AI moderation error: {e}")
@@ -188,14 +192,14 @@ def moderate_review(text):
     if not text or not text.strip():
         return True, "", "none"
     
-    # Layer 1: Simple text filter 
+    # Layer 1: Simple text filter (fast)
     is_clean, flagged_words = simple_text_filter(text)
     
     if not is_clean:
-        reason = f"Your review contains inappropriate language: {', '.join(flagged_words)}"
+        reason = "Your review contains inappropriate language. Please revise and try again."
         return False, reason, "simple"
     
-    # Layer 2: AI moderation
+    # Layer 2: AI moderation (slower, but smart)
     is_approved, ai_reason = ai_content_moderation(text)
     
     if not is_approved:
