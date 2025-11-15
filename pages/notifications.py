@@ -242,8 +242,14 @@ def update_notifications_display(notifications_data, user_session):
     notifications = notifications_data.get('notifications', [])
 
     # Sort notifications by created_at in descending order (newest first)
-    notifications = sorted(notifications, key=lambda x: x.get(
-        'created_at', ''), reverse=True)
+    # Put email verification notification first (it has None created_at), then sort others
+    def sort_key(x):
+        created_at = x.get('created_at')
+        if created_at is None:
+            return 'zzzzzzzzz'  # put at top (reverse=True makes this first)
+        return created_at if created_at else ''
+
+    notifications = sorted(notifications, key=sort_key, reverse=True)
 
     # Update header count
     count_display = f"{count} notification{'s' if count != 1 else ''}"
@@ -272,24 +278,30 @@ def update_notifications_display(notifications_data, user_session):
                 ], className='notification-avatar'),
 
                 html.Div([
+                    # Row 1: Title
+                    html.Strong(
+                        'Verify Your Email',
+                        className='notification-title text-link',
+                        style={'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Body text and button
                     html.Div([
-                        html.Div([
-                            html.Strong(
-                                'Verify Your Email', className='notification-username', style={'color': 'var(--link-color)'}),
-                            html.Span(' Please verify your email address to secure your account', className='notification-message', style={
-                                      'margin-left': '6px', 'color': 'var(--text-color)'})
-                        ], style={'display': 'flex', 'align-items': 'center'}),
-                    ], className='notification-content'),
-
-                    html.Div([
-                        html.Button(
-                            'Resend Email',
-                            id={'type': 'resend-verification',
-                                'notification_id': notification['id']},
-                            className='btn-accept-notification'
+                        html.Div(
+                            'Please verify your email address to secure your account',
+                            className='notification-message text-primary',
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                    ], className='notification-actions')
-                ], className='notification-main-content')
+                        html.Div([
+                            html.Button(
+                                'Resend Email',
+                                id={'type': 'resend-verification',
+                                    'notification_id': notification['id']},
+                                className='btn-accept-notification btn-email-verify'
+                            ),
+                        ], className='notification-actions')
+                    ], className='notification-row', style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
@@ -322,36 +334,38 @@ def update_notifications_display(notifications_data, user_session):
                 ),
 
                 html.Div([
+                    # Row 1: Title
+                    dcc.Link(
+                        html.Strong(f"{sender_username} sent you a friend request",
+                                    className='notification-title text-link'),
+                        href=profile_href,
+                        style={'text-decoration': 'none',
+                               'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Timestamp and buttons
                     html.Div([
-                        html.Div([
-                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
-                                     href=profile_href, style={'text-decoration': 'none'}),
-                            html.Span(' sent you a friend request', className='notification-message text-primary', style={
-                                      'margin-left': '6px'})
-                        ], style={'display': 'flex', 'align-items': 'center'}),
-
                         html.Div(
                             get_relative_time(notification.get('created_at')),
                             className='notification-time text-secondary',
-                            style={'font-size': '12px', 'margin-top': '4px'}
-                        )
-                    ], className='notification-content'),
-
-                    html.Div([
-                        html.Button(
-                            'Accept',
-                            id={'type': 'accept-notification',
-                                'notification_id': notification['id']},
-                            className='btn-accept-notification'
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                        html.Button(
-                            'Decline',
-                            id={'type': 'decline-notification',
-                                'notification_id': notification['id']},
-                            className='btn-decline-notification'
-                        ),
-                    ], className='notification-actions')
-                ], className='notification-main-content')
+                        html.Div([
+                            html.Button(
+                                'Accept',
+                                id={'type': 'accept-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-accept-notification'
+                            ),
+                            html.Button(
+                                'Decline',
+                                id={'type': 'decline-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-decline-notification'
+                            ),
+                        ], className='notification-actions')
+                    ], style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
@@ -366,6 +380,15 @@ def update_notifications_display(notifications_data, user_session):
             book_href = f"/book/{notification.get('book_id')}"
 
             item = html.Div([
+                # Dismiss button in top-right corner
+                html.Button(
+                    '✕',
+                    id={'type': 'dismiss-notification',
+                        'notification_id': notification['id']},
+                    className='btn-dismiss-small text-muted',
+                    title='Dismiss notification'
+                ),
+
                 dcc.Link(
                     html.Div([
                         html.Img(
@@ -385,49 +408,48 @@ def update_notifications_display(notifications_data, user_session):
                 ),
 
                 html.Div([
+                    # Row 1: Title
+                    dcc.Link(
+                        html.Strong(notification.get('book_title', 'a book'),
+                                    className='notification-title text-link'),
+                        href=book_href,
+                        style={'text-decoration': 'none',
+                               'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Details (sender and reason)
                     html.Div([
                         html.Div([
-                            dcc.Link(html.Strong(notification.get('book_title', 'a book'), className='notification-book-title text-link'),
-                                     href=book_href, style={'text-decoration': 'none'}),
-                            html.Span(' was recommended to you by ', className='notification-message text-primary', style={
-                                      'margin-left': '4px'}),
-                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
-                                     href=profile_href, style={'text-decoration': 'none', 'margin-left': '4px'})
-                        ], style={'display': 'flex', 'align-items': 'center', 'flex-wrap': 'wrap'}),
-
+                            html.Span('Recommended by ',
+                                      className='text-primary'),
+                            dcc.Link(html.Strong(sender_username, className='text-link'),
+                                     href=profile_href, style={'text-decoration': 'none'})
+                        ], style={'margin-bottom': '4px'}),
                         # Show reason if provided
                         html.Div(
-                            f"They said: {notification.get('reason', 'You might like this book!')}",
+                            f"\"{notification.get('reason', 'You might like this book!')}\"",
                             className='notification-reason text-secondary',
-                            style={'font-size': '14px',
-                                   'margin-top': '6px', 'font-style': 'italic'}
+                            style={'font-style': 'italic',
+                                   'margin-bottom': '8px'}
                         ) if notification.get('reason') else html.Div(),
-
+                    ]),
+                    # Row 3: Timestamp and button
+                    html.Div([
                         html.Div(
                             get_relative_time(notification.get('created_at')),
                             className='notification-time text-secondary',
-                            style={'font-size': '12px', 'margin-top': '4px'}
-                        )
-                    ], className='notification-content'),
-
-                    html.Div([
-                        # Single action button for book recommendations - opens bookshelf modal
-                        html.Button(
-                            'Add to Bookshelf',
-                            id={'type': 'add-to-bookshelf-notification',
-                                'notification_id': notification['id']},
-                            className='btn-add-to-bookshelf'
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                        # Small dismiss button
-                        html.Button(
-                            '✕',
-                            id={'type': 'dismiss-notification',
-                                'notification_id': notification['id']},
-                            className='btn-dismiss-small text-muted',
-                            title='Dismiss notification'
-                        )
-                    ], className='notification-actions')
-                ], className='notification-main-content')
+                        html.Div([
+                            html.Button(
+                                'Add to Bookshelf',
+                                id={'type': 'add-to-bookshelf-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-add-to-bookshelf'
+                            )
+                        ], className='notification-actions')
+                    ], style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',

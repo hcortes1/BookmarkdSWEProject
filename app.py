@@ -789,15 +789,32 @@ def apply_display_mode(session_data):
     return ''
 
 
-# Clientside callback to apply dark mode class to body
+# Clientside callback to apply dark mode class to body with system preference detection
 app.clientside_callback(
     """
     function(session_data) {
         const body = document.body;
-        if (session_data && session_data.logged_in && session_data.display_mode === 'dark') {
-            body.classList.add('dark-mode');
+        
+        // Check if user is logged in
+        if (session_data && session_data.logged_in) {
+            // Use user's saved preference
+            if (session_data.display_mode === 'dark') {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+            }
         } else {
-            body.classList.remove('dark-mode');
+            // User not logged in - check system preference
+            // Default to dark mode if system preference cannot be determined
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            
+            if (prefersLight) {
+                body.classList.remove('dark-mode');
+            } else {
+                // Default to dark mode (either system prefers dark or no preference detected)
+                body.classList.add('dark-mode');
+            }
         }
         return '';
     }
