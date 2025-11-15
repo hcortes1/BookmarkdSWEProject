@@ -266,7 +266,7 @@ def load_ai_recommendations(user_session):
         return html.P("Add some favorite genres in your profile to receive recommendations.",
                       className="home-empty-message")
 
-    recs = home_backend.get_ai_recommendations(user_genres, limit=10)
+    recs = home_backend.get_ai_recommendations(user_genres, user_id=user_session.get("user_id"), limit=10)
     if not recs:
         return html.P("No recommendations available right now.",
                       className="home-empty-message")

@@ -108,30 +108,50 @@ def get_recent_reviews(limit=10):
 
     return records
 
-def get_ai_recommendations(user_genres, limit=10):
+def get_ai_recommendations(user_genres, user_id=None, limit=10):
     if not user_genres:
         return []
 
+    completed_ids = set()
+    reading_ids = set()
+
+    if user_id:
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT book_id, LOWER(shelf_type) AS shelf_type
+                FROM public.bookshelf
+                WHERE user_id = %s;
+            """, (user_id,))
+            rows = cur.fetchall()
+
+        for book_id, shelf in rows:
+            if shelf == "completed":
+                completed_ids.add(book_id)
+            if shelf in ("reading", "currently reading"):
+                reading_ids.add(book_id)
+
+    ai_request_count = limit * 3
+
     prompt = (
-        f"Recommend {limit} popular and well-reviewed books across these genres: {', '.join(user_genres)}.\n"
-        "Output strictly as plain text, no markdown or bullet points. Each line should be in the format:\n"
-        "Title by Author\n\n"
-        "Do not include quotes, asterisks, numbering, or any special characters — only the raw title and author."
+        f"Recommend {ai_request_count} popular and well-reviewed books across these genres: "
+        f"{', '.join(user_genres)}.\n"
+        "Output strictly as plain text, no markdown. Each line must be:\n"
+        "Title by Author"
     )
 
     success, response_text = get_book_recommendation_chat(prompt, user_genres, [])
     if not success or not response_text:
         return []
 
-    recs = []
+    raw_recs = []
     for line in response_text.split("\n"):
         if " by " in line:
             title, author = line.split(" by ", 1)
-            recs.append({"title": title.strip(), "author": author.strip()})
-        if len(recs) >= limit:
+            raw_recs.append({"title": title.strip(), "author": author.strip()})
+        if len(raw_recs) >= ai_request_count:
             break
 
-    if not recs:
+    if not raw_recs:
         return []
 
     with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -139,6 +159,7 @@ def get_ai_recommendations(user_genres, limit=10):
             SELECT 
                 b.book_id, 
                 b.title, 
+                LOWER(b.title) AS title_lower,
                 COALESCE(b.cover_url, '/assets/svg/default-book.svg') AS cover_url,
                 COALESCE(a.name, '') AS author_name
             FROM public.books b
@@ -146,25 +167,31 @@ def get_ai_recommendations(user_genres, limit=10):
         """)
         all_books = cur.fetchall()
 
-    if not all_books:
-        return []
-
     all_titles = [b["title"].lower() for b in all_books]
 
     matched = []
-    for r in recs:
-        title_lower = r["title"].lower()
+    used_ids = set()
 
+    for r in raw_recs:
+        title_lower = r["title"].lower()
         best_match = difflib.get_close_matches(title_lower, all_titles, n=1, cutoff=0.55)
 
         if best_match:
             match_title = best_match[0]
             db_book = next(b for b in all_books if b["title"].lower() == match_title)
+
+            if db_book["book_id"] in completed_ids or db_book["book_id"] in reading_ids:
+                continue
+
+            if db_book["book_id"] in used_ids:
+                continue
+
+            used_ids.add(db_book["book_id"])
             matched.append({
                 "book_id": db_book["book_id"],
                 "title": db_book["title"],
                 "author": db_book["author_name"] or r["author"],
-                "cover_url": db_book["cover_url"] or "/assets/svg/default-book.svg"
+                "cover_url": db_book["cover_url"]
             })
         else:
             matched.append({
@@ -174,4 +201,23 @@ def get_ai_recommendations(user_genres, limit=10):
                 "cover_url": "/assets/svg/default-book.svg"
             })
 
-    return matched
+        if len(matched) >= limit:
+            break
+
+    if len(matched) < limit:
+        available_books = [
+            b for b in all_books
+            if b["book_id"] not in completed_ids
+            and b["book_id"] not in reading_ids
+            and b["book_id"] not in used_ids
+        ]
+
+        for b in available_books[: limit - len(matched)]:
+            matched.append({
+                "book_id": b["book_id"],
+                "title": b["title"],
+                "author": b["author_name"],
+                "cover_url": b["cover_url"]
+            })
+
+    return matched[:limit]
