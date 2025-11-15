@@ -4,14 +4,24 @@ import backend.friends as friends_backend
 import backend.recommendations as recommendations_backend
 
 
-def get_user_notifications(user_id: str) -> Dict[str, Any]:
+def get_user_notifications(user_id: str, email_verified: bool = True) -> Dict[str, Any]:
     """
     Get all notifications for a user.
-    Currently includes pending friend requests and book recommendations.
+    Currently includes pending friend requests, book recommendations, and email verification.
     Returns a dict with notification count and details.
     """
     try:
         notifications = []
+
+        # add email verification notification if not verified (always at top, cannot be dismissed)
+        if not email_verified:
+            notifications.append({
+                'type': 'email_verification',
+                'id': 'email_verification',
+                'message': 'Please verify your email address to secure your account',
+                'created_at': None,
+                'dismissible': False  # cannot be dismissed
+            })
 
         # Get pending friend requests
         pending_requests = friends_backend.get_pending_friend_requests(user_id)
@@ -102,6 +112,46 @@ def respond_to_book_recommendation_notification(user_id: str, notification_id: s
                 return {'success': False, 'message': result.get('message', 'Failed to dismiss recommendation')}
         else:
             return {'success': False, 'message': 'Only dismiss action is supported for book recommendations'}
+
+    except Exception as e:
+        return {'success': False, 'message': f'Error: {str(e)}'}
+
+
+def resend_verification_email(user_id: int) -> Dict[str, Any]:
+    """Resend verification email to user"""
+    try:
+        import backend.email_utils as email_utils
+        from backend.db import get_conn
+        import psycopg2.extras
+
+        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # get user info
+            cur.execute(
+                "SELECT email, username, email_verified FROM users WHERE user_id = %s", (user_id,))
+            user = cur.fetchone()
+
+            if not user:
+                return {'success': False, 'message': 'User not found'}
+
+            if user['email_verified']:
+                return {'success': False, 'message': 'Email already verified'}
+
+            # generate new token
+            token = email_utils.generate_token()
+            success, message = email_utils.store_verification_token(
+                user_id, token)
+
+            if not success:
+                return {'success': False, 'message': 'Error generating token'}
+
+            # send email
+            success, message = email_utils.send_verification_email(
+                user['email'], user['username'], token)
+
+            if success:
+                return {'success': True, 'message': 'Verification email sent'}
+            else:
+                return {'success': False, 'message': message}
 
     except Exception as e:
         return {'success': False, 'message': f'Error: {str(e)}'}
