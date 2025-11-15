@@ -242,8 +242,14 @@ def update_notifications_display(notifications_data, user_session):
     notifications = notifications_data.get('notifications', [])
 
     # Sort notifications by created_at in descending order (newest first)
-    notifications = sorted(notifications, key=lambda x: x.get(
-        'created_at', ''), reverse=True)
+    # Put email verification notification first (it has None created_at), then sort others
+    def sort_key(x):
+        created_at = x.get('created_at')
+        if created_at is None:
+            return 'zzzzzzzzz'  # put at top (reverse=True makes this first)
+        return created_at if created_at else ''
+    
+    notifications = sorted(notifications, key=sort_key, reverse=True)
 
     # Update header count
     count_display = f"{count} notification{'s' if count != 1 else ''}"
