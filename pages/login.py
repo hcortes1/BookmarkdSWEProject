@@ -14,6 +14,12 @@ def login_form():
         html.Label("Password", htmlFor="password", className="login-label"),
         dcc.Input(type="password", id="password",
                   className="login-input", placeholder="Enter your password"),
+        html.Div(
+            dcc.Link("Forgot password?", href='/reset-password',
+                     style={'fontSize': '12px', 'color': '#666'}),
+            style={'textAlign': 'right',
+                   'marginTop': '5px', 'marginBottom': '10px'}
+        ),
         html.Button("Log in", id="login-button", className="login-button"),
         html.Div(dcc.Link("Sign up", href='/login?mode=signup',
                  className="signup-link"), style={"marginTop": "10px"})
@@ -141,14 +147,16 @@ def handle_login(n_clicks, username, password):
             "created_at": user_data["created_at"],
             "first_login": user_data["first_login"],
             "favorite_genres": user_data["favorite_genres"],
-            "display_mode": user_data.get("display_mode", "light")
+            "display_mode": user_data.get("display_mode", "light"),
+            "email_verified": user_data.get("email_verified", False)
         }
 
         # Fetch initial notifications immediately after login
         try:
             import backend.notifications as notifications_backend
             notifications_data = notifications_backend.get_user_notifications(
-                str(user_data["user_id"]))
+                str(user_data["user_id"]),
+                email_verified=user_data.get("email_verified", False))
             session_data["notifications"] = notifications_data
         except Exception as e:
             session_data["notifications"] = {"count": 0, "notifications": []}
@@ -179,6 +187,12 @@ def handle_login(n_clicks, username, password):
                        className="login-label"),
             dcc.Input(type="password", id="password", className="login-input",
                       placeholder="Enter your password", value=password),
+            html.Div(
+                dcc.Link("Forgot password?", href='/reset-password',
+                         style={'fontSize': '12px', 'color': '#666'}),
+                style={'textAlign': 'right',
+                       'marginTop': '5px', 'marginBottom': '10px'}
+            ),
             html.Button("Log in", id="login-button", className="login-button"),
             error_message,
             html.Div(dcc.Link("Sign up", href='/login?mode=signup',
