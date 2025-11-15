@@ -11,7 +11,7 @@ def create_book_recommendation(sender_id: int, receiver_id: int, book_id: int, r
     """
     try:
         if reason is not None and reason.strip():
-            is_approved, moderate_reason, layer = moderate_review(reason)
+            is_approved, moderate_reason, layer = moderate_review(reason, context="recommendation")
             if not is_approved:
                 return {"success": False, "message": "Recommendation contains inappropriate content."}
         with db.get_conn() as conn:

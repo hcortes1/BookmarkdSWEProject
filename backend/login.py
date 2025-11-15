@@ -47,7 +47,7 @@ def signup_user(username, email, password):
     cursor = connection.cursor()
 
     # Moderate Username
-    is_approved, reason, layer = moderate_review(username)
+    is_approved, reason, layer = moderate_review(username, context="username")
     if not is_approved:
         cursor.close()
         connection.close()

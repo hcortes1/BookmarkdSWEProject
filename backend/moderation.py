@@ -36,6 +36,9 @@ ALLOWLIST = [
     'compass',     # Contains 'ass'
     'bass',        # Musical instrument
     'grass',       # Plant
+    'bookmarkd',   # YOUR APP NAME! ← ADD THIS
+    'bookmark',    # Related
+    'pass'
 ]
 
 # Common obfuscation patterns
@@ -111,40 +114,81 @@ def simple_text_filter(text):
     return is_clean, flagged_words
 
 
-def ai_content_moderation(text):
+def ai_content_moderation(text, context="general"):
     """
-    Layer 2: AI moderation for spam patterns and hate speech.
+    Layer 2: AI moderation with context awareness.
+    
+    Args:
+        text: Text to moderate
+        context: "review", "profile", "username", "recommendation", "general"
     
     Returns:
         tuple: (is_approved: bool, reason: str)
     """
-    system_instruction = """
-You are a content moderator for a book review platform.
-
-Review the user's text and determine if it's appropriate.
-
-REJECT if the text contains:
-- Hate speech or discriminatory content (even if disguised or creative)
-- Spam patterns (repeated characters, promotional links, unrelated content)
+    
+    # Context-specific instructions
+    if context == "review":
+        content_description = "a book review"
+        reject_criteria = """
+- Hate speech or discriminatory content
+- Spam patterns (repeated characters, promotional links)
 - Threats or harassment
 - Content completely unrelated to books
-- Self harm or declarations of harming others 
+"""
+    elif context == "profile":
+        content_description = "a user profile bio"
+        reject_criteria = """
+- Hate speech or discriminatory content
+- Spam patterns (repeated characters, promotional links)
+- Threats or harassment
+- Explicit sexual content
+"""
+    elif context == "username":
+        content_description = "a username"
+        reject_criteria = """
+- Hate speech or discriminatory content
+- Impersonation attempts
+- Explicit sexual content
+"""
+    elif context == "recommendation":
+        content_description = "a book recommendation message"
+        reject_criteria = """
+- Hate speech or discriminatory content
+- Spam patterns (repeated characters, promotional links)
+- Threats or harassment
+"""
+    else:
+        content_description = "user-generated content"
+        reject_criteria = """
+- Hate speech or discriminatory content
+- Spam patterns
+- Threats or harassment
+"""
+    
+    system_instruction = f"""
+You are a content moderator for a book social platform.
+
+Review the user's text which is {content_description}.
+
+REJECT if the text contains:
+{reject_criteria}
 
 APPROVE if:
-- It's a genuine book review or comment
-- Contains constructive criticism
-- Discusses book themes, characters, plot
+- It's genuine user-generated content
+- It doesn't violate the above criteria
+- For profiles: any reasonable bio is acceptable
+- For usernames: any reasonable name is acceptable
 
 Respond ONLY in valid JSON format:
-{
+{{
   "approved": true,
   "reason": ""
-}
+}}
 OR
-{
+{{
   "approved": false,
   "reason": "Brief specific explanation"
-}
+}}
 """
 
     try:
@@ -153,11 +197,10 @@ OR
             system_instruction=system_instruction
         )
         
-        response = model.generate_content(f"Moderate this review text: {text}")
+        response = model.generate_content(f"Moderate this {content_description}: {text}")
         response_text = response.text.strip()
         
         # Try to parse JSON response
-        # Remove markdown code blocks if present
         if response_text.startswith('```'):
             response_text = response_text.split('```')[1]
             if response_text.startswith('json'):
@@ -173,37 +216,44 @@ OR
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {e}")
         print(f"Response was: {response_text}")
-        # If we can't parse, be safe and approve (avoid false positives)
         return True, ""
     except Exception as e:
         print(f"AI moderation error: {e}")
-        # If AI fails, fall back to approving (Layer 1 already checked)
         return True, ""
 
 
-def moderate_review(text):
+def moderate_review(text, context="general"):
     """
-    Two-layer moderation system.
+    Two-layer moderation system with context awareness.
+    
+    Args:
+        text: The text to moderate
+        context: "review", "profile", "username", "recommendation"
     
     Returns:
         tuple: (is_approved: bool, reason: str, layer: str)
-        - layer: "simple" or "ai" to indicate which layer flagged it
     """
     if not text or not text.strip():
         return True, "", "none"
     
-    # Layer 1: Simple text filter (fast)
+    print(f"DEBUG MODERATION: Checking text: '{text}' (context: {context})")
+    
+    # Layer 1: Simple text filter (fast) - same for all contexts
     is_clean, flagged_words = simple_text_filter(text)
     
+    print(f"DEBUG MODERATION: Layer 1 result - is_clean: {is_clean}, flagged_words: {flagged_words}")
+    
     if not is_clean:
-        reason = "Your review contains inappropriate language. Please revise and try again."
+        reason = "Your content contains inappropriate language. Please revise and try again."
         return False, reason, "simple"
     
-    # Layer 2: AI moderation (slower, but smart)
-    is_approved, ai_reason = ai_content_moderation(text)
+    # Layer 2: AI moderation - context-specific
+    is_approved, ai_reason = ai_content_moderation(text, context)
+    
+    print(f"DEBUG MODERATION: Layer 2 result - is_approved: {is_approved}, reason: '{ai_reason}'")
     
     if not is_approved:
         return False, ai_reason, "ai"
     
-    # Passed both layers
+    print(f"DEBUG MODERATION: PASSED both layers")
     return True, "", "none"
