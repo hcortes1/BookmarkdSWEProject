@@ -4,7 +4,7 @@ import json
 import psycopg2
 import psycopg2.extras
 from .db import get_conn
-
+from backend.moderation import moderate_review
 # ---- READ ----
 
 
@@ -30,6 +30,17 @@ def update_user_profile(user_id: str, display_name: str = None, bio: str = None)
     Update user profile information
     """
     try:
+        if display_name is not None:
+            is_approved, reason, layer = moderate_review(display_name)
+            if not is_approved:
+                return {"success": False, "message": "Display name contains inappropriate content"}
+            
+        if bio is not None:
+            is_approved, reason, layer = moderate_review(bio)
+            if not is_approved:
+                return {"success": False, "message": "Bio contains inappropriate content."}
+
+
         updates = []
         params = []
 

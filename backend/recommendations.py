@@ -3,13 +3,17 @@ from typing import List, Dict, Any
 import backend.db as db
 import psycopg2.extras
 from datetime import datetime, timezone
-
+from backend.moderation import moderate_review
 
 def create_book_recommendation(sender_id: int, receiver_id: int, book_id: int, reason: str) -> Dict[str, Any]:
     """
     Create a book recommendation from sender to receiver.
     """
     try:
+        if reason is not None and reason.strip():
+            is_approved, moderate_reason, layer = moderate_review(reason)
+            if not is_approved:
+                return {"success": False, "message": "Recommendation contains inappropriate content."}
         with db.get_conn() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 # Insert the recommendation

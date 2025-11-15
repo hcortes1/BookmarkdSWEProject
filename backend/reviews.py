@@ -3,11 +3,20 @@ import psycopg2.extras
 from backend.db import get_conn
 from psycopg2 import Error
 from datetime import datetime
+from backend.moderation import moderate_review
+
 
 
 def create_or_update_review(user_id, book_id, rating, review_text=None):
     """Create a new review or update existing review"""
     try:
+        # STEP 1: Moderate the review text (if provided)
+        if review_text and review_text.strip():
+            is_approved, reason, layer = moderate_review(review_text)
+            
+            if not is_approved:
+                return False, f"Review rejected: {reason}"
+            
         with get_conn() as conn:
             with conn.cursor() as cursor:
                 # Check if review already exists

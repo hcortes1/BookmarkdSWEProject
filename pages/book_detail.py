@@ -1261,7 +1261,8 @@ def populate_friends_list(is_visible, user_session, book_data):
             'book_id': dash.dependencies.MATCH}, 'value'),
      Output({'type': 'error-modal-visible',
             'book_id': dash.dependencies.MATCH}, 'data', allow_duplicate=True),
-     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True)],
+     Output({'type': 'error-modal-content', 'book_id': dash.dependencies.MATCH}, 'children', allow_duplicate=True),
+     Output({'type': 'recommend-modal-feedback', 'book_id': dash.dependencies.MATCH}, 'children')],  # Add this output
     [Input({'type': 'send-recommendations',
            'book_id': dash.dependencies.MATCH}, 'n_clicks')],
     [State({'type': 'friends-checklist', 'book_id': dash.dependencies.MATCH}, 'value'),
@@ -1272,14 +1273,14 @@ def populate_friends_list(is_visible, user_session, book_data):
 )
 def send_recommendations(send_clicks, selected_friend_ids, reason, user_session, book_data):
     if not send_clicks or not user_session or not user_session.get('logged_in'):
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Get selected friends
     selected_friends = [
         int(fid) for fid in selected_friend_ids] if selected_friend_ids else []
 
     if not selected_friends:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Please select at least one friend."
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, "", html.Div("Please select at least one friend.", style={'color': 'red'})
 
     book_id = book_data['book_id']
     sender_id = user_session['user_id']
@@ -1287,21 +1288,33 @@ def send_recommendations(send_clicks, selected_friend_ids, reason, user_session,
 
     # Send recommendations to selected friends
     success_count = 0
+    failed_message = None
+    
     for friend_id in selected_friends:
         result = create_book_recommendation(
             sender_id, friend_id, book_id, reason)
+        
         if result['success']:
             success_count += 1
             award_recommendation(sender_id)
+        else:
+            # Capture the failure message (likely moderation rejection)
+            failed_message = result.get('message', 'Failed to send recommendation')
+            break  # Stop trying if moderation fails
 
+    # If moderation failed, show error and keep modal open
+    if failed_message and success_count == 0:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, "", html.Div(failed_message, style={'color': 'red', 'marginTop': '10px'})
+
+    # If some or all succeeded
     if success_count == len(selected_friends):
         message = f"Book recommendation sent to {success_count} friend{'s' if success_count != 1 else ''}!"
-        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), "", False, ""
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'green'}), "", False, "", ""
     elif success_count > 0:
         message = f"Book recommendation sent to {success_count} out of {len(selected_friends)} friends."
-        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), "", False, ""
+        return {'display': 'none'}, False, html.Div(message, style={'color': 'orange'}), "", False, "", ""
     else:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, "Failed to send recommendations. Please try again."
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, "", html.Div("Failed to send recommendations. Please try again.", style={'color': 'red'})
 
 
 # Callback to control error modal visibility
