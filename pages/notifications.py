@@ -164,12 +164,30 @@ def refresh_notifications(n_intervals, user_session):
     if n_intervals == 0 and 'notifications' in user_session and user_session['notifications']:
         return user_session['notifications']
 
-    # Fetch fresh notifications
-    new_data = notifications_backend.get_user_notifications(str(user_id))
+    # check email_verified status from database (in case it was just verified)
+    email_verified = user_session.get('email_verified', False)
+
+    # if showing unverified notification, check database for updates
+    if not email_verified:
+        try:
+            from backend.db import get_conn
+            import psycopg2.extras
+            with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT email_verified FROM users WHERE user_id = %s", (int(user_id),))
+                result = cur.fetchone()
+                if result and result['email_verified']:
+                    email_verified = True
+        except Exception as e:
+            pass
+
+    # Fetch fresh notifications (pass email_verified status)
+    new_data = notifications_backend.get_user_notifications(
+        str(user_id), email_verified=email_verified)
     return new_data
 
 
-# Callback to update session with fresh notifications
+# Callback to update session with fresh notifications and email_verified status
 @callback(
     Output('user-session', 'data', allow_duplicate=True),
     [Input('notifications-data', 'data')],
@@ -182,6 +200,26 @@ def update_session_notifications(notifications_data, user_session):
 
     # Update session with latest notifications
     user_session['notifications'] = notifications_data
+
+    # check if email verification notification is gone (meaning email was verified)
+    if notifications_data and 'notifications' in notifications_data:
+        has_email_notif = any(n.get(
+            'type') == 'email_verification' for n in notifications_data['notifications'])
+        # if notification is gone but session still shows unverified, update session
+        if not has_email_notif and not user_session.get('email_verified', False):
+            try:
+                from backend.db import get_conn
+                import psycopg2.extras
+                user_id = user_session.get('user_id')
+                with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT email_verified FROM users WHERE user_id = %s", (int(user_id),))
+                    result = cur.fetchone()
+                    if result and result['email_verified']:
+                        user_session['email_verified'] = True
+            except Exception as e:
+                pass
+
     return user_session
 
 
@@ -216,7 +254,52 @@ def update_notifications_display(notifications_data, user_session):
     # Create notification items
     notification_items = []
     for notification in notifications:
-        if notification['type'] == 'friend_request':
+        if notification['type'] == 'email_verification':
+            # email verification notification (cannot be dismissed)
+            item = html.Div([
+                html.Div([
+                    html.Img(
+                        src='/assets/svg/email-icon.svg',
+                        style={
+                            'width': '50px',
+                            'height': '50px',
+                            'border-radius': '50%',
+                            'object-fit': 'cover',
+                            'padding': '10px',
+                            'background-color': 'var(--secondary-bg)'
+                        }
+                    )
+                ], className='notification-avatar'),
+
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Strong(
+                                'Verify Your Email', className='notification-username', style={'color': 'var(--link-color)'}),
+                            html.Span(' Please verify your email address to secure your account', className='notification-message', style={
+                                      'margin-left': '6px', 'color': 'var(--text-color)'})
+                        ], style={'display': 'flex', 'align-items': 'center'}),
+                    ], className='notification-content'),
+
+                    html.Div([
+                        html.Button(
+                            'Resend Email',
+                            id={'type': 'resend-verification',
+                                'notification_id': notification['id']},
+                            className='btn-accept-notification'
+                        ),
+                    ], className='notification-actions')
+                ], className='notification-main-content')
+            ], className='card notification-item', style={
+                'display': 'flex',
+                'align-items': 'flex-start',
+                'padding': '16px',
+                'border-left': '4px solid var(--link-color)'
+            })
+
+            notification_items.append(item)
+
+        elif notification['type'] == 'friend_request':
             sender_username = notification.get('sender_username') or ''
             profile_href = f"/profile/view/{sender_username}"
 
@@ -366,13 +449,15 @@ def update_notifications_display(notifications_data, user_session):
            'notification_id': dash.dependencies.ALL}, 'n_clicks'),
      Input({'type': 'dismiss-notification',
            'notification_id': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'add-to-bookshelf-notification', 'notification_id': dash.dependencies.ALL}, 'n_clicks')],
+     Input({'type': 'add-to-bookshelf-notification',
+           'notification_id': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'resend-verification', 'notification_id': dash.dependencies.ALL}, 'n_clicks')],
     [State('user-session', 'data'),
      State('notifications-refresh-interval', 'n_intervals'),
      State('notifications-data', 'data')],
     prevent_initial_call=True
 )
-def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, user_session, current_interval, notifications_data):
+def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, resend_clicks, user_session, current_interval, notifications_data):
     if not user_session or not user_session.get('logged_in', False):
         return dash.no_update, dash.no_update, dash.no_update
 
@@ -412,6 +497,13 @@ def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, 
                 notification_id=notification_id,
                 dismiss=True
             )
+        elif button_type == 'resend-verification':
+            # resend verification email
+            result = notifications_backend.resend_verification_email(
+                user_id=int(user_session['user_id'])
+            )
+            # refresh notifications after resend
+            return current_interval + 1, dash.no_update, dash.no_update
         elif button_type == 'add-to-bookshelf-notification':
             # Open bookshelf modal with book data
             if notifications_data and 'notifications' in notifications_data:
