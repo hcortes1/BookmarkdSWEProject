@@ -12,7 +12,7 @@ load_dotenv()
 # email configuration from environment
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-APP_URL = os.getenv("APP_URL", "http://127.0.0.1:8080")
+APP_URL = os.getenv("APP_URL", "https://bookmarkdd.com")
 
 
 def generate_token():
