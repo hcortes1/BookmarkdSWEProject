@@ -17,7 +17,7 @@ BANNED_WORDS = [
     'towelhead', 'raghead', 'beaner',
     
     # Homophobic slurs
-    'faggot', 'fag', 'dyke', 'tranny',
+    'faggot', 'fag', 'dyke', 'tranny',"troon","travesti"
     
     # Other offensive terms
     'retard', 'retarded', 'rape', 'nazi'
