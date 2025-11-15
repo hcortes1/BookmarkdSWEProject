@@ -141,6 +141,46 @@
     gap: 15px;
 }
 
+/* Slideshow container for horizontal scrolling */
+.favorites-slideshow {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--link-color) var(--secondary-bg);
+}
+
+.favorites-slideshow::-webkit-scrollbar {
+    height: 8px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-track {
+    background: var(--secondary-bg);
+    border-radius: 4px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 4px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-thumb:hover {
+    background: var(--link-hover);
+}
+
+/* Make favorites list horizontal in slideshow mode */
+.favorites-slideshow .favorites-list {
+    flex-wrap: nowrap;
+    gap: 15px;
+    padding-bottom: 10px;
+}
+
+/* Ensure empty message displays properly */
+.favorites-slideshow .favorites-empty-message {
+    padding: 20px;
+    min-width: 100%;
+}
+
 .favorite-item {
     display: flex;
     flex-direction: column;
@@ -151,6 +191,7 @@
     border: 1px solid var(--border-color);
     width: 120px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
 }
 
 .favorite-item:hover {
@@ -440,41 +481,59 @@
         order: 1; /* Put tabs below profile info */
     }
 
+    /* Reduce gap between books and authors sections on mobile */
+    .favorites-container {
+        gap: 5px; /* Minimal gap */
+    }
 
+    .favorites-card {
+        padding: 8px 12px; /* Minimal vertical padding */
+    }
 
+    .favorites-card-title {
+        font-size: 0.9rem !important; /* Smaller title */
+        margin-bottom: 5px; /* Minimal margin */
+        padding-bottom: 3px; /* Minimal padding */
+    }
 
+    /* Mobile adjustments for favorites - slideshow mode */
+    .favorites-slideshow {
+        margin: 0 -10px; /* Extend to edges on mobile */
+        padding: 0 10px; /* Add padding inside */
+    }
 
-    /* Mobile adjustments for favorites */
-    .favorites-list {
-        gap: 5px; /* Reduce gap between items */
-        justify-content: center; /* Center the cards */
+    .favorites-slideshow .favorites-list {
+        gap: 10px; /* Consistent gap between items */
+        justify-content: flex-start; /* Align left for scrolling */
+        flex-wrap: nowrap; /* Force horizontal layout */
     }
 
     .favorite-item {
-        width: 80px; /* Smaller card width */
-        padding: 5px; /* Reduce padding */
+        width: 100px; /* Slightly larger on mobile for better touch targets */
+        padding: 8px; /* Adequate padding */
+        flex-shrink: 0; /* Prevent shrinking in horizontal scroll */
     }
 
     .favorite-item-image {
-        width: 60px; /* Smaller image */
-        height: 80px; /* Maintain aspect ratio */
-        margin-bottom: 4px; /* Reduce margin */
+        width: 70px; /* Balanced size */
+        height: 90px; /* Maintain aspect ratio */
+        margin-bottom: 6px; /* Good spacing */
     }
 
     .favorite-author-image {
-        width: 60px; /* Smaller author image */
-        height: 60px; /* Square */
-        margin-bottom: 4px; /* Reduce margin */
+        width: 70px; /* Match book image width */
+        height: 70px; /* Square */
+        margin-bottom: 6px; /* Consistent spacing */
     }
 
     .favorite-item-title {
-        font-size: 0.75rem; /* Smaller title */
+        font-size: 0.8rem; /* Readable title */
         line-height: 1.2; /* Tighter line height */
     }
 
     .favorite-item-author {
-        font-size: 0.65rem; /* Smaller author text */
-        margin-top: 2px; /* Reduce margin */
+        font-size: 0.7rem; /* Smaller author text */
+        margin-top: 3px; /* Comfortable margin */
     }
 
     /* Mobile styles for completed books */

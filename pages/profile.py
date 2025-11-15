@@ -542,17 +542,23 @@ def update_profile_data(session_data, viewed_username, active_tab):
 
             # Create tab content based on active tab
             if active_tab == 'favorites':
-                # Create the favorites cards (books first, then authors)
+                # Create the favorites cards (books first, then authors) in slideshow format
                 tab_content = html.Div([
                     html.Div([
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
-                        books_card_content
+                        html.Div(
+                            books_card_content,
+                            className="favorites-slideshow"
+                        )
                     ], className="card favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
-                        authors_card_content
+                        html.Div(
+                            authors_card_content,
+                            className="favorites-slideshow"
+                        )
                     ], className="card favorites-card lighter-bg")
                 ], className="favorites-container")
             elif active_tab == 'reviews':
@@ -568,12 +574,18 @@ def update_profile_data(session_data, viewed_username, active_tab):
                     html.Div([
                         html.H3("Favorite Books",
                                 className="favorites-card-title"),
-                        books_card_content
+                        html.Div(
+                            books_card_content,
+                            className="favorites-slideshow"
+                        )
                     ], className="card favorites-card lighter-bg"),
                     html.Div([
                         html.H3("Favorite Authors",
                                 className="favorites-card-title"),
-                        authors_card_content
+                        html.Div(
+                            authors_card_content,
+                            className="favorites-slideshow"
+                        )
                     ], className="card favorites-card lighter-bg")
                 ], className="favorites-container")
 
