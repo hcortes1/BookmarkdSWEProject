@@ -303,15 +303,12 @@ def layout(username=None, **kwargs):
                 html.Div([
                     # Tab navigation
                     html.Div([
-                        html.Button("Favorites", id="favorites-tab", className="profile-tab active-tab",
-                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer', 'margin-right': '5px',
-                                           'border-radius': '5px 5px 0 0'}),
-                        html.Button("Reviews", id="reviews-tab", className="profile-tab text-muted bg-light",
-                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer', 'margin-right': '5px',
-                                           'border-radius': '5px 5px 0 0'}),
-                        html.Button("Completed", id="completed-tab", className="profile-tab text-muted bg-light",
-                                    style={'padding': '10px 20px', 'border': 'none', 'cursor': 'pointer',
-                                           'border-radius': '5px 5px 0 0'})
+                        html.Button("Favorites", id="favorites-tab",
+                                    className="profile-tab active-tab"),
+                        html.Button("Reviews", id="reviews-tab",
+                                    className="profile-tab"),
+                        html.Button("Completed", id="completed-tab",
+                                    className="profile-tab")
                     ], className="profile-tabs", style={'margin-bottom': '0', 'border-bottom': '2px solid var(--link-color)'}),
 
                     # Tab content container
@@ -760,16 +757,16 @@ def update_profile_data(session_data, viewed_username, active_tab):
 # Callback to handle tab switching
 @callback(
     [Output('active-tab-store', 'data'),
-     Output('favorites-tab', 'style'),
-     Output('reviews-tab', 'style'),
-     Output('completed-tab', 'style')],
+     Output('favorites-tab', 'className'),
+     Output('reviews-tab', 'className'),
+     Output('completed-tab', 'className')],
     [Input('favorites-tab', 'n_clicks'),
      Input('reviews-tab', 'n_clicks'),
      Input('completed-tab', 'n_clicks')],
     prevent_initial_call=True
 )
 def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
-    """Handle tab switching and update tab styles"""
+    """Handle tab switching and update tab classes"""
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -777,24 +774,12 @@ def handle_tab_switch(fav_clicks, reviews_clicks, completed_clicks):
     # Determine which tab was clicked
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    # Base styles for tabs
-    active_style = {
-        'padding': '10px 20px', 'border': 'none', 'background': 'var(--link-color)',
-        'color': 'var(--button-text-color)', 'cursor': 'pointer', 'margin-right': '5px',
-        'border-radius': '5px 5px 0 0'
-    }
-    inactive_style = {
-        'padding': '10px 20px', 'border': 'none', 'background': '#f8f9fa',
-        'color': '#6c757d', 'cursor': 'pointer', 'margin-right': '5px',
-        'border-radius': '5px 5px 0 0'
-    }
-
     if button_id == 'favorites-tab':
-        return 'favorites', active_style, inactive_style, inactive_style
+        return 'favorites', 'profile-tab active-tab', 'profile-tab', 'profile-tab'
     elif button_id == 'reviews-tab':
-        return 'reviews', inactive_style, active_style, inactive_style
+        return 'reviews', 'profile-tab', 'profile-tab active-tab', 'profile-tab'
     elif button_id == 'completed-tab':
-        return 'completed', inactive_style, inactive_style, active_style
+        return 'completed', 'profile-tab', 'profile-tab', 'profile-tab active-tab'
 
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
