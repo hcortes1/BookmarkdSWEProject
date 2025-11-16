@@ -1,6 +1,14 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.ai_recommendation_cache (
+  cache_id integer NOT NULL DEFAULT nextval('ai_recommendation_cache_cache_id_seq'::regclass),
+  user_id integer NOT NULL UNIQUE,
+  rec_data jsonb NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT ai_recommendation_cache_pkey PRIMARY KEY (cache_id),
+  CONSTRAINT ai_recommendation_cache_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
 CREATE TABLE public.authors (
   author_id integer NOT NULL DEFAULT nextval('authors_author_id_seq'::regclass),
   name character varying NOT NULL UNIQUE,
@@ -181,6 +189,11 @@ CREATE TABLE public.users (
   first_login boolean DEFAULT true,
   favorite_genres jsonb DEFAULT '[]'::jsonb,
   display_mode character varying,
+  email_verified boolean DEFAULT false,
+  verification_token character varying,
+  token_expires_at timestamp without time zone,
+  reset_password_token character varying,
+  reset_token_expires_at timestamp without time zone,
   CONSTRAINT users_pkey PRIMARY KEY (user_id)
 );
 CREATE TABLE public.wishlist (

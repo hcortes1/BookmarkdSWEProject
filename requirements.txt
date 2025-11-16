@@ -1,4 +1,5 @@
 dash
+dash-cytoscape
 python-dotenv 
 psycopg2-binary
 supabase
@@ -8,3 +9,4 @@ gunicorn
 gutenbergpy
 beautifulsoup4
 yagmail
+pytz
