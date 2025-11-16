@@ -304,7 +304,8 @@ def update_notifications_display(notifications_data, user_session):
                                 n_clicks=0,
                                 className='btn-accept-notification btn-email-verify'
                             ),
-                            html.Div(id='resend-email-feedback', className='resend-feedback', style={'marginTop': '5px'})
+                            html.Div(
+                                id='resend-email-feedback', className='resend-feedback', style={'marginTop': '5px'})
                         ], className='notification-actions', style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'flex-start', 'gap': '5px'})
                     ], className='notification-row', style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
                 ], className='notification-main-content', style={'flex': '1'})
@@ -811,23 +812,23 @@ def handle_resend_verification(n_clicks, user_session, last_resend_time, current
     """Handle resend verification email with rate limiting (60 seconds)"""
     if not n_clicks or n_clicks == 0:
         return dash.no_update, dash.no_update, dash.no_update
-    
+
     if not user_session or not user_session.get('logged_in', False):
         return {'success': False, 'message': 'Please log in'}, dash.no_update, dash.no_update
-    
+
     import time
     current_time = time.time()
-    
+
     # Check if 90 seconds have passed since last resend
     if last_resend_time and (current_time - last_resend_time) < 90:
         remaining = int(90 - (current_time - last_resend_time))
         return {'success': False, 'message': f'retry in {remaining}s'}, dash.no_update, dash.no_update
-    
+
     # Send the email
     result = notifications_backend.resend_verification_email(
         user_id=int(user_session['user_id'])
     )
-    
+
     if result.get('success'):
         return {'success': True, 'message': 'Verification email sent!'}, current_time, current_interval + 1
     else:
@@ -846,11 +847,11 @@ def update_resend_button_state(last_resend_time, n_intervals):
     """Update button disabled state and text based on rate limiting"""
     if not last_resend_time or last_resend_time == 0:
         return False, 'Resend Email'
-    
+
     import time
     current_time = time.time()
     time_since_last = current_time - last_resend_time
-    
+
     if time_since_last < 90:
         remaining = int(90 - time_since_last)
         return True, f'Resend Email'
@@ -873,7 +874,7 @@ def display_resend_feedback(feedback_data, last_resend_time, n_intervals):
         import time
         current_time = time.time()
         time_since_last = current_time - last_resend_time
-        
+
         if time_since_last < 90:
             remaining = int(90 - time_since_last)
             return html.Span(
@@ -884,11 +885,11 @@ def display_resend_feedback(feedback_data, last_resend_time, n_intervals):
                     'font-weight': '500'
                 }
             )
-    
+
     # Show feedback from store if no active countdown
     if not feedback_data:
         return ""
-    
+
     if feedback_data.get('success'):
         return html.Span(
             'Message sent: retry in 90s',
