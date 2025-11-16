@@ -366,6 +366,7 @@ def toggle_chat(open_click, close_click):
 @dash.callback(
     Output("home-chat-display", "children"),
     Output("home-chat-history", "data"),
+    Output("home-chat-input", "value"),
     Input("home-chat-send-btn", "n_clicks"),
     State("home-chat-input", "value"),
     State("home-chat-history", "data"),
@@ -375,17 +376,28 @@ def update_chat(n_clicks, user_input, history):
     if not user_input:
         raise dash.exceptions.PreventUpdate
 
-    user_bubble = html.Div(user_input, className="chat-bubble user-bubble")
     history.append({'role': 'user', 'content': user_input})
 
-    ai_response = get_book_recommendation_chat(user_input)
-    ai_bubble = html.Div(ai_response, className="chat-bubble ai-bubble")
-    history.append({'role': 'ai', 'content': ai_response})
+    success, ai_response = get_book_recommendation_chat(user_input)
+    if not success:
+        ai_response = "Sorry, I'm having trouble connecting right now. Please try again later."
+    
+    # split ai response by newlines to create multiple message bubbles
+    response_parts = [part.strip() for part in ai_response.split('\n\n') if part.strip()]
+    
+    # add each part as a separate message
+    for part in response_parts:
+        history.append({'role': 'ai', 'content': part})
 
-    chat_display = [
-        html.Div(
-            [html.Div(msg['content'], className=f"chat-bubble {'user-bubble' if msg['role']=='user' else 'ai-bubble'}")]
-        ) for msg in history
-    ]
+    chat_display = []
+    for msg in history:
+        if msg['role'] == 'user':
+            chat_display.append(
+                html.Div([html.Div(msg['content'], className="chat-bubble user-bubble")])
+            )
+        else:
+            chat_display.append(
+                html.Div([dcc.Markdown(msg['content'], className="chat-bubble ai-bubble")])
+            )
 
-    return chat_display, history
+    return chat_display, history, ""
