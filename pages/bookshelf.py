@@ -89,14 +89,15 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
         dcc.Link([
             html.Div([
                 html.Img(
-                    src=book.get('cover_url') or '/assets/svg/default-book.svg',
+                    src=book.get(
+                        'cover_url') or '/assets/svg/default-book.svg',
                     className='bookshelf-book-cover',
                     title=f"{book.get('title', 'Unknown')} by {book.get('author_name', 'Unknown')}"
                 )
             ], className='bookshelf-cover-wrapper'),
             html.Div([
                 html.H4(book.get('title', 'Unknown'), className='bookshelf-book-title',
-                       title=book.get('title', 'Unknown')),
+                        title=book.get('title', 'Unknown')),
                 html.P(book.get('author_name', 'Unknown'), className='bookshelf-book-author',
                        title=book.get('author_name', 'Unknown')),
                 html.P(rating_display, className='bookshelf-book-rating',
@@ -187,16 +188,18 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
 
     # Create shelf layout with underline like profile page
     book_cards = [
-        create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type, 
-                        user_id=user_id, show_status_buttons=active_tab != 'rented') 
+        create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
+                         user_id=user_id, show_status_buttons=active_tab != 'rented')
         for book in books
     ]
 
     return html.Div([
         html.Div([
             html.Div([
-                html.H3(current_tab_info['title'], className="bookshelf-shelf-title"),
-                html.Span(f"({len(books)} books)", className="bookshelf-book-count")
+                html.H3(current_tab_info['title'],
+                        className="bookshelf-shelf-title"),
+                html.Span(f"({len(books)} books)",
+                          className="bookshelf-book-count")
             ], className='bookshelf-shelf-header'),
             html.Div([
                 html.Div(book_cards, className='bookshelf-books-row')
