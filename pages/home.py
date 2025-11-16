@@ -188,69 +188,102 @@ def load_home_data(user_session):
     if not reviews:
         recent_reviews = html.P("No recent reviews found.", className="home-empty-message")
     else:
-        recent_reviews = [
-            html.Div([
-                html.Div([
+        recent_reviews = []
+        for r in reviews:
+
+            user_profile_link = f"/profile/view/{r['username']}"
+            user_link = dcc.Link(
+                [
                     html.Img(
                         src=r.get('profile_image_url', '/assets/svg/default-profile.svg'),
                         className="activity-avatar-small"
                     ),
-                    html.Strong(r['username'], className="activity-username"),
-                    html.Span(" reviewed " if r["is_review"] else " rated ",
-                              className="activity-action"),
-                    html.Em(r["book_title"]),
-                ], className="activity-header"),
+                    html.Strong(r["username"], className="activity-username"),
+                ],
+                href=user_profile_link,
+                style={'textDecoration': 'none', 'display': 'flex', 'alignItems': 'center'}
+            )
 
+            book_title_link = dcc.Link(
+                html.H4(r["book_title"], className="activity-book-title"),
+                href=f"/book/{r['book_id']}",
+                style={'textDecoration': 'none', 'color': 'var(--text-color)'}
+            )
+
+            recent_reviews.append(
                 html.Div([
-                    dcc.Link([
-                        html.Img(
-                            src=r.get('cover_url', '/assets/svg/default-book.svg'),
-                            className="activity-book-cover"
-                        )
-                    ], href=f"/book/{r['book_id']}", style={'textDecoration': 'none'}),
+                    html.Div([
+                        user_link,
+                        html.Span(" reviewed " if r["is_review"] else " rated ",
+                                className="activity-action"),
+                        book_title_link,
+                    ], className="activity-header"),
 
                     html.Div([
-                        html.Span(f"⭐ {r['rating']}/5", className="activity-rating"),
-                        html.P(r["snippet"],
-                               className="activity-snippet") if r["is_review"] else None,
-                        html.Span(r["display_time"], className="activity-timestamp")
-                    ], className="activity-book-info")
-                ], className="activity-card-content")
-            ], className="activity-card")
-            for r in reviews
-        ]
+                        dcc.Link([
+                            html.Img(
+                                src=r.get('cover_url', '/assets/svg/default-book.svg'),
+                                className="activity-book-cover"
+                            )
+                        ], href=f"/book/{r['book_id']}", style={'textDecoration': 'none'}),
+
+                        html.Div([
+                            html.Span(f"⭐ {r['rating']}/5", className="activity-rating"),
+                            html.P(r["snippet"], className="activity-snippet") if r["is_review"] else None,
+                            html.Span(r["display_time"], className="activity-timestamp")
+                        ], className="activity-book-info")
+                    ], className="activity-card-content")
+                ], className="activity-card")
+            )
 
     friends = home_backend.get_friend_activity(user_id)
     if not friends:
         friend_activity = html.P("No recent activity from your friends.", className="home-empty-message")
     else:
-        friend_activity = [
-            html.Div([
+        friend_activity = []
+        for f in friends:
+
+            friend_profile_link = f"/profile/view/{f['username']}"
+
+            friend_link = dcc.Link(
+                [
+                    html.Img(
+                        src=f.get('profile_image_url', '/assets/svg/default-profile.svg'),
+                        className="activity-avatar-small"
+                    ),
+                    html.Strong(f["username"], className="activity-username"),
+                ],
+                href=friend_profile_link,
+                style={'textDecoration': 'none', 'display': 'flex', 'alignItems': 'center'}
+            )
+
+            book_title_link = dcc.Link(
+                html.H4(f["book_title"], className="activity-book-title"),
+                href=f"/book/{f['book_id']}",
+                style={'textDecoration': 'none', 'color': 'var(--text-color)'}
+            )
+
+            friend_activity.append(
                 html.Div([
-                    dcc.Link([
-                        html.Img(
-                            src=f.get('cover_url', '/assets/svg/default-book.svg'),
-                            className="activity-book-cover"
-                        )
-                    ], href=f"/book/{f['book_id']}", style={'textDecoration': 'none'}),
                     html.Div([
-                        html.Div([
+                        dcc.Link([
                             html.Img(
-                                src=f.get('profile_image_url', '/assets/svg/default-profile.svg'),
-                                className="activity-avatar-small"
-                            ),
-                            html.Strong(f['username'], className="activity-username"),
-                        ], className="activity-user-info"),
-                        html.Span(f" {f['action']} ", className="activity-action"),
-                        html.H4(f["book_title"], className="activity-book-title"),
-                        html.Span(f["display_time"], className="activity-timestamp"),
-                    ], className="activity-book-info")
-                ], className="activity-card-content")
-            ], className="activity-card") for f in friends
-        ]
+                                src=f.get('cover_url', '/assets/svg/default-book.svg'),
+                                className="activity-book-cover"
+                            )
+                        ], href=f"/book/{f['book_id']}", style={'textDecoration': 'none'}),
+
+                        html.Div([
+                            html.Div([friend_link], className="activity-user-info"),
+                            html.Span(f" {f['action']} ", className="activity-action"),
+                            book_title_link,
+                            html.Span(f["display_time"], className="activity-timestamp"),
+                        ], className="activity-book-info")
+                    ], className="activity-card-content")
+                ], className="activity-card")
+            )
 
     return recent_reviews, friend_activity
-
 
 @dash.callback(
     Output("ai-recommendations-container", "children"),
