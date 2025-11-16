@@ -213,13 +213,6 @@ def load_home_data(user_session):
             recent_reviews.append(
                 html.Div([
                     html.Div([
-                        user_link,
-                        html.Span(" reviewed " if r["is_review"] else " rated ",
-                                className="activity-action"),
-                        book_title_link,
-                    ], className="activity-header"),
-
-                    html.Div([
                         dcc.Link([
                             html.Img(
                                 src=r.get('cover_url', '/assets/svg/default-book.svg'),
@@ -228,8 +221,14 @@ def load_home_data(user_session):
                         ], href=f"/book/{r['book_id']}", style={'textDecoration': 'none'}),
 
                         html.Div([
-                            html.Span(f"⭐ {r['rating']}/5", className="activity-rating"),
+                            html.Div([
+                                user_link,
+                                html.Span(" reviewed " if r["is_review"] else " rated ",
+                                        className="activity-action"),
+                                book_title_link,
+                            ], className="activity-header"),
                             html.P(r["snippet"], className="activity-snippet") if r["is_review"] else None,
+                            html.Span(f"{r.get('avg_rating', r['rating'])}/5 ({r.get('total_ratings', 1)})", className="activity-rating"),
                             html.Span(r["display_time"], className="activity-timestamp")
                         ], className="activity-book-info")
                     ], className="activity-card-content")
@@ -277,7 +276,7 @@ def load_home_data(user_session):
                             html.Div([friend_link], className="activity-user-info"),
                             html.Span(f" {f['action']} ", className="activity-action"),
                             book_title_link,
-                            html.Span(f["display_time"], className="activity-timestamp"),
+                            html.Span(f["display_time"], className="activity-timestamp")
                         ], className="activity-book-info")
                     ], className="activity-card-content")
                 ], className="activity-card")

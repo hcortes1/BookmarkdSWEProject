@@ -86,7 +86,9 @@ def get_recent_reviews(limit=10):
             u.username,
             COALESCE(u.profile_image_url, '/assets/svg/default-profile.svg') AS profile_image_url,
             b.title AS book_title,
-            b.cover_url
+            b.cover_url,
+            (SELECT COUNT(*) FROM public.reviews WHERE book_id = r.book_id) AS total_ratings,
+            (SELECT ROUND(AVG(rating)::numeric, 1) FROM public.reviews WHERE book_id = r.book_id) AS avg_rating
         FROM public.reviews r
         JOIN public.users u ON r.user_id = u.user_id
         JOIN public.books b ON r.book_id = b.book_id
