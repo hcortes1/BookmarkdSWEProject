@@ -9,36 +9,33 @@ from datetime import datetime, date
 dash.register_page(__name__, path='/profile/bookshelf')
 
 layout = html.Div([
+    html.H1("My Bookshelf", className="main-title bookshelf-main-title"),
+
+    # Tab navigation
     html.Div([
-        html.H1("My Bookshelf", className="main-title bookshelf-main-title"),
+        html.Button("Want to Read", id="bookshelf-want-to-read-tab",
+                    className="card bookshelf-tab active-tab"),
+        html.Button("Currently Reading",
+                    id="bookshelf-reading-tab", className="card bookshelf-tab"),
+        html.Button("Completed", id="bookshelf-completed-tab",
+                    className="card bookshelf-tab"),
+        html.Button("Rented", id="bookshelf-rented-tab",
+                    className="card bookshelf-tab")
+    ], className='bookshelf-tabs-container'),
 
-        # Tab navigation
-        html.Div([
-            html.Button("Want to Read", id="bookshelf-want-to-read-tab",
-                        className="card bookshelf-tab active-tab"),
-            html.Button("Currently Reading",
-                        id="bookshelf-reading-tab", className="card bookshelf-tab"),
-            html.Button("Completed", id="bookshelf-completed-tab",
-                        className="card bookshelf-tab"),
-            html.Button("Rented", id="bookshelf-rented-tab",
-                        className="card bookshelf-tab")
-        ], className='bookshelf-tabs-container'),
+    # Tab content
+    html.Div(id='bookshelf-tab-content', children=[
+        # This will be populated by callback based on active tab
+    ]),
 
-        # Tab content
-        html.Div(id='bookshelf-tab-content', children=[
-            # This will be populated by callback based on active tab
-        ]),
+    # Store for active tab
+    dcc.Store(id='bookshelf-active-tab', data='want-to-read'),
 
-        # Store for active tab
-        dcc.Store(id='bookshelf-active-tab', data='want-to-read'),
+    # Store for refresh trigger
+    dcc.Store(id='bookshelf-refresh-trigger', data=0),
 
-        # Store for refresh trigger
-        dcc.Store(id='bookshelf-refresh-trigger', data=0),
-
-        # Store for book to remove
-        dcc.Store(id='book-to-remove', data=None)
-
-    ], className="app-container bookshelf-app-container"),
+    # Store for book to remove
+    dcc.Store(id='book-to-remove', data=None),
 
     # Confirmation modal
     html.Div([
@@ -56,11 +53,11 @@ layout = html.Div([
             ], style={'text-align': 'right'})
         ], className='secondary-bg remove-modal-content')
     ], id='remove-confirmation-modal', style={'display': 'none'}, className='remove-confirmation-modal')
-])
+], className="app-container bookshelf-app-container")
 
 
 def create_book_card(book, show_status_buttons=True, reading_status=None, user_id=None):
-    """Create a book card component for grid bookshelf view"""
+    """Create a book card component for bookshelf view (horizontal shelf layout)"""
 
     # Check if the book is favorited
     is_favorited = False
@@ -70,127 +67,44 @@ def create_book_card(book, show_status_buttons=True, reading_status=None, user_i
         except:
             is_favorited = False
 
-    # Determine border styling based on favorite status
-    border_style = '3px solid var(--link-color)' if is_favorited else '1px solid var(--border-color)'
+    # Determine card class based on favorite status
+    card_class = 'bookshelf-book-card bookshelf-favorited' if is_favorited else 'bookshelf-book-card'
 
-    # Calculate days remaining and expiry date text for rented books
-    days_remaining_text = "Unknown"
-    expiry_date_text = "Unknown"
-    if reading_status == 'rented':
-        expiry_date = book.get('expiry_date')
-        if expiry_date:
-            if isinstance(expiry_date, str):
-                try:
-                    expiry_date = datetime.strptime(
-                        expiry_date[:10], '%Y-%m-%d').date()
-                except:
-                    expiry_date = None
-            elif hasattr(expiry_date, 'date'):
-                expiry_date = expiry_date.date()
-
-            if expiry_date:
-                days_remaining = (expiry_date - date.today()).days
-                if days_remaining > 0:
-                    days_remaining_text = f"{days_remaining} days"
-                elif days_remaining == 0:
-                    days_remaining_text = "Today"
-                else:
-                    days_remaining_text = "Expired"
-
-                expiry_date_text = expiry_date.strftime('%m/%d/%Y')
+    # Get rating for completed books
+    rating_display = None
+    if reading_status == 'finished':
+        rating = book.get('user_rating')
+        if rating:
+            rating_display = f"⭐ {rating}/5"
 
     return html.Div([
         # Remove button as subtle X in top-right corner
         html.Button("×",
                     id={'type': 'remove-book-btn', 'book_id': book['book_id']},
-                    className='bookshelf-remove-btn',
+                    className='bookshelf-remove-btn-shelf',
                     title="Remove from bookshelf"
                     ) if show_status_buttons else html.Div(),
 
         # Wrap entire card content in a link
         dcc.Link([
-            # Book cover - prominent display
             html.Div([
                 html.Img(
                     src=book.get(
                         'cover_url') or '/assets/svg/default-book.svg',
-                    className='book-cover'
+                    className='bookshelf-book-cover',
+                    title=f"{book.get('title', 'Unknown')} by {book.get('author_name', 'Unknown')}"
                 )
-            ], className='cover-wrapper'),
-
-            # Book info - compact and centered
+            ], className='bookshelf-cover-wrapper'),
             html.Div([
-                html.H4(book['title'], className='bookshelf-book-title'),
-                html.P(book.get('author_name', 'Unknown Author'),
-                       className='bookshelf-book-author'),
-                # Display different info based on reading status
-                html.Div([
-                    # For completed books: show rating if exists, plus date added
-                    html.Div([
-                        html.Div([
-                            html.Span(f"{book.get('user_rating', 0):.1f}/5.0",
-                                      className='book-rating rating-color') if book.get('user_rating') else
-                            html.Span("Not rated", className='not-rated')
-                        ], className='book-rating-block'),
-                        # Date added for completed books
-                        html.Div([
-                            html.Span("Added: ", className='added-label'),
-                            html.Span(
-                                book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
-                                else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
-                                else 'Unknown date',
-                                className='added-date'
-                            )
-                        ], className='added-info')
-                    ]) if reading_status == 'finished' else
-                    # For rented books: show days remaining and expiry date
-                    html.Div([
-                        html.Div([
-                            html.Span("Expires in: ",
-                                      className='expiry-label-small'),
-                            html.Span(days_remaining_text,
-                                      className='expiry-days')
-                        ], className='expiry-info'),
-                        html.Div([
-                            html.Span(expiry_date_text,
-                                      className='expiry-date-small')
-                        ], className='expiry-date-line')
-                    ]) if reading_status == 'rented' else
-                    # For want-to-read and currently reading: only show date added
-                    html.Div([
-                        html.Span("Added: ", className='added-label'),
-                        html.Span(
-                            book.get('added_at', 'Unknown date')[:10] if isinstance(book.get('added_at'), str)
-                            else book.get('added_at').strftime('%m/%d/%Y') if book.get('added_at') and hasattr(book.get('added_at'), 'strftime')
-                            else 'Unknown date',
-                            className='added-date'
-                        )
-                    ], className='added-info')
-                ]),
-                # Show if has review - REMOVED per user request
-                # html.Div([
-                #     html.Span(
-                #         "📝", className='review-icon'),
-                #     html.Span("Has review", className='review-text')
-                # ], className='book-review-indicator') if book.get('review_text') and book.get('review_text').strip() else html.Div()
-            ])
-        ], href=f"/book/{book['book_id']}", className='book-link')
-
-    ], style={
-        'position': 'relative',
-        'display': 'flex',
-        'flex-direction': 'column',
-        'align-items': 'center',
-        'padding': '10px',  # Reduced padding from 15px to 10px
-        'border-radius': '8px',
-        'box-shadow': '0 2px 6px rgba(0,0,0,0.1)',
-        'transition': 'all 0.2s ease',
-        'height': '300px',
-        'overflow': 'hidden',
-        'width': '160px',  # Fixed width to prevent cards from being too wide
-        'margin': '0 auto',  # Center the card
-        'border': border_style  # Add favorite border if applicable
-    }, className='bookshelf-book-card secondary-bg')
+                html.H4(book.get('title', 'Unknown'), className='bookshelf-book-title',
+                        title=book.get('title', 'Unknown')),
+                html.P(book.get('author_name', 'Unknown'), className='bookshelf-book-author',
+                       title=book.get('author_name', 'Unknown')),
+                html.P(rating_display, className='bookshelf-book-rating',
+                       style={'fontWeight': 'bold', 'color': '#ffc107'}) if rating_display else None
+            ], className='bookshelf-book-info')
+        ], href=f"/book/{book.get('book_id')}", style={'textDecoration': 'none', 'color': 'inherit'})
+    ], className=card_class)
 
 
 # Callback to handle tab switching
@@ -272,10 +186,25 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
             ], className='bookshelf-empty')
         ])
 
+    # Create shelf layout with underline like profile page
+    book_cards = [
+        create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
+                         user_id=user_id, show_status_buttons=active_tab != 'rented')
+        for book in books
+    ]
+
     return html.Div([
         html.Div([
-            create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type, user_id=user_id, show_status_buttons=active_tab != 'rented') for book in books
-        ], className='bookshelf-grid')
+            html.Div([
+                html.H3(current_tab_info['title'],
+                        className="bookshelf-shelf-title"),
+                html.Span(f"({len(books)} books)",
+                          className="bookshelf-book-count")
+            ], className='bookshelf-shelf-header'),
+            html.Div([
+                html.Div(book_cards, className='bookshelf-books-row')
+            ], className='bookshelf-shelf-container')
+        ], className='bookshelf-shelf-section')
     ])
 
 

@@ -15,7 +15,7 @@ def login_form():
         dcc.Input(type="password", id="password",
                   className="login-input", placeholder="Enter your password"),
         html.Div(
-            dcc.Link("Forgot password?", href='/reset-password',
+            dcc.Link("Forgot password?", href='/change-password',
                      style={'fontSize': '12px', 'color': '#666'}),
             style={'textAlign': 'right',
                    'marginTop': '5px', 'marginBottom': '10px'}
@@ -188,7 +188,7 @@ def handle_login(n_clicks, username, password):
             dcc.Input(type="password", id="password", className="login-input",
                       placeholder="Enter your password", value=password),
             html.Div(
-                dcc.Link("Forgot password?", href='/reset-password',
+                dcc.Link("Forgot password?", href='/change-password',
                          style={'fontSize': '12px', 'color': '#666'}),
                 style={'textAlign': 'right',
                        'marginTop': '5px', 'marginBottom': '10px'}

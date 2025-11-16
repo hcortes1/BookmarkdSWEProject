@@ -48,6 +48,14 @@ a:hover {
   padding: 20px;
 }
 
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto !important;
+  padding: 20px;
+  width: 100%;
+  display: block;
+}
+
 .card {
   background: var(--secondary-bg);
   border-radius: 8px;

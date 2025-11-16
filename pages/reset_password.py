@@ -2,71 +2,81 @@ import dash
 from dash import dcc, html, Input, Output, State, callback
 import backend.login as login_backend
 
-# register both reset-password (request) and change-password (actual reset) routes
-dash.register_page(__name__, path='/reset-password')
+# register page at /change-password to match email reset links
+dash.register_page(__name__, path='/change-password')
 
-
-def layout(token=None):
-    """Password reset request and change password page"""
-    # determine which form to show based on URL token parameter
-    from dash import callback_context
-    import flask
-
-    # check if token is in URL query params
-    try:
-        request = flask.request
-        token_from_url = request.args.get('token')
-    except:
-        token_from_url = None
-
-    show_change_form = token_from_url is not None
-
-    return html.Div([
-        dcc.Location(id='reset-url', refresh=False),
-        dcc.Store(id='reset-token-store', data=token_from_url),
+# static layout - callbacks will handle showing correct form
+layout = html.Div([
+    dcc.Location(id='reset-url', refresh=False),
+    dcc.Store(id='reset-token-store', data=None),
+    html.Div([
+        # request reset form (shown first)
         html.Div([
-            # request reset form (shown first)
-            html.Div([
-                html.H1("Reset your password", className="login-title"),
-                html.P("Enter your email address and we'll send you a link to reset your password.",
-                       style={'marginBottom': '20px', 'color': '#666'}),
-                html.Label("Email", htmlFor="reset-email",
-                           className="login-label"),
-                dcc.Input(type="email", id="reset-email",
-                          className="login-input", placeholder="your@email.com",
-                          debounce=True),
-                html.Button("Send reset link", id="reset-request-button",
-                            className="login-button"),
-                html.Div(id='reset-request-feedback',
-                         style={'marginTop': '10px'}),
-                html.Div(
-                    dcc.Link("Back to Login", href='/login',
-                             className="signup-link"),
-                    style={"marginTop": "15px"}
-                )
-            ], id='reset-request-form', style={'display': 'none' if show_change_form else 'block'}),
+            html.H1("Reset your password", className="login-title"),
+            html.P("Enter your email address and we'll send you a link to reset your password.",
+                   style={'marginBottom': '20px', 'color': '#666'}),
+            html.Label("Email", htmlFor="reset-email",
+                       className="login-label"),
+            dcc.Input(type="email", id="reset-email",
+                      className="login-input", placeholder="your@email.com",
+                      debounce=True),
+            html.Button("Send reset link", id="reset-request-button",
+                        className="login-button"),
+            html.Div(id='reset-request-feedback',
+                     style={'marginTop': '10px'}),
+            html.Div(
+                dcc.Link("Back to Login", href='/login',
+                         className="signup-link"),
+                style={"marginTop": "15px"}
+            )
+        ], id='reset-request-form'),
 
-            # change password form (shown when token is present)
-            html.Div([
-                html.H1("Create new password", className="login-title"),
-                html.Label("New Password", htmlFor="new-password",
-                           className="login-label"),
-                dcc.Input(type="password", id="new-password",
-                          className="login-input", placeholder="Enter new password",
-                          debounce=True),
-                html.Label("Confirm Password", htmlFor="confirm-password",
-                           className="login-label"),
-                dcc.Input(type="password", id="confirm-password",
-                          className="login-input", placeholder="Confirm new password",
-                          debounce=True),
-                html.Button("Reset password", id="reset-submit-button",
-                            className="login-button"),
-                html.Div(id='reset-submit-feedback',
-                         style={'marginTop': '10px'}),
-            ], id='change-password-form', style={'display': 'block' if show_change_form else 'none'})
+        # change password form (shown when token is present)
+        html.Div([
+            html.H1("Create new password", className="login-title"),
+            html.Label("New Password", htmlFor="new-password",
+                       className="login-label"),
+            dcc.Input(type="password", id="new-password",
+                      className="login-input", placeholder="Enter new password",
+                      debounce=True),
+            html.Label("Confirm Password", htmlFor="confirm-password",
+                       className="login-label"),
+            dcc.Input(type="password", id="confirm-password",
+                      className="login-input", placeholder="Confirm new password",
+                      debounce=True),
+            html.Button("Reset password", id="reset-submit-button",
+                        className="login-button"),
+            html.Div(id='reset-submit-feedback',
+                     style={'marginTop': '10px'}),
+        ], id='change-password-form', style={'display': 'none'})
 
-        ], className='login-box')
-    ], className='login-page')
+    ], className='login-box')
+], className='login-page')
+
+
+# callback to check URL params and show correct form
+@callback(
+    [Output('reset-token-store', 'data'),
+     Output('reset-request-form', 'style'),
+     Output('change-password-form', 'style')],
+    Input('reset-url', 'search')
+)
+def handle_url_token(search):
+    """Extract token from URL and show appropriate form"""
+    import urllib.parse
+    
+    token = None
+    if search:
+        # parse query string
+        params = urllib.parse.parse_qs(search.lstrip('?'))
+        token = params.get('token', [None])[0]
+    
+    if token:
+        # show change password form
+        return token, {'display': 'none'}, {'display': 'block'}
+    else:
+        # show reset request form
+        return None, {'display': 'block'}, {'display': 'none'}
 
 
 @callback(
