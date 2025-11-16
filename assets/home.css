@@ -147,7 +147,7 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 3px 0;
-    color: var(--text-color);
+    color: var(--link-color);
 }
 
 /* Review snippet */
@@ -160,8 +160,9 @@
 
 /* Rating and labels */
 .activity-rating {
-    color: var(--link-color);
+    color: #ff9800;
     font-weight: 600;
+    margin-top: 4px;
 }
 
 .activity-review-label {
@@ -173,8 +174,7 @@
 .activity-timestamp {
     font-size: 0.8rem;
     color: var(--text-color-secondary);
-    margin-top: 5px;
-    align-self: flex-end;
+    margin-top: 4px;
 }
 
 /* Empty State */
