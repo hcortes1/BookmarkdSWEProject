@@ -2,8 +2,8 @@ import dash
 from dash import dcc, html, Input, Output, State, callback
 import backend.login as login_backend
 
-# register both reset-password (request) and change-password (actual reset) routes
-dash.register_page(__name__, path='/reset-password')
+# register page at /change-password to match email reset links
+dash.register_page(__name__, path='/change-password')
 
 
 def layout(token=None):
