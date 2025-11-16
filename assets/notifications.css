@@ -46,6 +46,10 @@
   background-color: var(--tab-hover-bg);
 }
 
+.notification-item.notification-no-hover:hover {
+  background-color: var(--background-color);
+}
+
 .notification-item:last-child {
   border-bottom: none;
 }
@@ -82,6 +86,8 @@
   display: flex;
   gap: 8px;
   margin-left: 16px;
+  position: relative;
+  z-index: 10;
 }
 
 .btn-accept-notification,
@@ -92,11 +98,20 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-accept-notification {
   background-color: var(--link-color);
   color: var(--button-text-color);
+}
+
+.btn-accept-notification:disabled {
+  background-color: var(--text-color-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-decline-notification {
@@ -105,7 +120,7 @@
   color: var(--danger-color);
 }
 
-.btn-accept-notification:hover {
+.btn-accept-notification:hover:not(:disabled) {
   background-color: var(--link-hover) !important;
 }
 
@@ -144,6 +159,9 @@
   transition: background-color 0.2s;
   background-color: var(--link-color);
   color: var(--button-text-color);
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-add-to-bookshelf:hover {
@@ -173,6 +191,13 @@
   background-color: var(--danger-bg);
   border-color: var(--danger-color);
   color: var(--danger-color);
+}
+
+/* Resend feedback styling */
+.resend-feedback {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 /* Utility classes for inline styles */

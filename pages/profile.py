@@ -303,9 +303,12 @@ def layout(username=None, **kwargs):
                 html.Div([
                     # Tab navigation
                     html.Div([
-                        html.Button("Favorites", id="favorites-tab", className="profile-tab active-tab"),
-                        html.Button("Reviews", id="reviews-tab", className="profile-tab"),
-                        html.Button("Completed", id="completed-tab", className="profile-tab")
+                        html.Button("Favorites", id="favorites-tab",
+                                    className="profile-tab active-tab"),
+                        html.Button("Reviews", id="reviews-tab",
+                                    className="profile-tab"),
+                        html.Button("Completed", id="completed-tab",
+                                    className="profile-tab")
                     ], className="profile-tabs", style={'margin-bottom': '0', 'border-bottom': '2px solid var(--link-color)'}),
 
                     # Tab content container

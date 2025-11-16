@@ -83,7 +83,7 @@ def homefeed_layout():
             # Chat window (hidden by default)
             html.Div([
                 html.Div([
-                    html.Span("Book Assistant", style={'fontWeight': 'bold', 'fontSize': '16px'}),
+                    html.Span("Bookmarkd Librarian", style={'fontWeight': 'bold', 'fontSize': '16px'}),
                     html.Button('×', id='chat-close-btn', style={
                         'background': 'none',
                         'border': 'none',
