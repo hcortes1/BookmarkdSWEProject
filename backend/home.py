@@ -30,6 +30,7 @@ def format_timestamp(dt):
 def get_friend_activity(user_id, limit=10):
     sql = """
         SELECT 
+            u.user_id,
             u.username,
             COALESCE(u.profile_image_url, '/assets/svg/default-profile.svg') AS profile_image_url,
             b.book_id,
@@ -81,6 +82,7 @@ def get_recent_reviews(limit=10):
             r.rating,
             r.review_text,
             r.created_at,
+            u.user_id,
             u.username,
             COALESCE(u.profile_image_url, '/assets/svg/default-profile.svg') AS profile_image_url,
             b.title AS book_title,
