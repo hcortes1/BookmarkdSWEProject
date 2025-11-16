@@ -2,12 +2,10 @@ import psycopg2.extras
 from datetime import datetime, timezone
 from backend.db import get_conn
 from datetime import datetime, timezone
+from backend.gemini_helper import get_book_recommendation_chat
+import difflib
 
 def format_timestamp(dt):
-    """
-    - If < 24 hours: 'x hours/minutes ago'
-    - Else: formatted date (e.g. 'Nov 3, 2025')
-    """
     if not dt:
         return ""
 
@@ -30,11 +28,6 @@ def format_timestamp(dt):
         return f"{int(seconds // 3600)}h ago"
 
 def get_friend_activity(user_id, limit=10):
-    """
-    Return recent bookshelf activity for a user's friends.
-    Includes actions such as marking a book as completed,
-    currently reading, or planning to read.
-    """
     sql = """
         SELECT 
             u.username,
@@ -81,10 +74,6 @@ def get_friend_activity(user_id, limit=10):
 
 
 def get_recent_reviews(limit=10):
-    """
-    Return the most recent user reviews site-wide,
-    including whether it's just a rating or a full review.
-    """
     sql = """
         SELECT 
             r.review_id,
@@ -119,65 +108,97 @@ def get_recent_reviews(limit=10):
 
     return records
 
-#  AI Recommendations Helper
-from backend.gemini_helper import get_book_recommendation_chat
-
-def get_ai_recommendations(user_genres, limit=12):
-    """
-    Generate AI-powered book recommendations based on user's favorite genres.
-    Cross-references with your books table to fetch covers and IDs.
-    """
+def get_ai_recommendations(user_id, user_genres, limit=10):
     if not user_genres:
         return []
 
-    prompt = (
-        f"Recommend {limit} popular and well-reviewed books across these genres: {', '.join(user_genres)}.\n"
-        "Output strictly as plain text, no markdown or bullet points. Each line should be in the format:\n"
-        "Title by Author\n\n"
-        "Do not include quotes, asterisks, numbering, or any special characters — only the raw title and author."
-    )
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
 
-    success, response_text = get_book_recommendation_chat(prompt, user_genres, [])
-    if not success:
+        cur.execute("""
+            SELECT book_id FROM public.bookshelf
+            WHERE user_id = %s AND shelf_type IN ('completed', 'reading', 'currently reading');
+        """, (user_id,))
+        excluded_ids = {row["book_id"] for row in cur.fetchall()}
+
+        cur.execute("""
+            SELECT 
+                b.book_id,
+                b.title,
+                COALESCE(b.cover_url, '') AS cover_url,
+                COALESCE(a.name, '') AS author
+            FROM public.books b
+            LEFT JOIN public.authors a ON b.author_id = a.author_id
+        """)
+        all_books = cur.fetchall()
+
+    if not all_books:
         return []
 
-    # Parse Gemini’s response
-    recs = []
-    for line in response_text.split("\n"):
-        if " by " in line:
-            title, author = line.split(" by ", 1)
-            recs.append({"title": title.strip(), "author": author.strip()})
-        if len(recs) >= limit:
+    # Filter out completed/currently-reading books
+    available_books = [
+        b for b in all_books
+        if b["book_id"] not in excluded_ids
+    ]
+
+    if not available_books:
+        return []
+
+    # Split books into two categories
+    books_with_covers = [b for b in available_books if b["cover_url"] not in (None, "", " ")]
+    books_without_covers = [b for b in available_books if b["cover_url"] in (None, "", " ")]
+
+    # AI selects books from DB titles
+    ai_prompt = (
+        f"From this list of books, pick {limit} titles that best match "
+        f"these genres: {', '.join(user_genres)}.\n"
+        f"Output only exact titles, one per line:\n\n" +
+        "\n".join([b["title"] for b in available_books])
+    )
+
+    success, ai_output = get_book_recommendation_chat(ai_prompt, user_genres, [])
+    ai_titles = ai_output.split("\n") if success else []
+
+    ai_titles_clean = {t.strip().lower() for t in ai_titles if t.strip()}
+
+    matched_recs = []
+    used_ids = set()
+
+    for title_lower in ai_titles_clean:
+        best = difflib.get_close_matches(
+            title_lower,
+            [b["title"].lower() for b in available_books],
+            n=1,
+            cutoff=0.7
+        )
+
+        if not best:
+            continue
+
+        match_title = best[0]
+        book = next(b for b in available_books if b["title"].lower() == match_title)
+
+        if book["book_id"] not in used_ids:
+            matched_recs.append(book)
+            used_ids.add(book["book_id"])
+
+        if len(matched_recs) >= limit:
             break
 
-    # --- Cross-reference with database ---
-    matched = []
-    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        for r in recs:
-            cur.execute("""
-                SELECT book_id, title, cover_url, a.name AS author_name
-                FROM public.books b
-                LEFT JOIN public.authors a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) ILIKE LOWER(%s)
-                ORDER BY LENGTH(b.title) ASC
-                LIMIT 1;
-            """, (f"%{r['title'].strip('*\"')}%",))
-            db_book = cur.fetchone()
+    if len(matched_recs) < limit:
+        for b in books_with_covers:
+            if b["book_id"] not in used_ids:
+                matched_recs.append(b)
+                used_ids.add(b["book_id"])
+                if len(matched_recs) >= limit:
+                    break
 
-            if db_book:
-                matched.append({
-                    "book_id": db_book["book_id"],
-                    "title": db_book["title"],
-                    "author": db_book["author_name"] or r["author"],
-                    "cover_url": db_book["cover_url"]
-                })
-            else:
-                # Fallback: AI-only result
-                matched.append({
-                    "book_id": None,
-                    "title": r["title"],
-                    "author": r["author"],
-                    "cover_url": None
-                })
+    if len(matched_recs) < limit:
+        for b in books_without_covers:
+            if b["book_id"] not in used_ids:
+                b["cover_url"] = "/assets/svg/default-book.svg"
+                matched_recs.append(b)
+                used_ids.add(b["book_id"])
+                if len(matched_recs) >= limit:
+                    break
 
-    return matched
+    return matched_recs[:limit]

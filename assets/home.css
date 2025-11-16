@@ -14,6 +14,14 @@
     margin: 15px 0 25px 0;
 }
 
+.app-container {
+    margin: 30px; 
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    padding: 30px; 
+}
+
 /* Section Styles */
 
 /* Grid layout for reviews + activity side by side */
@@ -29,10 +37,10 @@
     background-color: var(--secondary-bg);
     border-radius: 12px;
     box-shadow: var(--card-shadow);
-    padding: 20px 25px;
+    padding: 25px;
+    margin-bottom: 25px;
 }
 
-/* Add space between Recommended Books and the grid below */
 .home-section + .home-sections-grid {
     margin-top: 25px;
 }
@@ -47,7 +55,6 @@
 }
 
 /* Scrollable Content */
-
 .home-section-container {
     max-height: 600px;
     overflow-y: auto;
@@ -56,7 +63,6 @@
     scrollbar-color: #ccc var(--secondary-bg);
 }
 
-/* WebKit scrollbar for Chrome/Safari */
 .home-section-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -68,18 +74,18 @@
     background-color: #999;
 }
 
-/* Activity Cards (used for both reviews and friend activity) */
-
+/* Activity Cards */
 .activity-card {
     display: flex;
     flex-direction: column;
     background: var(--secondary-bg);
     border-radius: 10px;
     box-shadow: var(--card-shadow);
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .activity-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 3px 8px rgba(0,0,0,0.15);
@@ -99,7 +105,6 @@
     margin-bottom: 10px;
 }
 
-/* Small avatar with breathing room */
 .activity-avatar-small {
     width: 28px;
     height: 28px;
@@ -107,7 +112,7 @@
     object-fit: cover;
     vertical-align: middle;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-right: 8px; /* Added breathing room */
+    margin-right: 8px;
 }
 
 /* Username link */
@@ -173,7 +178,6 @@
 }
 
 /* Empty State */
-
 .home-empty-message {
     color: var(--text-color-secondary);
     text-align: center;
@@ -185,7 +189,6 @@
 }
 
 /* AI Recommendation Placeholder */
-
 .home-placeholder-message {
     text-align: center;
     color: var(--link-color);
@@ -194,7 +197,6 @@
 }
 
 /* Floating Chat Assistant */
-
 #chat-toggle-btn {
     position: fixed;
     bottom: 20px;
@@ -244,42 +246,15 @@
     color: var(--text-color);
 }
 
-/* Responsive Tweaks */
-
-@media (max-width: 900px) {
-    .home-sections-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    .home-section-container {
-        max-height: 400px;
-    }
-
-    .section-title {
-        font-size: 1.15rem;
-    }
-
-    .home-activity-item {
-        font-size: 0.9rem;
-    }
-
-    .activity-book-cover {
-        width: 60px;
-        height: 90px;
-    }
-
-    .activity-avatar-small {
-        width: 25px;
-        height: 25px;
-    }
-}
 /* AI Recommendation Cards */
 .rec-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
     gap: 20px;
-    padding-right: 10px;
+    padding: 10px 0;
+    align-items: flex-start;
 }
 
 .rec-card {
@@ -315,4 +290,35 @@
     object-fit: contain;
     border-radius: 6px;
     margin-bottom: 10px;
+}
+
+/* Responsive Tweaks */
+@media (max-width: 900px) {
+    .app-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .home-sections-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .home-section-container {
+        max-height: 400px;
+    }
+
+    .section-title {
+        font-size: 1.15rem;
+    }
+
+    .activity-book-cover {
+        width: 60px;
+        height: 90px;
+    }
+
+    .activity-avatar-small {
+        width: 25px;
+        height: 25px;
+    }
 }
