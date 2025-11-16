@@ -258,18 +258,31 @@ def load_home_data(user_session):
 )
 def load_ai_recommendations(user_session):
     if not user_session or not user_session.get("logged_in"):
-        return html.P("Log in to see AI-powered book recommendations.",
-                      className="home-empty-message")
+        return html.P(
+            "Log in to see AI-powered book recommendations.",
+            className="home-empty-message"
+        )
 
+    user_id = user_session.get("user_id")
     user_genres = user_session.get("favorite_genres", [])
-    if not user_genres:
-        return html.P("Add some favorite genres in your profile to receive recommendations.",
-                      className="home-empty-message")
 
-    recs = home_backend.get_ai_recommendations(user_genres, user_id=user_session.get("user_id"), limit=10)
+    if not user_genres:
+        return html.P(
+            "Add some favorite genres in your profile to receive recommendations.",
+            className="home-empty-message"
+        )
+
+    recs = home_backend.get_ai_recommendations(
+        user_id=user_id,
+        user_genres=user_genres,
+        limit=10
+    )
+
     if not recs:
-        return html.P("No recommendations available right now.",
-                      className="home-empty-message")
+        return html.P(
+            "No recommendations available right now.",
+            className="home-empty-message"
+        )
 
     return html.Div([
         html.Div([
@@ -283,7 +296,8 @@ def load_ai_recommendations(user_session):
                     html.P(f"by {r['author']}", className="rec-author")
                 ],
                     href=f"/book/{r['book_id']}" if r["book_id"] else f"/search?query={r['title']}+{r['author']}",
-                    style={"textDecoration": "none", "color": "inherit"})
+                    style={"textDecoration": "none", "color": "inherit"}
+                )
             ], className="rec-card")
             for r in recs
         ], className="rec-grid")
