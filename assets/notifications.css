@@ -39,10 +39,15 @@
   border-bottom: 1px solid var(--border-color);
   background-color: var(--background-color);
   transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .notification-item:hover {
   background-color: var(--tab-hover-bg);
+}
+
+.notification-item.notification-no-hover:hover {
+  background-color: var(--background-color);
 }
 
 .notification-item:last-child {
@@ -57,8 +62,8 @@
 .notification-main-content {
   flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 0;
 }
 
 .notification-content {
@@ -81,6 +86,8 @@
   display: flex;
   gap: 8px;
   margin-left: 16px;
+  position: relative;
+  z-index: 10;
 }
 
 .btn-accept-notification,
@@ -91,11 +98,20 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-accept-notification {
   background-color: var(--link-color);
   color: var(--button-text-color);
+}
+
+.btn-accept-notification:disabled {
+  background-color: var(--text-color-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-decline-notification {
@@ -104,7 +120,7 @@
   color: var(--danger-color);
 }
 
-.btn-accept-notification:hover {
+.btn-accept-notification:hover:not(:disabled) {
   background-color: var(--link-hover) !important;
 }
 
@@ -135,7 +151,17 @@
 }
 
 .btn-add-to-bookshelf {
-  background-color: var(--link-color) !important;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: var(--link-color);
+  color: var(--button-text-color);
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-add-to-bookshelf:hover {
@@ -155,8 +181,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   color: var(--text-color);
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .btn-dismiss-small:hover {
@@ -165,9 +193,106 @@
   color: var(--danger-color);
 }
 
+/* Resend feedback styling */
+.resend-feedback {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 /* Utility classes for inline styles */
 .text-link { color: var(--link-color); }
 .text-primary { color: var(--text-color); }
 .text-secondary { color: var(--text-color-secondary); }
 .text-muted { color: var(--text-muted); }
 .bg-light { background-color: var(--bg-light); }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .notifications-page {
+    padding: 10px;
+  }
+
+  .notifications-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .notification-count-header {
+    font-size: 0.95rem;
+  }
+
+  .notification-item {
+    padding: 12px !important;
+  }
+
+  .notification-avatar {
+    margin-right: 12px;
+  }
+
+  .notification-avatar img {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  /* Keep the same layout structure as desktop */
+  .notification-main-content {
+    gap: 8px;
+  }
+
+  /* Scale down text sizes but keep layout structure */
+  .notification-title {
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .notification-message {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .notification-reason {
+    font-size: 0.8rem !important;
+  }
+
+  .notification-time {
+    font-size: 0.75rem !important;
+  }
+
+  .notification-actions {
+    margin-left: 0;
+    gap: 6px;
+  }
+
+  /* Stack email verification on mobile */
+  .notification-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .btn-email-verify {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  /* Make friend request buttons smaller and fit container */
+  .btn-accept-notification,
+  .btn-decline-notification {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex: 0 1 auto;
+  }
+
+  .btn-dismiss-small {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+}

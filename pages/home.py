@@ -7,7 +7,6 @@ dash.register_page(__name__, path='/')
 
 
 def welcome_layout():
-    """Layout for non-logged-in users"""
     return html.Div([
         html.Div([
             html.H1("Welcome to Bookmarkd", className="welcome-title"),
@@ -29,7 +28,6 @@ def welcome_layout():
 
 
 def homefeed_layout():
-    """Layout for logged-in users"""
     return html.Div([
         html.Div([
             html.H1("Home Feed", className="main-title"),
@@ -37,29 +35,36 @@ def homefeed_layout():
                    className="homefeed-subtitle"),
             html.Hr(className="home-divider"),
 
-            # Recommended Books (top)
             html.Div([
-                html.H2("Recommended Books", className="section-title"),
-                html.Div(id="ai-recommendations-container", className="home-section-container")
+                html.Div([
+                    html.H2("Recommended Books", className="section-title", style={'display': 'inline-block', 'marginRight': '15px'}),
+                    html.Span(id="refresh-countdown", style={
+                        'fontSize': '14px',
+                        'color': 'var(--secondary-text-color)',
+                        'fontWeight': 'normal'
+                    })
+                ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '10px'}),
+                html.Div(id="ai-recommendations-container",
+                         className="home-section-container")
             ], className="home-section"),
 
-            # Two-column layout for Recent Reviews + Friend Activity
             html.Div([
                 html.Div([
                     html.H2("Recent Reviews", className="section-title"),
-                    html.Div(id="recent-reviews-container", className="home-section-container")
+                    html.Div(id="recent-reviews-container",
+                             className="home-section-container")
                 ], className="home-section"),
 
                 html.Div([
                     html.H2("Friend Activity", className="section-title"),
-                    html.Div(id="friend-activity-container", className="home-section-container")
+                    html.Div(id="friend-activity-container",
+                             className="home-section-container")
                 ], className="home-section")
             ], className="home-sections-grid"),
         ], className="app-container"),
 
         # Floating Chat Assistant
         html.Div([
-            # Chat toggle button
             html.Button(
                 "💬",
                 id='chat-toggle-btn',
@@ -80,10 +85,10 @@ def homefeed_layout():
                 }
             ),
 
-            # Chat window (hidden by default)
             html.Div([
                 html.Div([
-                    html.Span("Book Assistant", style={'fontWeight': 'bold', 'fontSize': '16px'}),
+                    html.Span("Bookmarkd Librarian", style={
+                              'fontWeight': 'bold', 'fontSize': '16px'}),
                     html.Button('×', id='chat-close-btn', style={
                         'background': 'none',
                         'border': 'none',
@@ -157,7 +162,6 @@ def homefeed_layout():
                 'zIndex': '2999'
             }),
 
-            # Chat message store
             dcc.Store(id='home-chat-history', data=[])
         ])
     ])
@@ -170,18 +174,17 @@ def layout():
     ])
 
 
-# Check login
 @dash.callback(
     Output('home-content', 'children'),
     Input('home-session-check', 'data'),
     Input('user-session', 'data')
 )
 def update_home_content(dummy, user_session):
-    is_logged_in = user_session.get('logged_in', False) if user_session else False
+    is_logged_in = user_session.get(
+        'logged_in', False) if user_session else False
     return homefeed_layout() if is_logged_in else welcome_layout()
 
 
-# Populate reviews and friend activity
 @dash.callback(
     Output("recent-reviews-container", "children"),
     Output("friend-activity-container", "children"),
@@ -193,169 +196,131 @@ def load_home_data(user_session):
 
     user_id = user_session.get("user_id")
 
-    # Recent Reviews
     reviews = home_backend.get_recent_reviews(limit=10)
     if not reviews:
-        recent_reviews = html.P("No recent reviews found.", className="home-empty-message")
+        recent_reviews = html.P(
+            "No recent reviews found.", className="home-empty-message")
     else:
-        recent_reviews = [
-            html.Div([
-                html.Div([
-                    dcc.Link([
-                        html.Img(
-                            src=r.get('profile_image_url', '/assets/svg/default-profile.svg'),
-                            className="activity-avatar-small"
-                        ),
-                        html.Strong(r['username'], className="activity-username")
-                    ], href=f"/profile/view/{r['username']}",
-                        style={'textDecoration': 'none', 'color': 'inherit'}),
+        recent_reviews = []
+        for r in reviews:
 
-                    html.Span(" reviewed " if r["is_review"] else " rated ",
-                              className="activity-action"),
-
-                    dcc.Link(
-                        html.Em(r["book_title"]),
-                        href=f"/book/{r['book_id']}",
-                        style={'textDecoration': 'none', 'color': 'var(--link-color)', 'fontWeight': '600'}
+            user_profile_link = f"/profile/view/{r['username']}"
+            user_link = dcc.Link(
+                [
+                    html.Img(
+                        src=r.get('profile_image_url',
+                                  '/assets/svg/default-profile.svg'),
+                        className="activity-avatar-small"
                     ),
-                ], className="activity-header"),
+                    html.Strong(r["username"], className="activity-username"),
+                ],
+                href=user_profile_link,
+                style={'textDecoration': 'none',
+                       'display': 'flex', 'alignItems': 'center'}
+            )
 
+            book_title_link = dcc.Link(
+                html.H4(r["book_title"], className="activity-book-title"),
+                href=f"/book/{r['book_id']}",
+                style={'textDecoration': 'none', 'color': 'var(--text-color)'}
+            )
+
+            recent_reviews.append(
                 html.Div([
-                    dcc.Link([
-                        html.Img(
-                            src=r.get('cover_url', '/assets/svg/default-book.svg'),
-                            className="activity-book-cover"
-                        )
-                    ], href=f"/book/{r['book_id']}", style={'textDecoration': 'none'}),
-
                     html.Div([
-                        html.Span(f"⭐ {r['rating']}/5", className="activity-rating"),
+                        dcc.Link([
+                            html.Img(
+                                src=r.get(
+                                    'cover_url', '/assets/svg/default-book.svg'),
+                                className="activity-book-cover"
+                            )
+                        ], href=f"/book/{r['book_id']}", style={'textDecoration': 'none'}),
 
-                        html.P(r["snippet"],
-                               className="activity-snippet") if r["is_review"] else None,
+                        html.Div([
+                            html.Div([
+                                user_link,
+                                html.Span(" reviewed " if r["is_review"] else " rated ",
+                                          className="activity-action"),
+                                book_title_link,
+                            ], className="activity-header"),
+                            html.P(
+                                r["snippet"], className="activity-snippet") if r["is_review"] else None,
+                            html.Span(
+                                f"{r.get('avg_rating', r['rating'])}/5 ({r.get('total_ratings', 1)})", className="activity-rating"),
+                            html.Span(r["display_time"],
+                                      className="activity-timestamp")
+                        ], className="activity-book-info")
+                    ], className="activity-card-content")
+                ], className="activity-card")
+            )
 
-                        html.Span(r["display_time"], className="activity-timestamp")
-                    ], className="activity-book-info")
-                ], className="activity-card-content")
-            ], className="activity-card")
-            for r in reviews
-        ]
-
-    # Friend Activity
     friends = home_backend.get_friend_activity(user_id)
     if not friends:
-        friend_activity = html.P("No recent activity from your friends.", className="home-empty-message")
+        friend_activity = html.P(
+            "No recent activity from your friends.", className="home-empty-message")
     else:
-        friend_activity = [
-            html.Div([
-                html.Div([
+        friend_activity = []
+        for f in friends:
+
+            friend_profile_link = f"/profile/view/{f['username']}"
+
+            friend_link = dcc.Link(
+                [
                     html.Img(
-                        src=f.get('cover_url', '/assets/svg/default-book.svg'),
-                        className="activity-book-cover"
+                        src=f.get('profile_image_url',
+                                  '/assets/svg/default-profile.svg'),
+                        className="activity-avatar-small"
                     ),
+                    html.Strong(f["username"], className="activity-username"),
+                ],
+                href=friend_profile_link,
+                style={'textDecoration': 'none',
+                       'display': 'flex', 'alignItems': 'center'}
+            )
+
+            book_title_link = dcc.Link(
+                html.H4(f["book_title"], className="activity-book-title"),
+                href=f"/book/{f['book_id']}",
+                style={'textDecoration': 'none', 'color': 'var(--text-color)'}
+            )
+
+            # build rating display for friend activity
+            total_ratings = f.get("total_ratings", 0)
+            avg_rating = f.get("avg_rating")
+            rating_element = None
+            if total_ratings and total_ratings > 0 and avg_rating:
+                rating_element = html.Span(
+                    f"{avg_rating}/5 ({total_ratings})",
+                    className="activity-rating"
+                )
+
+            friend_activity.append(
+                html.Div([
                     html.Div([
+                        dcc.Link([
+                            html.Img(
+                                src=f.get(
+                                    'cover_url', '/assets/svg/default-book.svg'),
+                                className="activity-book-cover"
+                            )
+                        ], href=f"/book/{f['book_id']}", style={'textDecoration': 'none'}),
+
                         html.Div([
-                            dcc.Link(
-                                html.Img(
-                                    src=f.get('profile_image_url', '/assets/svg/default-profile.svg'),
-                                    className="activity-avatar-small"
-                                ),
-                                href=f"/profile/view/{f['username']}",
-                                style={'textDecoration': 'none'}
-                            ),
-                            dcc.Link(
-                                html.Strong(f['username'], className="activity-username"),
-                                href=f"/profile/view/{f['username']}",
-                                style={'textDecoration': 'none', 'color': 'inherit', 'marginLeft': '8px'}
-                            ),
-                        ], className="activity-user-info"),
-                        html.Span(f" {f['action']} ", className="activity-action"),
-                        html.H4(f["book_title"], className="activity-book-title"),
-                        html.Span(f["display_time"], className="activity-timestamp"),
-                    ], className="activity-book-info")
-                ], className="activity-card-content")
-            ], className="activity-card") for f in friends
-        ]
+                            html.Div([friend_link],
+                                     className="activity-user-info"),
+                            html.Span(f" {f['action']} ",
+                                      className="activity-action"),
+                            book_title_link,
+                            rating_element if rating_element else None,
+                            html.Span(f["display_time"],
+                                      className="activity-timestamp")
+                        ], className="activity-book-info")
+                    ], className="activity-card-content")
+                ], className="activity-card")
+            )
 
     return recent_reviews, friend_activity
-# Chat Window Toggle
-@dash.callback(
-    Output('home-chat-window', 'style'),
-    Input('chat-toggle-btn', 'n_clicks'),
-    Input('chat-close-btn', 'n_clicks'),
-    State('home-chat-window', 'style'),
-    prevent_initial_call=True
-)
-def toggle_chat_window(toggle_clicks, close_clicks, current_style):
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        return dash.no_update
 
-    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    new_style = current_style.copy()
-
-    if button_id == 'chat-close-btn':
-        new_style['display'] = 'none'
-    elif button_id == 'chat-toggle-btn':
-        new_style['display'] = (
-            'none' if current_style.get('display') == 'block' else 'block'
-        )
-
-    return new_style
-
-
-# Chat Message Handling
-@dash.callback(
-    Output('home-chat-display', 'children'),
-    Output('home-chat-input', 'value'),
-    Output('home-chat-history', 'data'),
-    Input('home-chat-send-btn', 'n_clicks'),
-    State('home-chat-input', 'value'),
-    State('home-chat-display', 'children'),
-    State('home-chat-history', 'data'),
-    State('user-session', 'data'),
-    prevent_initial_call=True
-)
-def handle_home_chat(n_clicks, user_input, current_display, chat_history, user_session):
-    if not n_clicks or not user_input or not user_input.strip():
-        return dash.no_update, dash.no_update, dash.no_update
-
-    # Get user's favorite genres for context
-    user_genres = user_session.get('favorite_genres', []) if user_session else []
-
-    # Send message to Gemini backend
-    success, response_text = get_book_recommendation_chat(user_input, user_genres, chat_history)
-
-    # Error handling
-    if not success:
-        error_msg = html.Div(
-            f"Error: {response_text}",
-            style={'color': 'var(--danger-color)', 'padding': '10px', 'fontSize': '14px'}
-        )
-        return current_display + [error_msg], '', chat_history
-
-    # User message bubble
-    user_message_div = html.Div(
-        user_input,
-        className="chat-bubble user-bubble"
-    )
-
-    # AI response bubble
-    ai_message_div = html.Div(
-        response_text,
-        className="chat-bubble ai-bubble"
-    )
-
-    # Append both to chat
-    updated_display = current_display + [user_message_div, ai_message_div]
-
-    # Update chat history for context continuity
-    updated_history = (chat_history or []) + [
-        {"role": "user", "message": user_input},
-        {"role": "ai", "message": response_text}
-    ]
-
-    return updated_display, '', updated_history
 
 @dash.callback(
     Output("ai-recommendations-container", "children"),
@@ -363,34 +328,153 @@ def handle_home_chat(n_clicks, user_input, current_display, chat_history, user_s
 )
 def load_ai_recommendations(user_session):
     if not user_session or not user_session.get("logged_in"):
-        return html.P("Log in to see AI-powered book recommendations.",
-                      className="home-empty-message")
+        return html.P(
+            "Log in to see AI-powered book recommendations.",
+            className="home-empty-message"
+        )
 
+    user_id = user_session.get("user_id")
     user_genres = user_session.get("favorite_genres", [])
+
     if not user_genres:
-        return html.P("Add some favorite genres in your profile to receive recommendations.",
-                      className="home-empty-message")
+        return html.P(
+            "Add some favorite genres in your profile to receive recommendations.",
+            className="home-empty-message"
+        )
 
-    recs = home_backend.get_ai_recommendations(user_genres, limit=12)
+    recs = home_backend.get_ai_recommendations_with_cache(
+        user_id=user_id,
+        user_genres=user_genres,
+        limit=10
+    )
+
     if not recs:
-        return html.P("No recommendations available right now.",
-                      className="home-empty-message")
+        return html.P(
+            "No recommendations available right now.",
+            className="home-empty-message"
+        )
 
-    # --- Render recommendation cards with cover images ---
-    return html.Div([
-        html.Div([
+    # build recommendation cards
+    rec_cards = []
+    for r in recs:
+        cover_url = r.get("cover_url", "")
+        has_cover = cover_url and cover_url not in ("", " ", "/assets/svg/default-book.svg")
+        
+        if has_cover:
+            cover_element = html.Img(src=cover_url, className="rec-cover-large")
+        else:
+            # create placeholder with book title
+            cover_element = html.Div([
+                html.Div(r["title"], className="rec-placeholder-title")
+            ], className="rec-cover-placeholder-large")
+        
+        # build rating display
+        total_ratings = r.get("total_ratings", 0)
+        avg_rating = r.get("avg_rating")
+        
+        rating_element = None
+        if total_ratings and total_ratings > 0 and avg_rating:
+            rating_element = html.Span(
+                f"⭐ {avg_rating}/5 ({total_ratings})",
+                className="rec-rating"
+            )
+        
+        # get description, truncate if too long
+        description = r.get("description", "")
+        print(f"Frontend: Book '{r['title']}' has description: '{description[:100] if description else 'EMPTY'}...'")
+        if description and len(description) > 120:
+            description = description[:120] + "... Read more"
+        
+        rec_cards.append(
             html.Div([
                 dcc.Link([
-                    html.Img(
-                        src=r.get("cover_url", "/assets/svg/default-book.svg"),
-                        className="rec-cover"
-                    ),
-                    html.H4(r["title"], className="rec-title"),
-                    html.P(f"by {r['author']}", className="rec-author")
+                    html.Div([
+                        cover_element,
+                        html.Div([
+                            html.H4(r["title"], className="rec-title-large"),
+                            html.P(f"by {r['author']}", className="rec-author-large"),
+                            rating_element if rating_element else html.Span("No ratings yet", className="rec-no-rating"),
+                            html.P(description if description else "No description available.", className="rec-description")
+                        ], className="rec-info")
+                    ], className="rec-card-content")
                 ],
                     href=f"/book/{r['book_id']}" if r["book_id"] else f"/search?query={r['title']}+{r['author']}",
-                    style={"textDecoration": "none", "color": "inherit"})
-            ], className="rec-card")
-            for r in recs
-        ], className="rec-grid")
+                    style={"textDecoration": "none", "color": "inherit"}
+                )
+            ], className="rec-card-large")
+        )
+    
+    return html.Div([
+        html.Div(rec_cards, className="rec-scroll-container")
     ])
+
+
+@dash.callback(
+    Output("home-chat-window", "style"),
+    Input("chat-toggle-btn", "n_clicks"),
+    Input("chat-close-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def toggle_chat(open_click, close_click):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise dash.exceptions.PreventUpdate
+    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    if button_id == "chat-toggle-btn":
+        return {'display': 'block',
+                'position': 'fixed',
+                'bottom': '90px',
+                'right': '20px',
+                'width': '350px',
+                'backgroundColor': 'var(--secondary-bg)',
+                'borderRadius': '12px',
+                'boxShadow': '0 4px 20px rgba(0,0,0,0.3)',
+                'zIndex': '2999'}
+    elif button_id == "chat-close-btn":
+        return {'display': 'none'}
+    else:
+        raise dash.exceptions.PreventUpdate
+
+
+@dash.callback(
+    Output("home-chat-display", "children"),
+    Output("home-chat-history", "data"),
+    Output("home-chat-input", "value"),
+    Input("home-chat-send-btn", "n_clicks"),
+    State("home-chat-input", "value"),
+    State("home-chat-history", "data"),
+    prevent_initial_call=True
+)
+def update_chat(n_clicks, user_input, history):
+    if not user_input:
+        raise dash.exceptions.PreventUpdate
+
+    history.append({'role': 'user', 'content': user_input})
+
+    success, ai_response = get_book_recommendation_chat(user_input)
+    if not success:
+        ai_response = "Sorry, I'm having trouble connecting right now. Please try again later."
+
+    # split ai response by newlines to create multiple message bubbles
+    response_parts = [part.strip()
+                      for part in ai_response.split('\n\n') if part.strip()]
+
+    # add each part as a separate message
+    for part in response_parts:
+        history.append({'role': 'ai', 'content': part})
+
+    chat_display = []
+    for msg in history:
+        if msg['role'] == 'user':
+            chat_display.append(
+                html.Div(
+                    [html.Div(msg['content'], className="chat-bubble user-bubble")])
+            )
+        else:
+            chat_display.append(
+                html.Div(
+                    [dcc.Markdown(msg['content'], className="chat-bubble ai-bubble")])
+            )
+
+    return chat_display, history, ""

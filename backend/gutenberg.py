@@ -112,6 +112,51 @@ def search_gutenberg_books_by_author(author_name: str) -> List[Dict[str, Any]]:
     return books
 
 
+def get_gutenberg_description(book_title, author_name):
+    """
+    Fetch book description from Gutenberg metadata.
+    Returns description string or None.
+    """
+    try:
+        search_query = f"{book_title} {author_name}".replace(' ', '+')
+        search_url = f"https://www.gutenberg.org/ebooks/search/?query={search_query}"
+        
+        response = requests.get(search_url, timeout=10)
+        if response.status_code != 200:
+            return None
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # find first ebook link
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            if '/ebooks/' in href and href.count('/') == 2:
+                ebook_id = href.split('/')[-1]
+                if ebook_id.isdigit():
+                    # get book detail page
+                    detail_url = f"https://www.gutenberg.org/ebooks/{ebook_id}"
+                    detail_response = requests.get(detail_url, timeout=10)
+                    if detail_response.status_code == 200:
+                        detail_soup = BeautifulSoup(detail_response.text, 'html.parser')
+                        
+                        # try to find description in meta tags or summary
+                        meta_desc = detail_soup.find('meta', {'name': 'description'})
+                        if meta_desc and meta_desc.get('content'):
+                            return meta_desc.get('content').strip()
+                        
+                        # try to find in book description section
+                        desc_div = detail_soup.find('div', class_='book-description')
+                        if desc_div:
+                            return desc_div.get_text().strip()
+                    
+                    break
+        
+        return None
+    except Exception as e:
+        print(f"Error fetching Gutenberg description: {e}")
+        return None
+
+
 def search_and_download_gutenberg_html(book_title, author_name, book_id):
     """
     Search for a book on Project Gutenberg by title, download its HTML version if available,

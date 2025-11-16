@@ -14,6 +14,14 @@
     margin: 15px 0 25px 0;
 }
 
+.app-container {
+    margin: 30px; 
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    padding: 30px; 
+}
+
 /* Section Styles */
 
 /* Grid layout for reviews + activity side by side */
@@ -29,10 +37,10 @@
     background-color: var(--secondary-bg);
     border-radius: 12px;
     box-shadow: var(--card-shadow);
-    padding: 20px 25px;
+    padding: 25px;
+    margin-bottom: 25px;
 }
 
-/* Add space between Recommended Books and the grid below */
 .home-section + .home-sections-grid {
     margin-top: 25px;
 }
@@ -47,7 +55,6 @@
 }
 
 /* Scrollable Content */
-
 .home-section-container {
     max-height: 600px;
     overflow-y: auto;
@@ -56,7 +63,6 @@
     scrollbar-color: #ccc var(--secondary-bg);
 }
 
-/* WebKit scrollbar for Chrome/Safari */
 .home-section-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -68,18 +74,18 @@
     background-color: #999;
 }
 
-/* Activity Cards (used for both reviews and friend activity) */
-
+/* Activity Cards */
 .activity-card {
     display: flex;
     flex-direction: column;
     background: var(--secondary-bg);
     border-radius: 10px;
     box-shadow: var(--card-shadow);
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .activity-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 3px 8px rgba(0,0,0,0.15);
@@ -99,7 +105,6 @@
     margin-bottom: 10px;
 }
 
-/* Small avatar with breathing room */
 .activity-avatar-small {
     width: 28px;
     height: 28px;
@@ -107,7 +112,7 @@
     object-fit: cover;
     vertical-align: middle;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-right: 8px; /* Added breathing room */
+    margin-right: 8px;
 }
 
 /* Username link */
@@ -142,7 +147,7 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 3px 0;
-    color: var(--text-color);
+    color: var(--link-color);
 }
 
 /* Review snippet */
@@ -155,8 +160,9 @@
 
 /* Rating and labels */
 .activity-rating {
-    color: var(--link-color);
+    color: #ff9800;
     font-weight: 600;
+    margin-top: 4px;
 }
 
 .activity-review-label {
@@ -168,12 +174,10 @@
 .activity-timestamp {
     font-size: 0.8rem;
     color: var(--text-color-secondary);
-    margin-top: 5px;
-    align-self: flex-end;
+    margin-top: 4px;
 }
 
 /* Empty State */
-
 .home-empty-message {
     color: var(--text-color-secondary);
     text-align: center;
@@ -185,7 +189,6 @@
 }
 
 /* AI Recommendation Placeholder */
-
 .home-placeholder-message {
     text-align: center;
     color: var(--link-color);
@@ -194,7 +197,6 @@
 }
 
 /* Floating Chat Assistant */
-
 #chat-toggle-btn {
     position: fixed;
     bottom: 20px;
@@ -244,9 +246,149 @@
     color: var(--text-color);
 }
 
-/* Responsive Tweaks */
+/* AI Recommendation Cards - Single Row Horizontal Scroll */
+.rec-scroll-container {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 15px 5px 20px 5px;
+    scroll-behavior: smooth;
+    /* Make scrollbar more visible */
+    scrollbar-width: thin;
+    scrollbar-color: var(--link-color) var(--secondary-bg);
+}
 
+.rec-scroll-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.rec-scroll-container::-webkit-scrollbar-track {
+    background: var(--secondary-bg);
+    border-radius: 5px;
+}
+
+.rec-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 5px;
+}
+
+.rec-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-color);
+}
+
+.rec-card-large {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    padding: 15px;
+    min-width: 240px;
+    max-width: 240px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.rec-card-large:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.rec-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+}
+
+.rec-cover-large {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.rec-cover-placeholder-large {
+    width: 100%;
+    height: 200px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--card-bg) 100%);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.rec-placeholder-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
+    text-align: center;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+}
+
+.rec-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.rec-title-large {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.rec-author-large {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
+    margin: 0;
+}
+
+.rec-rating {
+    font-size: 0.85rem;
+    color: var(--link-color);
+    font-weight: 600;
+    display: inline-block;
+}
+
+.rec-no-rating {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
+}
+
+.rec-description {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    line-height: 1.4;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+/* Responsive Tweaks */
 @media (max-width: 900px) {
+    .app-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
     .home-sections-grid {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -260,10 +402,6 @@
         font-size: 1.15rem;
     }
 
-    .home-activity-item {
-        font-size: 0.9rem;
-    }
-
     .activity-book-cover {
         width: 60px;
         height: 90px;
@@ -273,46 +411,4 @@
         width: 25px;
         height: 25px;
     }
-}
-/* AI Recommendation Cards */
-.rec-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
-    padding-right: 10px;
-}
-
-.rec-card {
-    background-color: var(--secondary-bg);
-    border-radius: 10px;
-    box-shadow: var(--card-shadow);
-    padding: 15px;
-    text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.rec-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-}
-
-.rec-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 6px;
-}
-
-.rec-author {
-    font-size: 0.9rem;
-    color: var(--text-color-secondary);
-    font-style: italic;
-}
-
-.rec-cover {
-    width: 100px;
-    height: 140px;
-    object-fit: contain;
-    border-radius: 6px;
-    margin-bottom: 10px;
 }

@@ -62,6 +62,52 @@
     padding: 8px 12px;
 }
 
+/* Dropdown control (main visible part) */
+.time-dropdown .Select-control {
+    background-color: var(--input-field-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    color: var(--text-color) !important;
+}
+
+.time-dropdown .Select-value-label {
+    color: var(--text-color) !important;
+}
+
+.time-dropdown .Select-arrow {
+    border-color: var(--text-color) transparent transparent !important;
+}
+
+/* Dropdown menu (options list) */
+.time-dropdown .Select-menu-outer {
+    background-color: var(--input-field-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.time-dropdown .Select-menu {
+    background-color: var(--input-field-bg) !important;
+}
+
+/* Dropdown options */
+.time-dropdown .Select-option {
+    background-color: var(--input-field-bg) !important;
+    color: var(--text-color) !important;
+    padding: 8px 12px !important;
+}
+
+.time-dropdown .Select-option:hover,
+.time-dropdown .Select-option.is-focused {
+    background-color: var(--tab-hover-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.time-dropdown .Select-option.is-selected {
+    background-color: var(--link-color) !important;
+    color: var(--button-text-color) !important;
+}
+
 /* Leaderboard rows */
 .leaderboard-list {
     display: flex;

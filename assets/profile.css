@@ -1,9 +1,354 @@
+/* Tab navigation styles - positioned at top */
+.profile-tabs-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px auto 0;
+    max-width: 1600px;
+    padding: 0 20px;
+}
+
+.profile-tab {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-tab:hover {
+    background: var(--hover-color);
+    transform: translateY(-2px);
+}
+
+.profile-tab.active-tab {
+    background: var(--link-color);
+    color: white;
+    border-color: var(--link-color);
+}
+
+/* Tab content area */
+#profile-tab-content {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+}
+
+/* Profile showcase layout styles - original design */
+.profile-main-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    height: calc(100vh - 180px);
+    overflow: hidden;
+}
+
+.profile-left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.profile-right-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.profile-info-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.profile-image-compact {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: 3px solid var(--bg-color);
+}
+
+.profile-username-compact {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-top: 5px;
+}
+
+.user-info-compact {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Friends network container */
+.friends-network-container {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#friends-network {
+    cursor: default;
+}
+
+#friends-network canvas {
+    cursor: pointer !important;
+}
+
+.profile-section-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+.profile-section-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.section-title-showcase {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-color);
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bg-color);
+}
+
+/* Horizontal scrolling showcases */
+.showcase-scroll-container {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    margin-bottom: 5px;
+    flex: 1;
+    min-height: 0;
+}
+
+.showcase-scroll-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.showcase-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 10px;
+    margin: 0 10px;
+}
+
+.showcase-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+.showcase-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--link-hover-color);
+}
+
+.showcase-scroll {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 8px;
+}
+
+.showcase-card {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 140px;
+    max-width: 140px;
+    flex-shrink: 0;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.showcase-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.showcase-card-wide {
+    min-width: 220px;
+    max-width: 220px;
+}
+
+.showcase-cover-wrapper {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.showcase-cover {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    display: block;
+}
+
+.showcase-card .showcase-cover {
+    max-height: 140px;
+}
+
+/* Author images should be round */
+.showcase-card.author-card .showcase-cover {
+    border-radius: 50%;
+    object-fit: cover;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 8px;
+}
+
+.showcase-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 5px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+}
+
+.showcase-author {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+
+.showcase-rating {
+    font-size: 0.75rem;
+    color: var(--link-color);
+    margin: 3px 0;
+}
+
+.showcase-description {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+.showcase-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Friends showcase styling - Network Graph */
+.friends-showcase-container {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
+    background: var(--bg-color);
+    border-radius: 8px;
+}
+
+#friends-network-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.friends-showcase-container .showcase-card {
+    min-width: 60px;
+    max-width: 60px;
+    padding: 4px;
+}
+
+.friends-showcase-container .showcase-cover {
+    height: 50px;
+    width: 50px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.friends-showcase-container .showcase-title {
+    font-size: 0.7rem;
+    margin: 2px 0;
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 1200px) {
+    .profile-main-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        height: auto;
+    }
+
+    .profile-left-column {
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    .profile-info-card {
+        flex: 0 0 300px;
+    }
+
+    .profile-right-column {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(4, auto);
+        height: auto;
+    }
+}
+
+/* Old profile header styles (kept for compatibility) */
 .profile-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
     margin-top: 20px;
-    gap: 40px;
+    gap: 50px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Left section (profile info) */
@@ -11,10 +356,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 7px; /* 7px between different things */
+    gap: 10px;
     text-align: center;
-    max-width: 300px; /* Set maximum width to prevent expansion */
-    width: 300px; /* Fixed width for consistency */
+    min-width: 350px;
+    max-width: 400px;
+    width: 350px;
+    flex-shrink: 0;
 }
 
 /* Mobile responsive adjustments */
@@ -32,9 +379,8 @@
 
 /* Friends section on the left */
 .friends-section-left {
-    width: 80%; /* Less wide */
-    max-width: 300px; /* Maximum width */
-    margin-top: 10px;
+    width: 100%;
+    margin-top: 15px;
 }
 
 /* Mobile responsive adjustments */
@@ -84,17 +430,17 @@
 }
 
 .profile-user-image {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--border-color);
+    border: 4px solid var(--border-color);
     background-color: var(--background-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .profile-username {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: bold;
 }
 
@@ -103,6 +449,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    max-width: 900px;
 }
 
 /* Favorites section */
@@ -119,17 +467,18 @@
 
 .favorites-card {
     border-radius: 12px;
-    padding: 20px;
+    padding: 25px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     border: 1px solid var(--border-color);
 }
 
 .favorites-card-title {
-    font-size: 1.3rem;
-    margin-bottom: 15px;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
     color: var(--text-color);
     border-bottom: 2px solid var(--link-color);
-    padding-bottom: 8px;
+    padding-bottom: 10px;
+    font-weight: 600;
 }
 
 .favorites-list {
@@ -141,16 +490,84 @@
     gap: 15px;
 }
 
+/* Slideshow container for horizontal scrolling */
+.favorites-slideshow {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--link-color) var(--secondary-bg);
+}
+
+/* Desktop: Use grid layout instead of horizontal scroll */
+@media (min-width: 1025px) {
+    .favorites-slideshow {
+        overflow-x: visible;
+    }
+    
+    .favorites-slideshow .favorites-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .favorite-item {
+        width: 100%;
+    }
+}
+
+.favorites-slideshow::-webkit-scrollbar {
+    height: 8px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-track {
+    background: var(--secondary-bg);
+    border-radius: 4px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 4px;
+}
+
+.favorites-slideshow::-webkit-scrollbar-thumb:hover {
+    background: var(--link-hover);
+}
+
+/* Make favorites list horizontal in slideshow mode */
+.favorites-slideshow .favorites-list {
+    flex-wrap: nowrap;
+    gap: 15px;
+    padding-bottom: 10px;
+}
+
+/* Ensure empty message displays properly */
+.favorites-slideshow .favorites-empty-message {
+    padding: 20px;
+    min-width: 100%;
+}
+
 .favorite-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 10px;
     border: 1px solid var(--border-color);
     width: 120px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
+    background: var(--background-color);
+}
+
+/* Desktop: Larger favorite items */
+@media (min-width: 1025px) {
+    .favorite-item {
+        padding: 15px;
+        width: 100%;
+    }
 }
 
 .favorite-item:hover {
@@ -193,6 +610,21 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+/* Desktop: Larger images */
+@media (min-width: 1025px) {
+    .favorite-item-image {
+        width: 100px;
+        height: 130px;
+        margin-bottom: 12px;
+    }
+    
+    .favorite-author-image {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 12px;
+    }
+}
+
 .favorite-item-title {
     font-size: 0.85rem;
     font-weight: 500;
@@ -207,6 +639,19 @@
     color: var(--text-color-secondary);
     margin-top: 4px;
     font-style: italic;
+}
+
+/* Desktop: Larger text */
+@media (min-width: 1025px) {
+    .favorite-item-title {
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    
+    .favorite-item-author {
+        font-size: 0.85rem;
+        margin-top: 6px;
+    }
 }
 
 .favorites-empty-message {
@@ -242,7 +687,7 @@
 .user-email,
 .user-join-date,
 .user-bio {
-    margin: 3px 0; /* 3px between items that belong together */
+    margin: 3px 0;
     color: var(--text-color-secondary);
     font-size: 0.9rem;
     word-wrap: break-word;
@@ -251,9 +696,22 @@
 }
 
 .user-bio {
-    margin-bottom: 10px; /* Extra spacing between bio and stats */
-    color: var(--text-color); /* Make bio more visible with darker color */
-    font-size: 1rem; /* Slightly larger font size */
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+/* Desktop: Larger text */
+@media (min-width: 1025px) {
+    .user-email,
+    .user-join-date {
+        font-size: 1rem;
+    }
+    
+    .user-bio {
+        font-size: 1.1rem;
+        line-height: 1.5;
+    }
 }
 
 /* Friend item styles */
@@ -328,15 +786,29 @@
 
 /* Tab styles */
 .profile-tab {
-    font-size: 1rem !important;
-    font-weight: 450 !important;
-    padding: 12px 12px !important;
-    background: var(--secondary-bg) !important;
-    color: var(--text-color) !important;
-    border: none !important;
-    border-radius: 8px 8px 0 0 !important;
+    padding: 12px 20px;
+    border: none;
+    background: var(--secondary-bg);
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-size: 1rem;
+    font-weight: 500;
     margin-right: 5px;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.profile-tab:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text-color);
+}
+
+.profile-tab.active-tab {
+    background: var(--link-color);
+    color: var(--button-text-color);
+    border-bottom: 3px solid var(--link-color);
+    font-weight: 600;
 }
 
 .tab-section-title {
@@ -440,41 +912,59 @@
         order: 1; /* Put tabs below profile info */
     }
 
+    /* Reduce gap between books and authors sections on mobile */
+    .favorites-container {
+        gap: 5px; /* Minimal gap */
+    }
 
+    .favorites-card {
+        padding: 8px 12px; /* Minimal vertical padding */
+    }
 
+    .favorites-card-title {
+        font-size: 0.9rem !important; /* Smaller title */
+        margin-bottom: 5px; /* Minimal margin */
+        padding-bottom: 3px; /* Minimal padding */
+    }
 
+    /* Mobile adjustments for favorites - slideshow mode */
+    .favorites-slideshow {
+        margin: 0 -10px; /* Extend to edges on mobile */
+        padding: 0 10px; /* Add padding inside */
+    }
 
-    /* Mobile adjustments for favorites */
-    .favorites-list {
-        gap: 5px; /* Reduce gap between items */
-        justify-content: center; /* Center the cards */
+    .favorites-slideshow .favorites-list {
+        gap: 10px; /* Consistent gap between items */
+        justify-content: flex-start; /* Align left for scrolling */
+        flex-wrap: nowrap; /* Force horizontal layout */
     }
 
     .favorite-item {
-        width: 80px; /* Smaller card width */
-        padding: 5px; /* Reduce padding */
+        width: 100px; /* Slightly larger on mobile for better touch targets */
+        padding: 8px; /* Adequate padding */
+        flex-shrink: 0; /* Prevent shrinking in horizontal scroll */
     }
 
     .favorite-item-image {
-        width: 60px; /* Smaller image */
-        height: 80px; /* Maintain aspect ratio */
-        margin-bottom: 4px; /* Reduce margin */
+        width: 70px; /* Balanced size */
+        height: 90px; /* Maintain aspect ratio */
+        margin-bottom: 6px; /* Good spacing */
     }
 
     .favorite-author-image {
-        width: 60px; /* Smaller author image */
-        height: 60px; /* Square */
-        margin-bottom: 4px; /* Reduce margin */
+        width: 70px; /* Match book image width */
+        height: 70px; /* Square */
+        margin-bottom: 6px; /* Consistent spacing */
     }
 
     .favorite-item-title {
-        font-size: 0.75rem; /* Smaller title */
+        font-size: 0.8rem; /* Readable title */
         line-height: 1.2; /* Tighter line height */
     }
 
     .favorite-item-author {
-        font-size: 0.65rem; /* Smaller author text */
-        margin-top: 2px; /* Reduce margin */
+        font-size: 0.7rem; /* Smaller author text */
+        margin-top: 3px; /* Comfortable margin */
     }
 
     /* Mobile styles for completed books */
@@ -507,9 +997,377 @@
     }
 }
 
+/* Desktop: Better grid layout for completed books */
+@media (min-width: 1025px) {
+    .completed-books-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 20px !important;
+    }
+    
+    .completed-book-card {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 320px;
+    }
+}
+
 /* Utility classes for inline styles */
 .text-link { color: var(--link-color); }
 .text-secondary { color: var(--text-color-secondary); }
 .text-primary { color: var(--text-color); }
 .text-muted { color: #6c757d; }
 .bg-light { background-color: #f8f9fa; }
+
+/* Bookshelf Tab Styles */
+.bookshelf-layout {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bookshelf-shelf-section {
+    margin-bottom: 15px;
+    padding-bottom: 0;
+}
+
+.bookshelf-shelf-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+}
+
+.bookshelf-shelf-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.bookshelf-book-count {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.bookshelf-shelf-container {
+    position: relative;
+    padding: 10px 0 10px 0;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    min-height: 180px;
+    max-height: 180px;
+    border-bottom: 3px solid var(--border-color);
+    margin-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+    border-radius: 5px;
+    margin: 0 10px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 5px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+.bookshelf-books-row {
+    display: inline-flex;
+    gap: 15px;
+    padding: 0 10px 10px 10px;
+    align-items: flex-end;
+}
+
+.bookshelf-book-card {
+    flex-shrink: 0;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 93px;
+    max-width: 93px;
+    width: 93px;
+    transition: transform 0.2s ease;
+    vertical-align: top;
+}
+
+.bookshelf-book-card:hover {
+    transform: translateY(-5px);
+}
+
+.bookshelf-favorited .bookshelf-cover-wrapper {
+    border: 3px solid var(--link-color);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.bookshelf-cover-wrapper {
+    width: 85px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: box-shadow 0.2s ease, border 0.2s ease;
+    overflow: hidden;
+}
+
+.bookshelf-cover-wrapper:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.bookshelf-book-cover {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 2px;
+    cursor: pointer;
+    display: block;
+}
+
+.bookshelf-book-info {
+    text-align: center;
+    margin-top: 5px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.bookshelf-book-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 2px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.1;
+    max-height: 1.54em;
+}
+
+.bookshelf-book-author {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin: 0 0 2px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bookshelf-book-rating {
+    font-size: 0.65rem;
+    color: var(--link-color);
+    margin: 0;
+    font-weight: 500;
+}
+
+.bookshelf-empty-message {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 40px 20px;
+    text-align: center;
+    width: 100%;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    /* Stack profile layout vertically on mobile */
+    .profile-main-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 10px;
+        height: auto;
+    }
+    
+    .profile-left-column {
+        width: 100%;
+    }
+    
+    .profile-right-column {
+        width: 100%;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        gap: 15px;
+        height: auto;
+        overflow: visible;
+    }
+    
+    /* Adjust tab navigation for mobile */
+    .profile-tabs-container {
+        gap: 5px;
+        padding: 0 5px;
+        margin: 10px auto 0;
+        flex-wrap: wrap;
+    }
+    
+    .profile-tab {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        flex: 1;
+        min-width: 80px;
+    }
+    
+    #profile-tab-content {
+        padding: 0 10px 10px;
+    }
+    
+    /* Profile info card adjustments */
+    .profile-info-card {
+        padding: 15px;
+    }
+    
+    .profile-image-compact {
+        width: 100px;
+        height: 100px;
+    }
+    
+    /* Showcase sections for mobile */
+    .profile-section-card {
+        padding: 12px;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .section-title-showcase {
+        font-size: 1.1rem;
+    }
+    
+    .showcase-card,
+    .showcase-card-wide {
+        min-width: 120px;
+    }
+    
+    .showcase-cover-wrapper {
+        width: 100px;
+        height: 140px;
+    }
+    
+    /* Friends graph adjustments */
+    .friends-network-container {
+        padding: 10px;
+    }
+    
+    #friends-network {
+        height: 400px !important;
+    }
+    
+    /* Bookshelf adjustments */
+    .bookshelf-layout {
+        padding: 5px;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .bookshelf-shelf-section {
+        margin-bottom: 10px;
+    }
+    
+    .bookshelf-shelf-header {
+        padding-left: 5px;
+    }
+    
+    .bookshelf-shelf-title {
+        font-size: 1rem;
+    }
+    
+    .bookshelf-book-count {
+        font-size: 0.8rem;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 120px;
+        max-height: 120px;
+    }
+    
+    .bookshelf-cover-wrapper {
+        width: 70px;
+        height: 95px;
+        padding: 3px;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 76px;
+        max-width: 76px;
+        width: 76px;
+    }
+    
+    /* Hide text info on mobile - only show covers */
+    .bookshelf-book-info {
+        display: none;
+    }
+    
+    .bookshelf-books-row {
+        gap: 10px;
+        padding: 0 5px 5px 5px;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .profile-tab {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .profile-image-compact {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .showcase-card,
+    .showcase-card-wide {
+        min-width: 100px;
+    }
+    
+    .showcase-cover-wrapper {
+        width: 80px;
+        height: 120px;
+    }
+    
+    #friends-network {
+        height: 300px !important;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 110px;
+        max-height: 110px;
+    }
+    
+    .bookshelf-cover-wrapper {
+        width: 60px;
+        height: 85px;
+        padding: 2px;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 64px;
+        max-width: 64px;
+        width: 64px;
+    }
+    
+    .bookshelf-books-row {
+        gap: 8px;
+    }
+}

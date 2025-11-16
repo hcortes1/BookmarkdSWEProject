@@ -31,14 +31,13 @@ def update_user_profile(user_id: str, display_name: str = None, bio: str = None)
     """
     try:
         if display_name is not None:
-            is_approved, reason, layer = moderate_review(display_name)
+            is_approved, reason, layer = moderate_review(display_name, context="profile")
             if not is_approved:
                 return {"success": False, "message": "Display name contains inappropriate content"}
-            
         if bio is not None:
-            is_approved, reason, layer = moderate_review(bio)
-            if not is_approved:
-                return {"success": False, "message": "Bio contains inappropriate content."}
+                is_approved, reason, layer = moderate_review(bio, context="profile")
+                if not is_approved:
+                    return {"success": False, "message": "Bio contains inappropriate content."}
 
 
         updates = []

@@ -12,7 +12,7 @@ def create_or_update_review(user_id, book_id, rating, review_text=None):
     try:
         # STEP 1: Moderate the review text (if provided)
         if review_text and review_text.strip():
-            is_approved, reason, layer = moderate_review(review_text)
+            is_approved, reason, layer = moderate_review(review_text, context="review")
             
             if not is_approved:
                 return False, f"Review rejected: {reason}"

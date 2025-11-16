@@ -1,13 +1,13 @@
 import psycopg2.extras
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from backend.db import get_conn
-from datetime import datetime, timezone
+from backend.gemini_helper import get_book_recommendation_chat, select_books_from_list
+from backend.gutenberg import get_gutenberg_description
+import difflib
+import json
+import pytz
 
 def format_timestamp(dt):
-    """
-    - If < 24 hours: 'x hours/minutes ago'
-    - Else: formatted date (e.g. 'Nov 3, 2025')
-    """
     if not dt:
         return ""
 
@@ -30,20 +30,18 @@ def format_timestamp(dt):
         return f"{int(seconds // 3600)}h ago"
 
 def get_friend_activity(user_id, limit=10):
-    """
-    Return recent bookshelf activity for a user's friends.
-    Includes actions such as marking a book as completed,
-    currently reading, or planning to read.
-    """
     sql = """
         SELECT 
+            u.user_id,
             u.username,
             COALESCE(u.profile_image_url, '/assets/svg/default-profile.svg') AS profile_image_url,
             b.book_id,
             b.title AS book_title,
             b.cover_url,
             bs.shelf_type,
-            bs.added_at
+            bs.added_at,
+            (SELECT COUNT(*) FROM public.reviews WHERE book_id = b.book_id) AS total_ratings,
+            (SELECT ROUND(AVG(rating)::numeric, 1) FROM public.reviews WHERE book_id = b.book_id) AS avg_rating
         FROM public.bookshelf bs
         JOIN public.books b ON bs.book_id = b.book_id
         JOIN public.users u ON bs.user_id = u.user_id
@@ -81,10 +79,6 @@ def get_friend_activity(user_id, limit=10):
 
 
 def get_recent_reviews(limit=10):
-    """
-    Return the most recent user reviews site-wide,
-    including whether it's just a rating or a full review.
-    """
     sql = """
         SELECT 
             r.review_id,
@@ -92,10 +86,13 @@ def get_recent_reviews(limit=10):
             r.rating,
             r.review_text,
             r.created_at,
+            u.user_id,
             u.username,
             COALESCE(u.profile_image_url, '/assets/svg/default-profile.svg') AS profile_image_url,
             b.title AS book_title,
-            b.cover_url
+            b.cover_url,
+            (SELECT COUNT(*) FROM public.reviews WHERE book_id = r.book_id) AS total_ratings,
+            (SELECT ROUND(AVG(rating)::numeric, 1) FROM public.reviews WHERE book_id = r.book_id) AS avg_rating
         FROM public.reviews r
         JOIN public.users u ON r.user_id = u.user_id
         JOIN public.books b ON r.book_id = b.book_id
@@ -119,65 +116,241 @@ def get_recent_reviews(limit=10):
 
     return records
 
-#  AI Recommendations Helper
-from backend.gemini_helper import get_book_recommendation_chat
-
-def get_ai_recommendations(user_genres, limit=12):
-    """
-    Generate AI-powered book recommendations based on user's favorite genres.
-    Cross-references with your books table to fetch covers and IDs.
-    """
+def get_ai_recommendations(user_id, user_genres, limit=10):
     if not user_genres:
         return []
 
-    prompt = (
-        f"Recommend {limit} popular and well-reviewed books across these genres: {', '.join(user_genres)}.\n"
-        "Output strictly as plain text, no markdown or bullet points. Each line should be in the format:\n"
-        "Title by Author\n\n"
-        "Do not include quotes, asterisks, numbering, or any special characters — only the raw title and author."
-    )
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
 
-    success, response_text = get_book_recommendation_chat(prompt, user_genres, [])
-    if not success:
+        cur.execute("""
+            SELECT book_id FROM public.bookshelf
+            WHERE user_id = %s AND shelf_type IN ('completed', 'reading', 'currently reading');
+        """, (user_id,))
+        excluded_ids = {row["book_id"] for row in cur.fetchall()}
+
+        cur.execute("""
+            SELECT 
+                b.book_id,
+                b.title,
+                COALESCE(b.cover_url, '') AS cover_url,
+                COALESCE(a.name, '') AS author,
+                b.description AS description,
+                (SELECT COUNT(*) FROM public.reviews WHERE book_id = b.book_id) AS total_ratings,
+                (SELECT ROUND(AVG(rating)::numeric, 1) FROM public.reviews WHERE book_id = b.book_id) AS avg_rating
+            FROM public.books b
+            LEFT JOIN public.authors a ON b.author_id = a.author_id
+        """)
+        all_books = cur.fetchall()
+        print(f"DEBUG: Fetched {len(all_books)} books from database")
+        for book in all_books[:3]:  # Print first 3 books
+            print(f"  Book: {book['title']}, Description exists: {bool(book.get('description'))}, Length: {len(book.get('description', '') or '')}")
+
+    if not all_books:
         return []
 
-    # Parse Gemini’s response
-    recs = []
-    for line in response_text.split("\n"):
-        if " by " in line:
-            title, author = line.split(" by ", 1)
-            recs.append({"title": title.strip(), "author": author.strip()})
-        if len(recs) >= limit:
-            break
+    # Filter out completed/currently-reading books
+    available_books = [
+        b for b in all_books
+        if b["book_id"] not in excluded_ids
+    ]
 
-    # --- Cross-reference with database ---
-    matched = []
-    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        for r in recs:
+    if not available_books:
+        return []
+
+    # Prioritize books by quality: cover + description > cover only > neither
+    books_with_both = [b for b in available_books 
+                       if b["cover_url"] not in (None, "", " ") 
+                       and b.get("description") and b["description"].strip()]
+    books_with_cover_only = [b for b in available_books 
+                             if b["cover_url"] not in (None, "", " ") 
+                             and (not b.get("description") or not b["description"].strip())]
+    books_with_neither = [b for b in available_books 
+                          if b["cover_url"] in (None, "", " ")]
+
+    # AI selects books from DB titles using dedicated function
+    book_titles_list = [b["title"] for b in available_books]
+    success, ai_output = select_books_from_list(book_titles_list, user_genres, limit)
+    
+    matched_recs = []
+    used_ids = set()
+    
+    # Try to match AI-selected titles if successful, prioritizing complete books
+    if success and ai_output:
+        ai_titles = [t.strip() for t in ai_output.split("\n") if t.strip()]
+        ai_titles_clean = {t.lower() for t in ai_titles}
+
+        # First pass: match books with both cover and description
+        for title_lower in ai_titles_clean:
+            best = difflib.get_close_matches(
+                title_lower,
+                [b["title"].lower() for b in books_with_both],
+                n=1,
+                cutoff=0.7
+            )
+            if best:
+                match_title = best[0]
+                book = next(b for b in books_with_both if b["title"].lower() == match_title)
+                if book["book_id"] not in used_ids:
+                    matched_recs.append(book)
+                    used_ids.add(book["book_id"])
+                    if len(matched_recs) >= limit:
+                        break
+
+        # Second pass: match remaining AI titles from books with cover only
+        if len(matched_recs) < limit:
+            for title_lower in ai_titles_clean:
+                best = difflib.get_close_matches(
+                    title_lower,
+                    [b["title"].lower() for b in books_with_cover_only],
+                    n=1,
+                    cutoff=0.7
+                )
+                if best:
+                    match_title = best[0]
+                    book = next(b for b in books_with_cover_only if b["title"].lower() == match_title)
+                    if book["book_id"] not in used_ids:
+                        matched_recs.append(book)
+                        used_ids.add(book["book_id"])
+                        if len(matched_recs) >= limit:
+                            break
+
+    # Fill remaining slots with books that have both cover and description
+    if len(matched_recs) < limit:
+        for b in books_with_both:
+            if b["book_id"] not in used_ids:
+                matched_recs.append(b)
+                used_ids.add(b["book_id"])
+                if len(matched_recs) >= limit:
+                    break
+
+    # Then fill with books that have cover only
+    if len(matched_recs) < limit:
+        for b in books_with_cover_only:
+            if b["book_id"] not in used_ids:
+                matched_recs.append(b)
+                used_ids.add(b["book_id"])
+                if len(matched_recs) >= limit:
+                    break
+
+    # Finally add books without covers as last resort
+    if len(matched_recs) < limit:
+        for b in books_with_neither:
+            if b["book_id"] not in used_ids:
+                b["cover_url"] = "/assets/svg/default-book.svg"
+                matched_recs.append(b)
+                used_ids.add(b["book_id"])
+                if len(matched_recs) >= limit:
+                    break
+
+    # Debug: print what descriptions we have
+    for rec in matched_recs:
+        print(f"Book: {rec['title']}, Has description: {bool(rec.get('description'))}, Description: {rec.get('description', '')[:50] if rec.get('description') else 'None'}")
+
+    return matched_recs[:limit]
+
+
+def get_next_refresh_time():
+    """Calculate next 7 PM ET refresh time"""
+    eastern = pytz.timezone('US/Eastern')
+    now_et = datetime.now(eastern)
+    
+    # Set to today at 7 PM ET
+    refresh_time = now_et.replace(hour=19, minute=0, second=0, microsecond=0)
+    
+    # If it's already past 7 PM, move to tomorrow
+    if now_et >= refresh_time:
+        refresh_time += timedelta(days=1)
+    
+    return refresh_time
+
+
+def should_refresh_cache(created_at):
+    """Check if cache should be refreshed (past 7 PM ET)"""
+    if not created_at:
+        return True
+    
+    eastern = pytz.timezone('US/Eastern')
+    now_et = datetime.now(eastern)
+    
+    # Convert created_at to Eastern time
+    if created_at.tzinfo is None:
+        created_at = pytz.utc.localize(created_at)
+    created_at_et = created_at.astimezone(eastern)
+    
+    # Get last 7 PM ET
+    last_refresh = now_et.replace(hour=19, minute=0, second=0, microsecond=0)
+    if now_et < last_refresh:
+        # Haven't hit today's 7 PM yet, so last refresh was yesterday
+        last_refresh -= timedelta(days=1)
+    
+    # Cache should refresh if it was created before the last 7 PM ET
+    return created_at_et < last_refresh
+
+
+def get_cached_recommendations(user_id):
+    """Get cached recommendations for user, or None if cache invalid"""
+    try:
+        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("""
-                SELECT book_id, title, cover_url, a.name AS author_name
-                FROM public.books b
-                LEFT JOIN public.authors a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) ILIKE LOWER(%s)
-                ORDER BY LENGTH(b.title) ASC
-                LIMIT 1;
-            """, (f"%{r['title'].strip('*\"')}%",))
-            db_book = cur.fetchone()
+                SELECT rec_data, created_at
+                FROM public.ai_recommendation_cache
+                WHERE user_id = %s
+            """, (user_id,))
+            
+            result = cur.fetchone()
+            if not result:
+                return None
+            
+            # Check if cache should be refreshed
+            if should_refresh_cache(result['created_at']):
+                return None
+            
+            return result['rec_data']
+    except Exception as e:
+        print(f"Error getting cached recommendations: {e}")
+        return None
 
-            if db_book:
-                matched.append({
-                    "book_id": db_book["book_id"],
-                    "title": db_book["title"],
-                    "author": db_book["author_name"] or r["author"],
-                    "cover_url": db_book["cover_url"]
-                })
-            else:
-                # Fallback: AI-only result
-                matched.append({
-                    "book_id": None,
-                    "title": r["title"],
-                    "author": r["author"],
-                    "cover_url": None
-                })
 
-    return matched
+def cache_recommendations(user_id, recommendations):
+    """Store recommendations in cache"""
+    try:
+        with get_conn() as conn, conn.cursor() as cur:
+            # Use upsert to insert or update
+            cur.execute("""
+                INSERT INTO public.ai_recommendation_cache (user_id, rec_data, created_at)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id) 
+                DO UPDATE SET rec_data = EXCLUDED.rec_data, created_at = CURRENT_TIMESTAMP
+            """, (user_id, json.dumps(recommendations)))
+            conn.commit()
+            return True
+    except Exception as e:
+        print(f"Error caching recommendations: {e}")
+        return False
+
+
+def get_ai_recommendations_with_cache(user_id, user_genres, limit=10):
+    """Get AI recommendations with caching - refreshes daily at 7 PM ET"""
+    if not user_genres:
+        return []
+    
+    # Try to get from cache first
+    cached = get_cached_recommendations(user_id)
+    if cached is not None:
+        print(f"Returning cached recommendations for user {user_id}")
+        # Re-sort cached results to prioritize books with cover + description
+        sorted_cached = sorted(cached, key=lambda b: (
+            bool(b.get("cover_url") and b["cover_url"] not in ("", " ", "/assets/svg/default-book.svg") and b.get("description") and b["description"].strip()),
+            bool(b.get("cover_url") and b["cover_url"] not in ("", " ", "/assets/svg/default-book.svg"))
+        ), reverse=True)
+        return sorted_cached
+    
+    # Generate fresh recommendations
+    print(f"Generating fresh recommendations for user {user_id}")
+    recommendations = get_ai_recommendations(user_id, user_genres, limit)
+    
+    # Cache the results
+    if recommendations:
+        cache_recommendations(user_id, recommendations)
+    
+    return recommendations

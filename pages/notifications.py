@@ -56,6 +56,11 @@ def layout():
         dcc.Store(id='notifications-data',
                   data={'count': 0, 'notifications': []}),
 
+        # Store for resend email feedback
+        dcc.Store(id='resend-feedback-store', data=None),
+        # Store for last resend time (for rate limiting)
+        dcc.Store(id='last-resend-time', data=0),
+
         # Stores for bookshelf modal
         dcc.Store(id='bookshelf-modal-visible', data=False),
         dcc.Store(id='bookshelf-book-data', data={}),
@@ -242,8 +247,14 @@ def update_notifications_display(notifications_data, user_session):
     notifications = notifications_data.get('notifications', [])
 
     # Sort notifications by created_at in descending order (newest first)
-    notifications = sorted(notifications, key=lambda x: x.get(
-        'created_at', ''), reverse=True)
+    # Put email verification notification first (it has None created_at), then sort others
+    def sort_key(x):
+        created_at = x.get('created_at')
+        if created_at is None:
+            return 'zzzzzzzzz'  # put at top (reverse=True makes this first)
+        return created_at if created_at else ''
+
+    notifications = sorted(notifications, key=sort_key, reverse=True)
 
     # Update header count
     count_display = f"{count} notification{'s' if count != 1 else ''}"
@@ -272,25 +283,33 @@ def update_notifications_display(notifications_data, user_session):
                 ], className='notification-avatar'),
 
                 html.Div([
+                    # Row 1: Title
+                    html.Strong(
+                        'Verify Your Email',
+                        className='notification-title text-link',
+                        style={'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Body text and button
                     html.Div([
-                        html.Div([
-                            html.Strong(
-                                'Verify Your Email', className='notification-username', style={'color': 'var(--link-color)'}),
-                            html.Span(' Please verify your email address to secure your account', className='notification-message', style={
-                                      'margin-left': '6px', 'color': 'var(--text-color)'})
-                        ], style={'display': 'flex', 'align-items': 'center'}),
-                    ], className='notification-content'),
-
-                    html.Div([
-                        html.Button(
-                            'Resend Email',
-                            id={'type': 'resend-verification',
-                                'notification_id': notification['id']},
-                            className='btn-accept-notification'
+                        html.Div(
+                            'Please verify your email address to secure your account',
+                            className='notification-message text-primary',
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                    ], className='notification-actions')
-                ], className='notification-main-content')
-            ], className='card notification-item', style={
+                        html.Div([
+                            html.Button(
+                                'Resend Email',
+                                id='resend-verification-btn',
+                                n_clicks=0,
+                                className='btn-accept-notification btn-email-verify'
+                            ),
+                            html.Div(
+                                id='resend-email-feedback', className='resend-feedback', style={'marginTop': '5px'})
+                        ], className='notification-actions', style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'flex-start', 'gap': '5px'})
+                    ], className='notification-row', style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
+            ], className='card notification-item notification-no-hover', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
                 'padding': '16px',
@@ -322,36 +341,38 @@ def update_notifications_display(notifications_data, user_session):
                 ),
 
                 html.Div([
+                    # Row 1: Title
+                    dcc.Link(
+                        html.Strong(f"{sender_username} sent you a friend request",
+                                    className='notification-title text-link'),
+                        href=profile_href,
+                        style={'text-decoration': 'none',
+                               'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Timestamp and buttons
                     html.Div([
-                        html.Div([
-                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
-                                     href=profile_href, style={'text-decoration': 'none'}),
-                            html.Span(' sent you a friend request', className='notification-message text-primary', style={
-                                      'margin-left': '6px'})
-                        ], style={'display': 'flex', 'align-items': 'center'}),
-
                         html.Div(
                             get_relative_time(notification.get('created_at')),
                             className='notification-time text-secondary',
-                            style={'font-size': '12px', 'margin-top': '4px'}
-                        )
-                    ], className='notification-content'),
-
-                    html.Div([
-                        html.Button(
-                            'Accept',
-                            id={'type': 'accept-notification',
-                                'notification_id': notification['id']},
-                            className='btn-accept-notification'
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                        html.Button(
-                            'Decline',
-                            id={'type': 'decline-notification',
-                                'notification_id': notification['id']},
-                            className='btn-decline-notification'
-                        ),
-                    ], className='notification-actions')
-                ], className='notification-main-content')
+                        html.Div([
+                            html.Button(
+                                'Accept',
+                                id={'type': 'accept-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-accept-notification'
+                            ),
+                            html.Button(
+                                'Decline',
+                                id={'type': 'decline-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-decline-notification'
+                            ),
+                        ], className='notification-actions')
+                    ], style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
@@ -366,6 +387,15 @@ def update_notifications_display(notifications_data, user_session):
             book_href = f"/book/{notification.get('book_id')}"
 
             item = html.Div([
+                # Dismiss button in top-right corner
+                html.Button(
+                    '✕',
+                    id={'type': 'dismiss-notification',
+                        'notification_id': notification['id']},
+                    className='btn-dismiss-small text-muted',
+                    title='Dismiss notification'
+                ),
+
                 dcc.Link(
                     html.Div([
                         html.Img(
@@ -385,49 +415,48 @@ def update_notifications_display(notifications_data, user_session):
                 ),
 
                 html.Div([
+                    # Row 1: Title
+                    dcc.Link(
+                        html.Strong(notification.get('book_title', 'a book'),
+                                    className='notification-title text-link'),
+                        href=book_href,
+                        style={'text-decoration': 'none',
+                               'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Details (sender and reason)
                     html.Div([
                         html.Div([
-                            dcc.Link(html.Strong(notification.get('book_title', 'a book'), className='notification-book-title text-link'),
-                                     href=book_href, style={'text-decoration': 'none'}),
-                            html.Span(' was recommended to you by ', className='notification-message text-primary', style={
-                                      'margin-left': '4px'}),
-                            dcc.Link(html.Strong(sender_username, className='notification-username text-link'),
-                                     href=profile_href, style={'text-decoration': 'none', 'margin-left': '4px'})
-                        ], style={'display': 'flex', 'align-items': 'center', 'flex-wrap': 'wrap'}),
-
+                            html.Span('Recommended by ',
+                                      className='text-primary'),
+                            dcc.Link(html.Strong(sender_username, className='text-link'),
+                                     href=profile_href, style={'text-decoration': 'none'})
+                        ], style={'margin-bottom': '4px'}),
                         # Show reason if provided
                         html.Div(
-                            f"They said: {notification.get('reason', 'You might like this book!')}",
+                            f"\"{notification.get('reason', 'You might like this book!')}\"",
                             className='notification-reason text-secondary',
-                            style={'font-size': '14px',
-                                   'margin-top': '6px', 'font-style': 'italic'}
+                            style={'font-style': 'italic',
+                                   'margin-bottom': '8px'}
                         ) if notification.get('reason') else html.Div(),
-
+                    ]),
+                    # Row 3: Timestamp and button
+                    html.Div([
                         html.Div(
                             get_relative_time(notification.get('created_at')),
                             className='notification-time text-secondary',
-                            style={'font-size': '12px', 'margin-top': '4px'}
-                        )
-                    ], className='notification-content'),
-
-                    html.Div([
-                        # Single action button for book recommendations - opens bookshelf modal
-                        html.Button(
-                            'Add to Bookshelf',
-                            id={'type': 'add-to-bookshelf-notification',
-                                'notification_id': notification['id']},
-                            className='btn-add-to-bookshelf'
+                            style={'flex': '1', 'display': 'flex',
+                                   'align-items': 'center'}
                         ),
-                        # Small dismiss button
-                        html.Button(
-                            '✕',
-                            id={'type': 'dismiss-notification',
-                                'notification_id': notification['id']},
-                            className='btn-dismiss-small text-muted',
-                            title='Dismiss notification'
-                        )
-                    ], className='notification-actions')
-                ], className='notification-main-content')
+                        html.Div([
+                            html.Button(
+                                'Add to Bookshelf',
+                                id={'type': 'add-to-bookshelf-notification',
+                                    'notification_id': notification['id']},
+                                className='btn-add-to-bookshelf'
+                            )
+                        ], className='notification-actions')
+                    ], style={'display': 'flex', 'align-items': 'center', 'gap': '12px'})
+                ], className='notification-main-content', style={'flex': '1'})
             ], className='card notification-item', style={
                 'display': 'flex',
                 'align-items': 'flex-start',
@@ -439,7 +468,7 @@ def update_notifications_display(notifications_data, user_session):
     return notification_items, count_display
 
 
-# Callback to handle notification responses
+# Callback to handle notification responses (non-resend actions)
 @callback(
     [Output('notifications-refresh-interval', 'n_intervals'),
      Output('bookshelf-modal-visible', 'data'),
@@ -450,14 +479,13 @@ def update_notifications_display(notifications_data, user_session):
      Input({'type': 'dismiss-notification',
            'notification_id': dash.dependencies.ALL}, 'n_clicks'),
      Input({'type': 'add-to-bookshelf-notification',
-           'notification_id': dash.dependencies.ALL}, 'n_clicks'),
-     Input({'type': 'resend-verification', 'notification_id': dash.dependencies.ALL}, 'n_clicks')],
+           'notification_id': dash.dependencies.ALL}, 'n_clicks')],
     [State('user-session', 'data'),
      State('notifications-refresh-interval', 'n_intervals'),
      State('notifications-data', 'data')],
     prevent_initial_call=True
 )
-def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, resend_clicks, user_session, current_interval, notifications_data):
+def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, user_session, current_interval, notifications_data):
     if not user_session or not user_session.get('logged_in', False):
         return dash.no_update, dash.no_update, dash.no_update
 
@@ -497,13 +525,6 @@ def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, 
                 notification_id=notification_id,
                 dismiss=True
             )
-        elif button_type == 'resend-verification':
-            # resend verification email
-            result = notifications_backend.resend_verification_email(
-                user_id=int(user_session['user_id'])
-            )
-            # refresh notifications after resend
-            return current_interval + 1, dash.no_update, dash.no_update
         elif button_type == 'add-to-bookshelf-notification':
             # Open bookshelf modal with book data
             if notifications_data and 'notifications' in notifications_data:
@@ -774,3 +795,128 @@ def toggle_review_form(status):
     if status == 'finished':
         return {'display': 'block'}
     return {'display': 'none'}
+
+
+# Separate callback to handle resend verification with rate limiting
+@callback(
+    [Output('resend-feedback-store', 'data'),
+     Output('last-resend-time', 'data'),
+     Output('notifications-refresh-interval', 'n_intervals', allow_duplicate=True)],
+    Input('resend-verification-btn', 'n_clicks'),
+    [State('user-session', 'data'),
+     State('last-resend-time', 'data'),
+     State('notifications-refresh-interval', 'n_intervals')],
+    prevent_initial_call=True
+)
+def handle_resend_verification(n_clicks, user_session, last_resend_time, current_interval):
+    """Handle resend verification email with rate limiting (60 seconds)"""
+    if not n_clicks or n_clicks == 0:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    if not user_session or not user_session.get('logged_in', False):
+        return {'success': False, 'message': 'Please log in'}, dash.no_update, dash.no_update
+
+    import time
+    current_time = time.time()
+
+    # Check if 90 seconds have passed since last resend
+    if last_resend_time and (current_time - last_resend_time) < 90:
+        remaining = int(90 - (current_time - last_resend_time))
+        return {'success': False, 'message': f'retry in {remaining}s'}, dash.no_update, dash.no_update
+
+    # Send the email
+    result = notifications_backend.resend_verification_email(
+        user_id=int(user_session['user_id'])
+    )
+
+    if result.get('success'):
+        return {'success': True, 'message': 'Verification email sent!'}, current_time, current_interval + 1
+    else:
+        return {'success': False, 'message': result.get('message', 'Failed to send email')}, dash.no_update, dash.no_update
+
+
+# Callback to update button state based on rate limiting
+@callback(
+    [Output('resend-verification-btn', 'disabled'),
+     Output('resend-verification-btn', 'children')],
+    [Input('last-resend-time', 'data'),
+     Input('notifications-refresh-interval', 'n_intervals')],
+    prevent_initial_call=False
+)
+def update_resend_button_state(last_resend_time, n_intervals):
+    """Update button disabled state and text based on rate limiting"""
+    if not last_resend_time or last_resend_time == 0:
+        return False, 'Resend Email'
+
+    import time
+    current_time = time.time()
+    time_since_last = current_time - last_resend_time
+
+    if time_since_last < 90:
+        remaining = int(90 - time_since_last)
+        return True, f'Resend Email'
+    else:
+        return False, 'Resend Email'
+
+
+# Callback to display resend email feedback with live countdown
+@callback(
+    Output('resend-email-feedback', 'children'),
+    [Input('resend-feedback-store', 'data'),
+     Input('last-resend-time', 'data'),
+     Input('notifications-refresh-interval', 'n_intervals')],
+    prevent_initial_call=False
+)
+def display_resend_feedback(feedback_data, last_resend_time, n_intervals):
+    """Display success or error message after resending verification email with live countdown"""
+    # If there's a last resend time, show countdown
+    if last_resend_time and last_resend_time != 0:
+        import time
+        current_time = time.time()
+        time_since_last = current_time - last_resend_time
+
+        if time_since_last < 90:
+            remaining = int(90 - time_since_last)
+            return html.Span(
+                f'Message sent: retry in {remaining}s',
+                style={
+                    'color': '#28a745',
+                    'font-size': '0.9rem',
+                    'font-weight': '500'
+                }
+            )
+
+    # Show feedback from store if no active countdown
+    if not feedback_data:
+        return ""
+
+    if feedback_data.get('success'):
+        return html.Span(
+            'Message sent: retry in 90s',
+            style={
+                'color': '#28a745',
+                'font-size': '0.9rem',
+                'font-weight': '500'
+            }
+        )
+    else:
+        message = feedback_data.get('message', 'Failed to send')
+        # If message contains 'retry in', treat as success (rate limit)
+        if 'retry in' in message:
+            return html.Span(
+                f"Message sent: {message}",
+                style={
+                    'color': '#28a745',
+                    'font-size': '0.9rem',
+                    'font-weight': '500'
+                }
+            )
+        else:
+            return html.Span(
+                message,
+                style={
+                    'color': '#dc3545',
+                    'font-size': '0.9rem',
+                    'font-weight': '500'
+                }
+            )
