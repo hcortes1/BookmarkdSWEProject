@@ -187,8 +187,9 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         ])
 
     # Create shelf layout with multiple rows (shelves)
-    # 10 books per shelf - on mobile CSS will show 5, hiding the rest, and creating visual breaks
-    books_per_shelf = 10
+    # Desktop: 10 books per shelf, Mobile: 4 books per shelf (handled by CSS showing only first 4)
+    books_per_shelf_desktop = 10
+    books_per_shelf_mobile = 4
     shelf_sections = []
 
     # Add header first
@@ -201,33 +202,19 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
         ], className='bookshelf-shelf-header')
     )
 
-    for shelf_index in range(0, len(books), books_per_shelf):
-        shelf_books = books[shelf_index:shelf_index + books_per_shelf]
-
-        # Split into two rows of 5 for mobile (desktop will show all 10 in one row)
-        first_half = shelf_books[:5]
-        second_half = shelf_books[5:]
-
-        # First row (always shown - desktop and mobile)
-        book_cards_first = [
+    # Create shelves based on mobile view (4 books per shelf) to ensure all books are accessible
+    for shelf_index in range(0, len(books), books_per_shelf_mobile):
+        shelf_books = books[shelf_index:shelf_index + books_per_shelf_mobile]
+        
+        book_cards = [
             create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
                              user_id=user_id, show_status_buttons=active_tab != 'rented')
-            for book in first_half
+            for book in shelf_books
         ]
-
-        # Second row (desktop only)
-        book_cards_second = [
-            create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
-                             user_id=user_id, show_status_buttons=active_tab != 'rented')
-            for book in second_half
-        ] if second_half else []
-
-        # Combine all cards for desktop (will be split by CSS on mobile)
-        all_cards = book_cards_first + book_cards_second
 
         shelf_sections.append(
             html.Div([
-                html.Div(all_cards, className='bookshelf-books-row')
+                html.Div(book_cards, className='bookshelf-books-row')
             ], className='bookshelf-shelf-container')
         )
 

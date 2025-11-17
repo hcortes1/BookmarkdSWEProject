@@ -2,7 +2,7 @@
 .bookshelf-shelf-section {
     margin-bottom: 15px;
     padding-bottom: 0;
-    max-width: 1200px;
+    max-width: 500px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -275,7 +275,7 @@
 #bookshelf-tab-content {
   background: var(--secondary-bg);
   padding: 20px;
-  max-width: 1200px;
+  max-width: 500px;
   margin: 0 auto;
 }
 
@@ -358,15 +358,10 @@
     }
     
     .bookshelf-books-row {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         max-width: 100%;
         gap: 6px;
         padding: 0 3px 10px 3px;
-    }
-    
-    /* Show only first 5 books per row on mobile */
-    .bookshelf-books-row .bookshelf-book-card:nth-child(n+6) {
-        display: none !important;
     }
     
     .bookshelf-book-card {
