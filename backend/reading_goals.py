@@ -6,9 +6,12 @@ from .db import get_conn
 
 
 # Create a new reading goal for a user and return success status and message
+
+
 def create_goal(
     user_id,
-    book_id=None,
+    goal_type='pages_per_day',
+    book_name=None,
     target=1,
     start_date=None,
     end_date=None,
@@ -31,10 +34,18 @@ def create_goal(
         with get_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO reading_goals(user_id, target_books, start_date, end_date, reminder_enabled)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO reading_goals(
+                        user_id, 
+                        goal_type,
+                        book_name,
+                        target_books, 
+                        start_date, 
+                        end_date, 
+                        reminder_enabled
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING goal_id
-                """, (user_id, target, start_date, end_date, reminder_enabled))
+                """, (user_id, goal_type, book_name, target, start_date, end_date, reminder_enabled))
 
                 goal_id = cur.fetchone()[0]
                 conn.commit()
@@ -43,22 +54,33 @@ def create_goal(
 
     except Exception as e:
         return False, str(e)
+    
 
 # Retrieve all reading goals for a specific user, newest first
-def get_user_goals(user_id: int) -> Tuple[bool, str, List[Dict[str, Any]]]:
+def get_user_goals(user_id):
+    """Get all reading goals for a user"""
     try:
         with get_conn() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute("""
-                    SELECT goal_id, user_id, target_books, progress, start_date, end_date, reminder_enabled
+                    SELECT 
+                        goal_id,
+                        user_id,
+                        goal_type,
+                        book_name,
+                        target_books,
+                        progress,
+                        start_date,
+                        end_date,
+                        reminder_enabled
                     FROM reading_goals
                     WHERE user_id = %s
-                    ORDER BY goal_id DESC
-                """, (int(user_id),))
-                rows = cur.fetchall()
-
-        return True, "OK", [dict(r) for r in rows]
-
+                    ORDER BY start_date DESC
+                """, (user_id,))
+                
+                goals = cur.fetchall()
+                return True, "Goals retrieved successfully", goals
+                
     except Exception as e:
         return False, str(e), []
 

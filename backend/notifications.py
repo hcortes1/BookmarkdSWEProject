@@ -7,7 +7,7 @@ import backend.recommendations as recommendations_backend
 def get_user_notifications(user_id: str, email_verified: bool = True) -> Dict[str, Any]:
     """
     Get all notifications for a user.
-    Currently includes pending friend requests, book recommendations, and email verification.
+    Currently includes pending friend requests, book recommendations, email verification, and reading goal reminders.
     Returns a dict with notification count and details.
     """
     try:
@@ -37,8 +37,7 @@ def get_user_notifications(user_id: str, email_verified: bool = True) -> Dict[st
             })
 
         # Get book recommendations
-        book_recommendations = recommendations_backend.get_user_recommendations(
-            int(user_id))
+        book_recommendations = recommendations_backend.get_user_recommendations(int(user_id))
         for rec in book_recommendations:
             notifications.append({
                 'type': 'book_recommendation',
@@ -53,6 +52,54 @@ def get_user_notifications(user_id: str, email_verified: bool = True) -> Dict[st
                 'reason': rec['reason'],
                 'created_at': rec['created_at'],
                 'message': f"{rec['sender_username']} recommended '{rec['book_title']}' to you"
+            })
+
+        # Get reading goal reminders
+        goal_reminders = get_reading_goal_reminders(int(user_id))
+        for goal in goal_reminders:
+            # Calculate progress percentage
+            progress = goal.get('progress', 0) or 0
+            target = goal.get('target_books', 1) or 1
+            percentage = int((progress / target) * 100) if target else 0
+            
+            # Calculate days left
+            end_date = goal.get('end_date')
+            days_left_text = ""
+            if end_date:
+                from datetime import date
+                if hasattr(end_date, 'date'):
+                    end_date = end_date.date()
+                days_left = (end_date - date.today()).days
+                if days_left > 0:
+                    days_left_text = f"{days_left} day{'s' if days_left != 1 else ''} left"
+                elif days_left == 0:
+                    days_left_text = "Due today!"
+                else:
+                    days_left_text = "Overdue"
+            
+            # Create message
+            if goal.get('book_title'):
+                message = f"Reading goal: {goal['book_title']} - {percentage}% complete"
+            else:
+                message = f" Reading goal: {percentage}% complete ({progress}/{target})"
+            
+            if days_left_text:
+                message += f" • {days_left_text}"
+            
+            notifications.append({
+                'type': 'reading_goal_reminder',
+                'id': f"reading_goal_{goal['goal_id']}",
+                'goal_id': goal['goal_id'],
+                'book_id': goal.get('book_id'),
+                'book_title': goal.get('book_title'),
+                'book_cover_url': goal.get('book_cover_url'),
+                'progress': progress,
+                'target': target,
+                'percentage': percentage,
+                'end_date': goal.get('end_date'),
+                'days_left_text': days_left_text,
+                'created_at': goal.get('created_at'),
+                'message': message
             })
 
         return {
@@ -155,3 +202,90 @@ def resend_verification_email(user_id: int) -> Dict[str, Any]:
 
     except Exception as e:
         return {'success': False, 'message': f'Error: {str(e)}'}
+def create_reading_goal_reminder(user_id: int, goal_id: int, message: str) -> Dict[str, Any]:
+    """
+    Create a reminder notification for a reading goal.
+    This is called when a goal is created with reminders enabled.
+    """
+    try:
+        from backend.db import get_conn
+        
+        with get_conn() as conn, conn.cursor() as cur:
+            # Insert notification into notifications table
+            # Note: You'll need to add a 'reading_goal_reminder' type to your notifications system
+            cur.execute("""
+                INSERT INTO notifications (user_id, type, message, related_id, created_at)
+                VALUES (%s, 'reading_goal_reminder', %s, %s, NOW())
+                RETURNING notification_id
+            """, (user_id, message, goal_id))
+            
+            notification_id = cur.fetchone()[0]
+            conn.commit()
+            
+            return {'success': True, 'notification_id': notification_id}
+    
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+
+def get_reading_goal_reminders(user_id: int) -> List[Dict[str, Any]]:
+    """
+    Get active reading goal reminders for a user.
+    These are shown in the notifications page.
+    """
+    try:
+        from backend.db import get_conn
+        import psycopg2.extras
+        
+        with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Get goals that have reminders enabled and are not completed
+            cur.execute("""
+                SELECT 
+                    rg.goal_id,
+                    rg.target_books,
+                    rg.progress,
+                    rg.start_date,
+                    rg.end_date,
+                    rg.created_at,
+                    b.book_id,
+                    b.title as book_title,
+                    b.cover_url as book_cover_url
+                FROM reading_goals rg
+                LEFT JOIN books b ON rg.book_id = b.book_id
+                WHERE rg.user_id = %s 
+                  AND rg.reminder_enabled = TRUE
+                  AND rg.progress < rg.target_books
+                  AND (rg.end_date IS NULL OR rg.end_date >= CURRENT_DATE)
+                ORDER BY rg.end_date ASC NULLS LAST
+            """, (user_id,))
+            
+            goals = cur.fetchall()
+            return [dict(g) for g in goals]
+    
+    except Exception as e:
+        print(f"Error getting reading goal reminders: {e}")
+        return []
+    
+    
+def dismiss_reading_goal_reminder(user_id: str, goal_id: int) -> Dict[str, Any]:
+    """
+    Dismiss a reading goal reminder by disabling reminders for that goal.
+    """
+    try:
+        from backend.db import get_conn
+        
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                UPDATE reading_goals 
+                SET reminder_enabled = FALSE 
+                WHERE goal_id = %s AND user_id = %s
+            """, (goal_id, int(user_id)))
+            
+            if cur.rowcount > 0:
+                conn.commit()
+                return {'success': True, 'message': 'Reminder dismissed'}
+            else:
+                return {'success': False, 'message': 'Goal not found'}
+    
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
