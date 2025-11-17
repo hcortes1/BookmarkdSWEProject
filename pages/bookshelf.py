@@ -205,7 +205,7 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
     # Create shelves based on mobile view (4 books per shelf) to ensure all books are accessible
     for shelf_index in range(0, len(books), books_per_shelf_mobile):
         shelf_books = books[shelf_index:shelf_index + books_per_shelf_mobile]
-        
+
         book_cards = [
             create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
                              user_id=user_id, show_status_buttons=active_tab != 'rented')

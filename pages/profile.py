@@ -267,6 +267,9 @@ def layout(username=None, **kwargs):
             # Tab Content - will show/hide different layouts
             html.Div(id='profile-tab-content', children=[]),
 
+            # Always include friend-request-section for callback registration
+            html.Div(id='friend-request-section'),
+
             # Store for active tab
             dcc.Store(id='profile-active-tab', data='profile'),
 
@@ -1322,21 +1325,25 @@ def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_sessio
             )
 
             # Show cancel button immediately after sending request
-            return html.Button(
-                "Cancel Friend Request",
-                id={'type': 'cancel-friend-request',
-                    'username': target_username},
-                className='btn-cancel-friend-request',
-                style={
-                    'background': '#6c757d',
-                    'color': 'white',
-                    'border': 'none',
-                    'padding': '8px 16px',
-                    'border-radius': '6px',
-                    'margin-top': '0px',
-                    'cursor': 'pointer'
-                }
-            )
+            return html.Div([
+                html.Button(
+                    "Cancel Friend Request",
+                    id={'type': 'cancel-friend-request',
+                        'username': target_username},
+                    className='btn-cancel-friend-request',
+                    style={
+                        'background': '#6c757d',
+                        'color': 'white',
+                        'border': 'none',
+                        'padding': '8px 16px',
+                        'border-radius': '6px',
+                        'margin-top': '0px',
+                        'cursor': 'pointer',
+                        'width': '100%',
+                        'display': 'block'
+                    }
+                )
+            ], className='friend-request-section')
 
         elif action_type == 'remove-friend':
             # Get the target user's ID first

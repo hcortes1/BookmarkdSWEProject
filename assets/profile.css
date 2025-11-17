@@ -787,6 +787,11 @@
 .btn-send-friend-request {
     background: #007bff;
     color: var(--button-text-color);
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
 }
 
 .btn-send-friend-request:hover {
@@ -1167,6 +1172,7 @@
     width: 100%;
     max-width: 100%;
     overflow: hidden;
+    align-items: center;
     word-wrap: break-word;
 }
 
