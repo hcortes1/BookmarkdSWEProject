@@ -62,7 +62,7 @@ app.layout = html.Div(id="main-app-container", children=[
                                 {'label': 'Books', 'value': 'books'},
                                 {'label': 'Authors', 'value': 'authors'}
                             ],
-                            value='users',
+                            value='books',
                             clearable=False,
                             searchable=False,
                             className='search-type-dropdown',

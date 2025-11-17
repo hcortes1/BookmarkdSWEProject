@@ -1,10 +1,21 @@
+/* Remove background from book card and info containers */
+.bookshelf-book-card, .bookshelf-book-info {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+/* Remove background from book cover images */
+.bookshelf-book-cover {
+    background: transparent !important;
+}
 /* Bookshelf shelf section styles (matching profile page) */
+
 .bookshelf-shelf-section {
     margin-bottom: 15px;
     padding-bottom: 0;
-    max-width: 500px;
+    max-width: 650px;
     margin-left: auto;
     margin-right: auto;
+    width: 100%;
 }
 
 .bookshelf-shelf-header {
@@ -61,7 +72,7 @@
 .bookshelf-books-row {
     display: flex;
     flex-wrap: nowrap;
-    gap: 15px;
+    gap: 8px;
     padding: 0 10px 10px 10px;
     align-items: flex-end;
     justify-content: center;
@@ -74,9 +85,9 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    min-width: 93px;
-    max-width: 93px;
-    width: 93px;
+    min-width: 70px;
+    max-width: 70px;
+    width: 70px;
     transition: transform 0.2s ease;
     vertical-align: top;
     position: relative;
@@ -92,12 +103,12 @@
 }
 
 .bookshelf-cover-wrapper {
-    width: 85px;
-    height: 110px;
+    width: 62px;
+    height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f9fa;
+    background: transparent;
     border-radius: 4px;
     padding: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
@@ -199,12 +210,17 @@
 
 /* Tabs container tweaks */
 .bookshelf-tabs-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0px;
-  border-bottom: 2px solid var(--link-color);
-  padding-bottom: 0px;
-  width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0px;
+    border-bottom: 2px solid var(--link-color);
+    padding-bottom: 0px;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    position: relative;
+}
 }
 .bookshelf-tab:not(:last-child) {
   margin-right: 5px;
@@ -273,10 +289,11 @@
 
 /* Tab content background */
 #bookshelf-tab-content {
-  background: var(--secondary-bg);
-  padding: 20px;
-  max-width: 500px;
-  margin: 0 auto;
+    background: transparent;
+    padding: 20px;
+    max-width: 650px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 /* Mobile Responsive Styles */
@@ -345,6 +362,7 @@
     #bookshelf-tab-content {
         padding: 10px 5px;
         overflow-x: hidden;
+        max-width: 100%;
     }
 }
 

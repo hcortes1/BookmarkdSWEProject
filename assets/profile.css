@@ -1108,6 +1108,7 @@
     gap: 15px;
     padding: 0 10px 10px 10px;
     align-items: flex-end;
+    justify-content: flex-start;
 }
 
 .bookshelf-book-card {
