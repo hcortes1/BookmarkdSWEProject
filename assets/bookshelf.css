@@ -2,6 +2,9 @@
 .bookshelf-shelf-section {
     margin-bottom: 15px;
     padding-bottom: 0;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .bookshelf-shelf-header {
@@ -27,14 +30,13 @@
 .bookshelf-shelf-container {
     position: relative;
     padding: 10px 0 10px 0;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
-    white-space: nowrap;
     min-height: 180px;
-    max-height: 180px;
     border-bottom: 3px solid var(--border-color);
     margin-bottom: 5px;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    justify-content: center;
 }
 
 .bookshelf-shelf-container::-webkit-scrollbar {
@@ -57,10 +59,13 @@
 }
 
 .bookshelf-books-row {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: nowrap;
     gap: 15px;
     padding: 0 10px 10px 10px;
     align-items: flex-end;
+    justify-content: center;
+    max-width: 100%;
 }
 
 /* Book card styles for shelf layout */
@@ -270,13 +275,21 @@
 #bookshelf-tab-content {
   background: var(--secondary-bg);
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Mobile Responsive Styles */
 @media (max-width: 1024px) {
+    .bookshelf-shelf-section {
+        max-width: 100%;
+        padding: 0 5px;
+    }
+    
     .bookshelf-shelf-container {
         min-height: 150px;
-        max-height: 150px;
+        overflow-x: hidden;
+        padding: 10px 5px;
     }
 
     .bookshelf-book-card {
@@ -311,12 +324,14 @@
     }
 
     .bookshelf-books-row {
-        gap: 10px;
+        gap: 8px;
+        padding: 0 5px 10px 5px;
     }
 
     /* Mobile adjustments for bookshelf tabs */
     .bookshelf-tabs-container {
         flex-wrap: nowrap;
+        padding: 0 5px;
     }
 
     .bookshelf-tab {
@@ -328,6 +343,75 @@
     }
     
     #bookshelf-tab-content {
-        padding: 10px;
+        padding: 10px 5px;
+        overflow-x: hidden;
+    }
+}
+
+@media (max-width: 768px) {
+    .bookshelf-shelf-section {
+        max-width: 100%;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 130px;
+    }
+    
+    .bookshelf-books-row {
+        flex-wrap: wrap;
+        max-width: 100%;
+        gap: 6px;
+        padding: 0 3px 10px 3px;
+    }
+    
+    /* Show only first 5 books per row on mobile */
+    .bookshelf-books-row .bookshelf-book-card:nth-child(n+6) {
+        display: none !important;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 64px;
+        max-width: 64px;
+        width: 64px;
+    }
+
+    .bookshelf-cover-wrapper {
+        width: 60px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bookshelf-shelf-section {
+        margin-bottom: 10px;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 110px;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 54px;
+        max-width: 54px;
+        width: 54px;
+    }
+
+    .bookshelf-cover-wrapper {
+        width: 50px;
+        height: 70px;
+        padding: 2px;
+    }
+    
+    .bookshelf-books-row {
+        gap: 5px;
+        padding: 0 2px 8px 2px;
+    }
+    
+    .bookshelf-shelf-header {
+        padding-left: 5px;
+    }
+    
+    #bookshelf-tab-content {
+        padding: 8px 3px;
     }
 }

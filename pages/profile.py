@@ -547,22 +547,23 @@ def handle_tab_switch(profile_clicks, friends_clicks, bookshelf_clicks):
 )
 def update_tab_content(active_tab, session_data, viewed_username):
     """Update the displayed content based on which tab is active"""
-    
+
     if not viewed_username:
         return html.Div("No user specified", className="text-secondary")
-    
+
     # Get user data
     user_data = profile_backend.get_user_profile_by_username(viewed_username)
     if not user_data:
         return html.Div("User not found", className="text-secondary")
-    
+
     is_own_profile = (session_data and
                       session_data.get('logged_in', False) and
                       session_data.get('username', '').lower() == viewed_username.lower())
-    
+
     # Create profile info card (shown on all tabs)
-    profile_card = create_profile_info_card(user_data, is_own_profile, session_data)
-    
+    profile_card = create_profile_info_card(
+        user_data, is_own_profile, session_data)
+
     # Create tab navigation
     tab_navigation = html.Div([
         html.Button("Profile", id="profile-profile-tab",
@@ -572,7 +573,7 @@ def update_tab_content(active_tab, session_data, viewed_username):
         html.Button("Bookshelf", id="profile-bookshelf-tab",
                     className="profile-tab active-tab" if active_tab == 'bookshelf' else "profile-tab")
     ], className='profile-tabs-container')
-    
+
     # Get tab-specific content
     if active_tab == 'profile':
         tab_content = create_profile_tab_content(user_data, is_own_profile)
@@ -582,7 +583,7 @@ def update_tab_content(active_tab, session_data, viewed_username):
         tab_content = create_bookshelf_tab_content(user_data, is_own_profile)
     else:
         tab_content = html.Div()
-    
+
     # Return layout with profile card, tabs, then content
     return html.Div([
         html.Div([profile_card], className="profile-left-column"),
@@ -596,7 +597,7 @@ def update_tab_content(active_tab, session_data, viewed_username):
 def create_profile_info_card(user_data, is_own_profile, session_data):
     """Create the profile info card shown on all tabs"""
     from datetime import datetime
-    
+
     # Format user info
     created_at = user_data.get('created_at')
     member_since = 'Unknown'
@@ -640,7 +641,8 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
     if is_own_profile:
         xp = rewards.get('xp', 0)
         points = rewards.get('points', 0)
-        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(xp)
+        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+            xp)
         level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
         level_style = {'cursor': 'help'}
 
@@ -667,7 +669,8 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
     from backend.bookshelf import get_yearly_reading_stats
     current_year = datetime.now().year
 
-    stats_success, stats_message, yearly_stats = get_yearly_reading_stats(profile_user_id, current_year)
+    stats_success, stats_message, yearly_stats = get_yearly_reading_stats(
+        profile_user_id, current_year)
     if stats_success:
         books_count = yearly_stats.get('books_read', 0)
         pages_count = yearly_stats.get('pages_read', 0)
@@ -682,7 +685,7 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
         )
 
     user_info = html.Div(user_info_elements)
-    
+
     # Friend request section
     friend_request_section = html.Div()
     if is_own_profile and session_data and session_data.get('logged_in', False):
@@ -708,7 +711,8 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
         if status == 'friends':
             friend_request_section = html.Button(
                 "Remove Friend",
-                id={'type': 'remove-friend', 'username': user_data['username']},
+                id={'type': 'remove-friend',
+                    'username': user_data['username']},
                 className='btn-remove-friend',
                 style={'background': '#dc3545', 'color': 'white', 'border': 'none',
                        'padding': '8px 16px', 'border-radius': '6px', 'margin-top': '0px', 'cursor': 'pointer'}
@@ -716,7 +720,8 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
         elif status == 'pending_sent':
             friend_request_section = html.Button(
                 "Cancel Friend Request",
-                id={'type': 'cancel-friend-request', 'username': user_data['username']},
+                id={'type': 'cancel-friend-request',
+                    'username': user_data['username']},
                 className='btn-cancel-friend-request',
                 style={'background': '#6c757d', 'color': 'white', 'border': 'none',
                        'padding': '8px 16px', 'border-radius': '6px', 'margin-top': '0px', 'cursor': 'pointer'}
@@ -729,14 +734,16 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
         else:
             friend_request_section = html.Button(
                 "Send Friend Request",
-                id={'type': 'send-friend-request', 'username': user_data['username']},
+                id={'type': 'send-friend-request',
+                    'username': user_data['username']},
                 className='btn-send-friend-request',
                 style={'background': '#007bff', 'color': 'white', 'border': 'none',
                        'padding': '8px 16px', 'border-radius': '6px', 'margin-top': '0px', 'cursor': 'pointer'}
             )
-    
-    profile_image_url = user_data.get('profile_image_url', '/assets/svg/default-profile.svg')
-    
+
+    profile_image_url = user_data.get(
+        'profile_image_url', '/assets/svg/default-profile.svg')
+
     return html.Div([
         # Left column: image, badge, and button stacked
         html.Div([
@@ -754,7 +761,7 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
 
 def create_profile_tab_content(user_data, is_own_profile):
     """Create the profile tab content - just the showcase sections without profile card"""
-    
+
     # Create Favorite Books Section
     favorite_books = user_data.get('favorite_books_details', [])[:10]
     if favorite_books:
@@ -777,7 +784,7 @@ def create_profile_tab_content(user_data, is_own_profile):
     else:
         msg = "Add books to your favorites!" if is_own_profile else f"{user_data['username']} has no favorite books"
         books_content = html.P(msg, className="showcase-empty")
-    
+
     # Create Favorite Authors Section
     favorite_authors = user_data.get('favorite_authors_details', [])[:10]
     if favorite_authors:
@@ -794,16 +801,18 @@ def create_profile_tab_content(user_data, is_own_profile):
                     ], href=f"/author/{author.get('author_id')}", style={"textDecoration": "none", "color": "inherit"})
                 ], className="showcase-card author-card")
             )
-        authors_content = html.Div(authors_showcase, className="showcase-scroll")
+        authors_content = html.Div(
+            authors_showcase, className="showcase-scroll")
     else:
         msg = "Add authors to your favorites!" if is_own_profile else f"{user_data['username']} has no favorite authors"
         authors_content = html.P(msg, className="showcase-empty")
-    
+
     # Create Recent Reviews Section
     from backend.reviews import get_user_reviews
     all_reviews = get_user_reviews(user_data['user_id'])
-    reviews = [r for r in all_reviews if r.get('review_text') and r.get('review_text').strip()][:5]
-    
+    reviews = [r for r in all_reviews if r.get(
+        'review_text') and r.get('review_text').strip()][:5]
+
     if reviews:
         reviews_showcase = []
         for review in reviews:
@@ -814,33 +823,40 @@ def create_profile_tab_content(user_data, is_own_profile):
                             html.Img(src=review.get('cover_url', '/assets/svg/default-book.svg'),
                                      className="showcase-cover")
                         ], className="showcase-cover-wrapper"),
-                        html.H4(review.get('title', 'Unknown'), className="showcase-title"),
-                        html.P(f"⭐ {review.get('rating', 0)}/5", className="showcase-rating"),
-                        html.P(review.get('review_text', ''), className="showcase-description")
+                        html.H4(review.get('title', 'Unknown'),
+                                className="showcase-title"),
+                        html.P(f"⭐ {review.get('rating', 0)}/5",
+                               className="showcase-rating"),
+                        html.P(review.get('review_text', ''),
+                               className="showcase-description")
                     ], href=f"/book/{review.get('book_id')}", style={"textDecoration": "none", "color": "inherit"})
                 ], className="showcase-card-wide")
             )
-        reviews_content = html.Div(reviews_showcase, className="showcase-scroll")
+        reviews_content = html.Div(
+            reviews_showcase, className="showcase-scroll")
     else:
         msg = "No reviews yet" if is_own_profile else f"{user_data['username']} hasn't written reviews"
         reviews_content = html.P(msg, className="showcase-empty")
-    
+
     # Create Recently Completed Books Section - sorted by rating then recent
-    success, _, bookshelf = bookshelf_backend.get_user_bookshelf(user_data['user_id'])
-    completed_books = bookshelf.get('finished', []) if success and bookshelf else []
-    
+    success, _, bookshelf = bookshelf_backend.get_user_bookshelf(
+        user_data['user_id'])
+    completed_books = bookshelf.get(
+        'finished', []) if success and bookshelf else []
+
     # Sort by rating (desc) then by added_at (desc)
     completed_books_sorted = sorted(
         completed_books,
-        key=lambda x: (-(x.get('user_rating') or 0), -(x.get('added_at').timestamp() if hasattr(x.get('added_at'), 'timestamp') else 0))
+        key=lambda x: (-(x.get('user_rating') or 0), -(x.get('added_at').timestamp()
+                       if hasattr(x.get('added_at'), 'timestamp') else 0))
     )[:10]
-    
+
     if completed_books_sorted:
         completed_showcase = []
         for book in completed_books_sorted:
             rating = book.get('user_rating')
             rating_display = f"⭐ {rating}/5" if rating else "No rating"
-            
+
             completed_showcase.append(
                 html.Div([
                     dcc.Link([
@@ -848,17 +864,19 @@ def create_profile_tab_content(user_data, is_own_profile):
                             html.Img(src=book.get('cover_url', '/assets/svg/default-book.svg'),
                                      className="showcase-cover")
                         ], className="showcase-cover-wrapper"),
-                        html.H4(book.get('title', 'Unknown'), className="showcase-title"),
-                        html.P(rating_display, className="showcase-rating", 
+                        html.H4(book.get('title', 'Unknown'),
+                                className="showcase-title"),
+                        html.P(rating_display, className="showcase-rating",
                                style={'fontWeight': 'bold', 'color': '#ffc107' if rating else None})
                     ], href=f"/book/{book.get('book_id')}", style={"textDecoration": "none", "color": "inherit"})
                 ], className="showcase-card")
             )
-        completed_content = html.Div(completed_showcase, className="showcase-scroll")
+        completed_content = html.Div(
+            completed_showcase, className="showcase-scroll")
     else:
         msg = "No completed books yet" if is_own_profile else f"{user_data['username']} hasn't completed books"
         completed_content = html.P(msg, className="showcase-empty")
-    
+
     # Get user info for profile card
     created_at = user_data.get('created_at')
     member_since = 'Unknown'
@@ -903,7 +921,8 @@ def create_profile_tab_content(user_data, is_own_profile):
     if is_own_profile:
         xp = rewards.get('xp', 0)
         points = rewards.get('points', 0)
-        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(xp)
+        _, current_level_xp, xp_to_next = rewards_backend.get_level_progress(
+            xp)
         level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
         level_style = {'cursor': 'help'}
 
@@ -933,7 +952,8 @@ def create_profile_tab_content(user_data, is_own_profile):
     from datetime import datetime
     current_year = datetime.now().year
 
-    stats_success, stats_message, yearly_stats = get_yearly_reading_stats(profile_user_id, current_year)
+    stats_success, stats_message, yearly_stats = get_yearly_reading_stats(
+        profile_user_id, current_year)
     if stats_success:
         books_count = yearly_stats.get('books_read', 0)
         pages_count = yearly_stats.get('pages_read', 0)
@@ -948,7 +968,7 @@ def create_profile_tab_content(user_data, is_own_profile):
         )
 
     user_info = html.Div(user_info_elements)
-    
+
     # Friend request section - will be populated by the header callback
     # Return just the showcase sections - profile card will be shown separately
     return html.Div([
@@ -956,17 +976,17 @@ def create_profile_tab_content(user_data, is_own_profile):
             html.H3("Favorite Books", className="section-title-showcase"),
             html.Div(books_content, className="showcase-scroll-container")
         ], className="profile-section-card card"),
-        
+
         html.Div([
             html.H3("Favorite Authors", className="section-title-showcase"),
             html.Div(authors_content, className="showcase-scroll-container")
         ], className="profile-section-card card"),
-        
+
         html.Div([
             html.H3("Recent Reviews", className="section-title-showcase"),
             html.Div(reviews_content, className="showcase-scroll-container")
         ], className="profile-section-card card"),
-        
+
         html.Div([
             html.H3("Recently Completed", className="section-title-showcase"),
             html.Div(completed_content, className="showcase-scroll-container")
@@ -976,29 +996,31 @@ def create_profile_tab_content(user_data, is_own_profile):
 
 def create_friends_tab_content(user_data, is_own_profile):
     """Create the friends tab with a Cytoscape network graph (no labels)"""
-    
+
     friends = user_data.get('friends', [])
     friends_count = len(friends)
-    
+
     title = f"Your Friends ({friends_count})" if is_own_profile else f"{user_data['username']}'s Friends ({friends_count})"
-    
+
     if not friends:
         msg = "No friends yet" if is_own_profile else f"{user_data['username']} has no friends"
         return html.Div([
             html.H3(title, className="section-title-showcase"),
-            html.P(msg, className="showcase-empty", style={'text-align': 'center', 'margin-top': '50px'})
+            html.P(msg, className="showcase-empty",
+                   style={'text-align': 'center', 'margin-top': '50px'})
         ])
-    
+
     # Build Cytoscape elements
     elements = []
-    
+
     # Calculate positions for circular layout
     import math
     center_x, center_y = 300, 300  # center of graph
     radius = 120  # radius of circle for friends
-    
+
     # Central node (current user) - positioned at center
-    profile_img = user_data.get('profile_image_url') or '/assets/svg/default-profile.svg'
+    profile_img = user_data.get(
+        'profile_image_url') or '/assets/svg/default-profile.svg'
     elements.append({
         'data': {
             'id': user_data['username'],
@@ -1008,19 +1030,20 @@ def create_friends_tab_content(user_data, is_own_profile):
         },
         'position': {'x': center_x, 'y': center_y}
     })
-    
+
     # Create a set of friend user IDs for quick lookup
     friend_user_ids = {friend['user_id'] for friend in friends}
     friend_usernames = {friend['username'] for friend in friends}
-    
+
     # Friend nodes and edges from center to friends - arranged in circle
     for i, friend in enumerate(friends):
         # Calculate angle for this friend (evenly distributed around circle)
         angle = (2 * math.pi * i) / len(friends)
         x = center_x + radius * math.cos(angle)
         y = center_y + radius * math.sin(angle)
-        
-        friend_img = friend.get('profile_image_url') or '/assets/svg/default-profile.svg'
+
+        friend_img = friend.get(
+            'profile_image_url') or '/assets/svg/default-profile.svg'
         elements.append({
             'data': {
                 'id': friend['username'],
@@ -1030,7 +1053,7 @@ def create_friends_tab_content(user_data, is_own_profile):
             },
             'position': {'x': x, 'y': y}
         })
-        
+
         # Edge from center user to this friend
         elements.append({
             'data': {
@@ -1038,20 +1061,22 @@ def create_friends_tab_content(user_data, is_own_profile):
                 'target': friend['username']
             }
         })
-    
+
     # Add edges between friends who are also friends with each other (mutual friends)
     for i, friend1 in enumerate(friends):
         # Get this friend's friends list from backend
         try:
-            friend1_friends_data = friends_backend.get_friends_list(str(friend1['user_id']))
+            friend1_friends_data = friends_backend.get_friends_list(
+                str(friend1['user_id']))
             # Extract friend IDs for comparison
             friend1_friend_ids = {f['friend_id'] for f in friend1_friends_data}
         except Exception as e:
             print(f"Error fetching friends for {friend1['username']}: {e}")
             friend1_friend_ids = set()
-        
+
         # Check if any of the center user's friends are also friends with friend1
-        for friend2 in friends[i+1:]:  # Only check friends after this one to avoid duplicates
+        # Only check friends after this one to avoid duplicates
+        for friend2 in friends[i+1:]:
             # Check if friend2's user_id is in friend1's friend list
             if friend2['user_id'] in friend1_friend_ids:
                 # Add edge between the two mutual friends
@@ -1062,7 +1087,7 @@ def create_friends_tab_content(user_data, is_own_profile):
                         'type': 'mutual'
                     }
                 })
-    
+
     # Create Cytoscape graph without labels
     cytoscape_graph = cyto.Cytoscape(
         id='friends-network',
@@ -1140,7 +1165,7 @@ def create_friends_tab_content(user_data, is_own_profile):
             }
         ]
     )
-    
+
     return html.Div([
         html.Div(cytoscape_graph, className="friends-network-container")
     ], className="tab-content-wrapper")
@@ -1148,35 +1173,38 @@ def create_friends_tab_content(user_data, is_own_profile):
 
 def create_bookshelf_tab_content(user_data, is_own_profile):
     """Create the bookshelf tab showing user's books organized by shelf in a visual bookshelf layout"""
-    
-    success, _, bookshelf = bookshelf_backend.get_user_bookshelf(user_data['user_id'])
-    
+
+    success, _, bookshelf = bookshelf_backend.get_user_bookshelf(
+        user_data['user_id'])
+
     if not success or not bookshelf:
         msg = "No books on your bookshelf yet" if is_own_profile else f"{user_data['username']} has no books on their bookshelf"
         return html.Div([
-            html.P(msg, className="showcase-empty", style={'text-align': 'center', 'margin-top': '50px'})
+            html.P(msg, className="showcase-empty",
+                   style={'text-align': 'center', 'margin-top': '50px'})
         ])
-    
+
     # Create sections for each shelf type - use correct keys from backend
     shelves = [
         ('reading', 'Currently Reading', bookshelf.get('reading', [])),
         ('to_read', 'Want to Read', bookshelf.get('to_read', [])),
         ('finished', 'Completed', bookshelf.get('finished', []))
     ]
-    
+
     shelf_sections = []
     for shelf_key, shelf_name, books in shelves:
         # Create book cards for bookshelf visualization
         book_cards = []
-        
+
         if books:
             # Sort books by rating (desc) then by added_at (desc) for completed shelf
             if shelf_key == 'finished':
                 books = sorted(
                     books,
-                    key=lambda x: (-(x.get('user_rating') or 0), -(x.get('added_at').timestamp() if hasattr(x.get('added_at'), 'timestamp') else 0))
+                    key=lambda x: (-(x.get('user_rating') or 0), -(
+                        x.get('added_at').timestamp() if hasattr(x.get('added_at'), 'timestamp') else 0))
                 )
-            
+
             # Check which books are favorited
             from backend.favorites import get_favorite_books
             favorite_book_ids = set()
@@ -1185,32 +1213,35 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
                 favorite_book_ids = {fav['book_id'] for fav in favorites}
             except:
                 pass
-            
+
             for book in books:
                 # Get rating for completed books
                 rating = book.get('user_rating')
                 rating_display = None
                 if shelf_key == 'finished' and rating:
                     rating_display = f"⭐ {rating}/5"
-                
+
                 # Check if book is favorited
                 is_favorited = book.get('book_id') in favorite_book_ids
                 card_class = 'bookshelf-book-card bookshelf-favorited' if is_favorited else 'bookshelf-book-card'
-                
+
                 # Create book card with vertical stacking
                 book_cards.append(
                     html.Div([
                         dcc.Link([
                             html.Div([
                                 html.Img(
-                                    src=book.get('cover_url', '/assets/svg/default-book.svg'),
+                                    src=book.get(
+                                        'cover_url', '/assets/svg/default-book.svg'),
                                     className='bookshelf-book-cover',
                                     title=f"{book.get('title', 'Unknown')} by {book.get('author_name', 'Unknown')}"
                                 )
                             ], className='bookshelf-cover-wrapper'),
                             html.Div([
-                                html.H4(book.get('title', 'Unknown'), className='bookshelf-book-title'),
-                                html.P(book.get('author_name', 'Unknown'), className='bookshelf-book-author'),
+                                html.H4(book.get('title', 'Unknown'),
+                                        className='bookshelf-book-title'),
+                                html.P(book.get('author_name', 'Unknown'),
+                                       className='bookshelf-book-author'),
                                 html.P(rating_display, className='bookshelf-book-rating',
                                        style={'fontWeight': 'bold', 'color': '#ffc107'}) if rating_display else None
                             ], className='bookshelf-book-info')
@@ -1225,20 +1256,21 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
                     className='bookshelf-empty-message'
                 )
             )
-        
+
         # Create individual shelf section
         shelf_sections.append(
             html.Div([
                 html.Div([
                     html.H3(shelf_name, className="bookshelf-shelf-title"),
-                    html.Span(f"({len(books)} books)", className="bookshelf-book-count")
+                    html.Span(f"({len(books)} books)",
+                              className="bookshelf-book-count")
                 ], className='bookshelf-shelf-header'),
                 html.Div([
                     html.Div(book_cards, className='bookshelf-books-row')
                 ], className='bookshelf-shelf-container')
             ], className='bookshelf-shelf-section')
         )
-    
+
     return html.Div(shelf_sections, className='bookshelf-layout tab-content-wrapper')
 
 
