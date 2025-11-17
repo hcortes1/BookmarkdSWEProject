@@ -2,9 +2,11 @@ import os
 import hashlib
 import psycopg2
 import json
+import secrets
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from psycopg2 import Error
-from backend.moderation import moderate_review  
+from backend.moderation import moderate_review
 import backend.email_utils as email_utils
 
 # load environment variables from .env file
@@ -103,10 +105,110 @@ def signup_user(username, email, password):
         return True, "Account created! However, verification email could not be sent."
 
 
-def login_user(username, password):
+def generate_remember_token(user_id, remember_me=False):
+    """Generate and store a remember me token for 30 days"""
+    if not remember_me:
+        return None
+
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = connection.cursor()
+
+    try:
+        # generate secure token
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now() + timedelta(days=30)
+
+        # store token in database
+        cursor.execute(
+            "UPDATE users SET remember_token = %s, remember_token_expires = %s WHERE user_id = %s",
+            (token, expires_at, user_id)
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return token
+    except Error as e:
+        print(f"Error generating remember token: {e}")
+        cursor.close()
+        connection.close()
+        return None
+
+
+def verify_remember_token(token):
+    """Verify remember me token and return user data if valid"""
     connection = get_db_connection()
     if not connection:
         return False, "Database connection failed", None
+
+    cursor = connection.cursor()
+
+    try:
+        # check if token exists and is not expired
+        query = """
+            SELECT user_id, username, email, profile_image_url, created_at, first_login, favorite_genres, display_mode, email_verified
+            FROM users 
+            WHERE remember_token = %s AND remember_token_expires > NOW()
+        """
+        cursor.execute(query, (token,))
+        user_record = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if user_record:
+            user_data = {
+                "user_id": user_record[0],
+                "username": user_record[1],
+                "email": user_record[2],
+                "profile_image_url": user_record[3],
+                "created_at": user_record[4].isoformat() if user_record[4] else None,
+                "first_login": user_record[5],
+                "favorite_genres": user_record[6],
+                "display_mode": user_record[7],
+                "email_verified": user_record[8]
+            }
+            return True, "Token valid", user_data
+        else:
+            return False, "Invalid or expired token", None
+    except Error as e:
+        print(f"Error verifying remember token: {e}")
+        cursor.close()
+        connection.close()
+        return False, "Error verifying token", None
+
+
+def clear_remember_token(user_id):
+    """Clear remember me token on logout"""
+    connection = get_db_connection()
+    if not connection:
+        return False
+
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE users SET remember_token = NULL, remember_token_expires = NULL WHERE user_id = %s",
+            (user_id,)
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return True
+    except Error as e:
+        print(f"Error clearing remember token: {e}")
+        cursor.close()
+        connection.close()
+        return False
+
+
+def login_user(username, password, remember_me=False):
+    connection = get_db_connection()
+    if not connection:
+        return False, "Database connection failed", None, None
 
     cursor = connection.cursor()
 
@@ -137,9 +239,13 @@ def login_user(username, password):
             "display_mode": user_record[7],
             "email_verified": user_record[8]  # include email_verified status
         }
-        return True, "Login successful", user_data
+
+        # generate remember me token if requested
+        remember_token = generate_remember_token(user_record[0], remember_me)
+
+        return True, "Login successful", user_data, remember_token
     else:
-        return False, "Invalid username or password", None
+        return False, "Invalid username or password", None, None
 
 
 def refresh_user_session_data(user_id):

@@ -1,27 +1,187 @@
-/* Bookshelf remove button hover effect */
-.remove-btn-hover:hover {
-  opacity: 1 !important;
-  background: var(--danger-bg) !important; /* error/warning background */
-  transform: scale(1.1);
+/* Remove background from book card and info containers */
+.bookshelf-book-card, .bookshelf-book-info {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+/* Remove background from book cover images */
+.bookshelf-book-cover {
+    background: transparent !important;
+}
+/* Bookshelf shelf section styles (matching profile page) */
+
+.bookshelf-shelf-section {
+    margin-bottom: 15px;
+    padding-bottom: 0;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
 
-/* Bookshelf grid styles */
+.bookshelf-shelf-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+}
+
+.bookshelf-shelf-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.bookshelf-book-count {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.bookshelf-shelf-container {
+    position: relative;
+    padding: 10px 0 10px 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    min-height: 180px;
+    border-bottom: 3px solid var(--border-color);
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+    border-radius: 5px;
+    margin: 0 10px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-thumb {
+    background: var(--link-color);
+    border-radius: 5px;
+}
+
+.bookshelf-shelf-container::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+.bookshelf-books-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 0 10px 10px 10px;
+    align-items: flex-end;
+    justify-content: center;
+    max-width: 100%;
+}
+
+/* Book card styles for shelf layout */
+.bookshelf-book-card {
+    flex-shrink: 0;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 70px;
+    max-width: 70px;
+    width: 70px;
+    transition: transform 0.2s ease;
+    vertical-align: top;
+    position: relative;
+}
+
 .bookshelf-book-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--card-shadow);
+    transform: translateY(-5px);
 }
 
-.bookshelf-remove-btn {
+.bookshelf-favorited .bookshelf-cover-wrapper {
+    border: 3px solid var(--link-color);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.bookshelf-cover-wrapper {
+    width: 62px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: box-shadow 0.2s ease, border 0.2s ease;
+    overflow: hidden;
+}
+
+.bookshelf-cover-wrapper:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.bookshelf-book-cover {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 2px;
+    cursor: pointer;
+    display: block;
+}
+
+.bookshelf-book-info {
+    text-align: center;
+    margin-top: 5px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.bookshelf-book-title {
+    font-size: 0.75rem;
+    margin: 3px 0;
+    color: var(--text-color);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    line-height: 1.2;
+    max-height: 1.8em;
+    word-break: break-word;
+}
+
+.bookshelf-book-author {
+    font-size: 0.65rem;
+    margin: 2px 0;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bookshelf-book-rating {
+    font-size: 0.7rem;
+    margin: 3px 0;
+}
+
+/* Remove button for shelf layout */
+.bookshelf-remove-btn-shelf {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 20px;
-  height: 20px;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
   border: none;
   border-radius: 50%;
-  background: var(--text-color-secondary);
-  color: var(--button-text-color);
-  font-size: 12px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   display: flex;
@@ -29,23 +189,17 @@
   justify-content: center;
   z-index: 10;
   transition: all 0.2s ease;
-  box-shadow: var(--card-shadow);
   opacity: 0;
+  line-height: 1;
 }
 
-.bookshelf-book-card:hover .bookshelf-remove-btn {
+.bookshelf-book-card:hover .bookshelf-remove-btn-shelf {
   opacity: 1;
 }
 
-.bookshelf-book-card:hover img {
-  transform: scale(1.02);
-}
-
-/* Bookshelf page container and layout */
-.bookshelf-app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+.bookshelf-remove-btn-shelf:hover {
+  background: rgb(220, 53, 69);
+  transform: scale(1.1);
 }
 
 /* Page title */
@@ -56,115 +210,20 @@
 
 /* Tabs container tweaks */
 .bookshelf-tabs-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0px; /* Remove gap to attach to content */
-  border-bottom: 2px solid var(--link-color); /* Blue border */
-  padding-bottom: 0px; /* Remove padding to attach tabs to border */
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0px;
+    border-bottom: 2px solid var(--link-color);
+    padding-bottom: 0px;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    position: relative;
+}
 }
 .bookshelf-tab:not(:last-child) {
   margin-right: 5px;
-}
-
-/* Book card layout */
-.bookshelf-book-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  transition: all 0.2s ease;
-  height: 100%;
-  overflow: hidden;
-  width: 160px;
-  margin: 0 auto;
-}
-
-/* Cover image */
-.cover-wrapper {
-  margin-bottom: 5px;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-}
-.book-cover {
-  width: 120px;
-  height: 180px;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  transition: transform 0.2s;
-  display: block;
-  background-color: var(--background-color);
-  margin: 0 auto;
-}
-
-/* Title & author */
-.bookshelf-book-title {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-color);
-  font-weight: 600;
-  line-height: 1;
-  height: 2em;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  text-align: center;
-}
-.bookshelf-book-author {
-  margin: 1px 0 3px 0;
-  font-size: 12px;
-  color: var(--text-color-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-
-/* Metadata: rating and added date */
-.book-rating-block {
-  text-align: center;
-  margin-bottom: 4px;
-}
-.book-rating {
-  font-size: 11px;
-  font-weight: bold;
-}
-.not-rated {
-  font-size: 10px;
-  color: var(--text-color-secondary);
-}
-.added-label { font-size: 9px; color: var(--text-color-secondary); }
-.added-date { font-size: 9px; color: var(--text-color-secondary); }
-
-.added-info { text-align: center; margin-bottom: 2px; }
-
-/* Expiry info for rented books */
-.expiry-info { text-align: center; margin-bottom: 1px; }
-.expiry-label-small { font-size: 10px; color: var(--text-color-secondary); }
-.expiry-days { font-size: 11px; color: var(--text-color-secondary); font-weight: bold; }
-.expiry-date-line { text-align: center; margin-top: 1px; }
-.expiry-date-small { font-size: 9px; color: var(--text-color-secondary); }
-
-/* Review indicator */
-.book-review-indicator { text-align: center; }
-.review-icon { font-size: 12px; margin-right: 3px; }
-.review-text { font-size: 10px; color: var(--success-color); }
-
-/* Link wrapper */
-.book-link { text-decoration: none; color: inherit; display: block; }
-
-/* Grid for books */
-.bookshelf-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 20px;
-  padding: 10px 0;
 }
 
 /* Empty and error states */
@@ -230,72 +289,142 @@
 
 /* Tab content background */
 #bookshelf-tab-content {
-  background: var(--secondary-bg);
-}
-
-/* Remove background from book cards to match content background */
-.bookshelf-book-card {
-  background: var(--secondary-bg) !important;
-  box-shadow: none !important; /* Remove shadow */
+    background: transparent;
+    padding: 20px;
+    max-width: 650px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 /* Mobile Responsive Styles */
 @media (max-width: 1024px) {
-    /* Mobile adjustments for bookshelf grid */
-    .bookshelf-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-        gap: 0 !important; /* No gap between cards */
+    .bookshelf-shelf-section {
+        max-width: 100%;
+        padding: 0 5px;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 150px;
+        overflow-x: hidden;
+        padding: 10px 5px;
     }
 
     .bookshelf-book-card {
-        width: 95% !important; /* Slightly wider cards */
-        height: 95% !important; /* Reduced height */
-        padding: 10px !important; /* Less padding */
+        min-width: 70px;
+        max-width: 70px;
+        width: 70px;
     }
 
-    .book-cover {
-        width: 60px !important; /* Smaller image */
-        height: 80px !important; /* Maintain aspect ratio */
+    .bookshelf-cover-wrapper {
+        width: 65px;
+        height: 85px;
     }
 
     .bookshelf-book-title {
-        font-size: 0.75rem !important; /* Smaller title */
-        height: auto !important; /* Allow flexible height */
-        -webkit-line-clamp: 2 !important;
-        line-clamp: 2 !important;
+        font-size: 0.65rem;
     }
 
     .bookshelf-book-author {
-        font-size: 0.65rem !important; /* Smaller author text */
-        margin: 1px 0 2px 0 !important;
+        font-size: 0.55rem;
     }
 
-    .book-rating {
-        font-size: 0.7rem !important; /* Smaller rating */
+    .bookshelf-book-rating {
+        font-size: 0.6rem;
     }
 
-    .added-label,
-    .added-date,
-    .expiry-label-small,
-    .expiry-days,
-    .expiry-date-small {
-        font-size: 0.6rem !important; /* Smaller metadata text */
+    .bookshelf-shelf-title {
+        font-size: 0.95rem;
     }
 
-    .review-text {
-        font-size: 0.65rem !important; /* Smaller review text */
+    .bookshelf-book-count {
+        font-size: 0.8rem;
+    }
+
+    .bookshelf-books-row {
+        gap: 8px;
+        padding: 0 5px 10px 5px;
     }
 
     /* Mobile adjustments for bookshelf tabs */
     .bookshelf-tabs-container {
-        flex-wrap: nowrap; /* Prevent tabs from wrapping */
+        flex-wrap: nowrap;
+        padding: 0 5px;
     }
 
     .bookshelf-tab {
         flex: 1;
-        max-width: 120px; /* Limit max width */
-        padding: 6px 10px !important; /* Reduced padding */
-        font-size: 0.75rem !important; /* Smaller font */
-        margin: 0 1px !important; /* Smaller margin */
+        max-width: 120px;
+        padding: 6px 10px !important;
+        font-size: 0.75rem !important;
+        margin: 0 1px !important;
+    }
+    
+    #bookshelf-tab-content {
+        padding: 10px 5px;
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .bookshelf-shelf-section {
+        max-width: 100%;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 130px;
+    }
+    
+    .bookshelf-books-row {
+        flex-wrap: nowrap;
+        max-width: 100%;
+        gap: 6px;
+        padding: 0 3px 10px 3px;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 64px;
+        max-width: 64px;
+        width: 64px;
+    }
+
+    .bookshelf-cover-wrapper {
+        width: 60px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bookshelf-shelf-section {
+        margin-bottom: 10px;
+    }
+    
+    .bookshelf-shelf-container {
+        min-height: 110px;
+    }
+    
+    .bookshelf-book-card {
+        min-width: 54px;
+        max-width: 54px;
+        width: 54px;
+    }
+
+    .bookshelf-cover-wrapper {
+        width: 50px;
+        height: 70px;
+        padding: 2px;
+    }
+    
+    .bookshelf-books-row {
+        gap: 5px;
+        padding: 0 2px 8px 2px;
+    }
+    
+    .bookshelf-shelf-header {
+        padding-left: 5px;
+    }
+    
+    #bookshelf-tab-content {
+        padding: 8px 3px;
     }
 }

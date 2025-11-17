@@ -30,6 +30,8 @@ body {
   color: var(--text-color);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 a {
@@ -46,6 +48,14 @@ a:hover {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto !important;
+  padding: 20px;
+  width: 100%;
+  display: block;
 }
 
 .card {
@@ -220,5 +230,54 @@ a:hover {
   .welcome-buttons {
     flex-direction: column;
     gap: 15px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .welcome-page {
+    padding: 10px;
+    width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .welcome-container {
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
+    max-width: 100vw;
+  }
+  
+  .welcome-title {
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+  }
+  
+  .welcome-subtitle {
+    font-size: 1rem;
+    margin-bottom: 40px;
+    padding: 0 10px;
+  }
+
+  .welcome-login-btn,
+  .welcome-signup-btn {
+    width: 100%;
+    max-width: 280px;
+    padding: 14px 24px;
+    font-size: 1.1rem;
+  }
+
+  .main-title {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    word-wrap: break-word;
+    max-width: 100%;
+  }
+
+  .container {
+    padding: 8px;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 }

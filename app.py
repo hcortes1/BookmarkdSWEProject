@@ -6,6 +6,7 @@ import backend.settings as settings_backend
 import backend.profile as profile_backend
 import backend.friends as friends_backend
 import backend.rewards as rewards_backend
+import backend.login as login_backend
 
 
 app = Dash(
@@ -27,6 +28,7 @@ app.layout = html.Div(id="main-app-container", children=[
     dcc.Location(id="url"),
     dcc.Store(id="user-session", storage_type="session",
               data={"logged_in": False}),
+    dcc.Store(id="remember-token-store", storage_type="local"),
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
     dcc.Store(id="mobile-menu-store",
               storage_type="memory", data={"open": False}),
@@ -60,7 +62,7 @@ app.layout = html.Div(id="main-app-container", children=[
                                 {'label': 'Books', 'value': 'books'},
                                 {'label': 'Authors', 'value': 'authors'}
                             ],
-                            value='users',
+                            value='books',
                             clearable=False,
                             searchable=False,
                             className='search-type-dropdown',
@@ -304,7 +306,8 @@ def update_navigation(user_session):
                 html.Img(src=profile_image_src,
                          className='mobile-menu-profile-img'),
                 html.Span(f"Profile ({user_session.get('username', '')})"),
-                html.Span(f"Lvl {level}", className=f'mobile-level-badge level-{level}')
+                html.Span(f"Lvl {level}",
+                          className=f'mobile-level-badge level-{level}')
             ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
             dcc.Link([
                 html.Img(src='/assets/svg/bell.svg',
@@ -757,17 +760,68 @@ def update_mobile_menu_style(menu_data):
 
 
 @app.callback(
+    Output('user-session', 'data', allow_duplicate=True),
+    Input('remember-token-store', 'data'),
+    State('user-session', 'data'),
+    prevent_initial_call='initial_duplicate'
+)
+def auto_login_from_remember_token(token, current_session):
+    # only auto-login if not already logged in and token exists
+    if not token or (current_session and current_session.get('logged_in')):
+        return dash.no_update
+
+    # verify token with backend
+    success, message, user_data = login_backend.verify_remember_token(token)
+
+    if success:
+        # create session data
+        session_data = {
+            "logged_in": True,
+            "user_id": user_data["user_id"],
+            "username": user_data["username"],
+            "email": user_data["email"],
+            "profile_image_url": user_data["profile_image_url"],
+            "created_at": user_data["created_at"],
+            "first_login": user_data["first_login"],
+            "favorite_genres": user_data["favorite_genres"],
+            "display_mode": user_data.get("display_mode", "light"),
+            "email_verified": user_data.get("email_verified", False)
+        }
+
+        # fetch notifications
+        try:
+            import backend.notifications as notifications_backend
+            notifications_data = notifications_backend.get_user_notifications(
+                str(user_data["user_id"]),
+                email_verified=user_data.get("email_verified", False))
+            session_data["notifications"] = notifications_data
+        except Exception as e:
+            session_data["notifications"] = {"count": 0, "notifications": []}
+
+        return session_data
+    else:
+        # invalid token, don't update session
+        return dash.no_update
+
+
+@app.callback(
     Output('url', 'pathname', allow_duplicate=True),
     Output('user-session', 'data', allow_duplicate=True),
+    Output('remember-token-store', 'data', allow_duplicate=True),
     [Input('quick-logout-button', 'n_clicks'),
      Input('mobile-logout-button', 'n_clicks')],
+    State('user-session', 'data'),
     prevent_initial_call=True
 )
-def handle_logout(n_clicks_quick, n_clicks_mobile):
+def handle_logout(n_clicks_quick, n_clicks_mobile, session_data):
     if not n_clicks_quick and not n_clicks_mobile:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
-    # Clear session and redirect to home page
+    # clear remember token from database
+    if session_data and session_data.get('user_id'):
+        login_backend.clear_remember_token(session_data['user_id'])
+
+    # clear session and remember token, redirect to home page
     return '/', {
         "logged_in": False,
         "username": None,
@@ -775,7 +829,7 @@ def handle_logout(n_clicks_quick, n_clicks_mobile):
         "email": None,
         "profile_image_url": None,
         "created_at": None
-    }
+    }, None
 
 
 @app.callback(
