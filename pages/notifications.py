@@ -465,6 +465,110 @@ def update_notifications_display(notifications_data, user_session):
 
             notification_items.append(item)
 
+        elif notification['type'] == 'reading_goal_reminder':
+            goal_href = f"/profile/view/{user_session.get('username')}"
+            book_id = notification.get('book_id')
+            
+            # Use book cover if available, otherwise use goal icon
+            if book_id and notification.get('book_cover_url'):
+                avatar = dcc.Link(
+                    html.Div([
+                        html.Img(
+                            src=notification.get('book_cover_url') or '/assets/svg/default-book.svg',
+                            style={
+                                'width': '50px',
+                                'height': '50px',
+                                'border-radius': '8px',
+                                'object-fit': 'contain'
+                            },
+                            className='bg-light'
+                        )
+                    ], className='notification-avatar'),
+                    href=f"/book/{book_id}",
+                    style={'text-decoration': 'none', 'color': 'inherit'}
+                )
+            else:
+                avatar = html.Div([
+                    html.Div(
+                        style={
+                            'width': '50px',
+                            'height': '50px',
+                            'display': 'flex',
+                            'align-items': 'center',
+                            'justify-content': 'center',
+                            'font-size': '2rem',
+                            'border-radius': '50%',
+                            'background-color': 'var(--secondary-bg)'
+                        }
+                    )
+                ], className='notification-avatar')
+            
+            # Build progress text
+            percentage = notification.get('percentage', 0)
+            progress = notification.get('progress', 0)
+            target = notification.get('target', 1)
+            days_left_text = notification.get('days_left_text', '')
+            
+            # Determine border color based on status
+            if 'Overdue' in days_left_text:
+                border_color = '#dc3545'  # Red
+            elif percentage < 50:
+                border_color = '#ffc107'  # Yellow
+            else:
+                border_color = '#28a745'  # Green
+            
+            item = html.Div([
+                # Dismiss button
+                html.Button(
+                    '✕',
+                    id={'type': 'dismiss-goal-reminder', 'goal_id': notification['goal_id']},
+                    className='btn-dismiss-small text-muted',
+                    title='Dismiss reminder'
+                ),
+                
+                avatar,
+                
+                html.Div([
+                    # Row 1: Title
+                    dcc.Link(
+                        html.Strong(
+                            notification.get('book_title', 'Reading Goal'),
+                            className='notification-title text-link'
+                        ),
+                        href=goal_href,
+                        style={'text-decoration': 'none', 'display': 'block', 'margin-bottom': '6px'}
+                    ),
+                    # Row 2: Progress details
+                    html.Div([
+                        html.Div(
+                            f"{percentage}% complete ({progress}/{target})",
+                            className='text-primary',
+                            style={'margin-bottom': '4px', 'font-weight': '600'}
+                        ),
+                        html.Div(
+                            days_left_text,
+                            className='text-secondary' if 'Overdue' not in days_left_text else 'text-danger',
+                            style={'font-weight': 'bold' if 'Overdue' in days_left_text or 'today' in days_left_text.lower() else 'normal'}
+                        ) if days_left_text else html.Div()
+                    ]),
+                    # Row 3: Timestamp
+                    html.Div([
+                        html.Div(
+                            get_relative_time(notification.get('created_at')),
+                            className='notification-time text-secondary',
+                            style={'flex': '1', 'display': 'flex', 'align-items': 'center', 'margin-top': '8px'}
+                        )
+                    ])
+                ], className='notification-main-content', style={'flex': '1'})
+            ], className='card notification-item', style={
+                'display': 'flex',
+                'align-items': 'flex-start',
+                'padding': '16px',
+                'border-left': f'4px solid {border_color}'
+            })
+            
+            notification_items.append(item)
+
     return notification_items, count_display
 
 
@@ -479,13 +583,14 @@ def update_notifications_display(notifications_data, user_session):
      Input({'type': 'dismiss-notification',
            'notification_id': dash.dependencies.ALL}, 'n_clicks'),
      Input({'type': 'add-to-bookshelf-notification',
-           'notification_id': dash.dependencies.ALL}, 'n_clicks')],
+           'notification_id': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'dismiss-goal-reminder', 'goal_id': dash.dependencies.ALL}, 'n_clicks')],  
     [State('user-session', 'data'),
      State('notifications-refresh-interval', 'n_intervals'),
      State('notifications-data', 'data')],
     prevent_initial_call=True
 )
-def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, user_session, current_interval, notifications_data):
+def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, add_bookshelf_clicks, dismiss_goal_clicks, user_session, current_interval, notifications_data):
     if not user_session or not user_session.get('logged_in', False):
         return dash.no_update, dash.no_update, dash.no_update
 
@@ -506,27 +611,39 @@ def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, 
         button_id_str = triggered_prop.split('.')[0]
         button_data = json.loads(button_id_str.replace("'", '"'))
 
-        notification_id = button_data['notification_id']
         button_type = button_data['type']
 
         # Handle different notification types
         if button_type in ['accept-notification', 'decline-notification']:
             # Friend request response
+            notification_id = button_data['notification_id']
             is_accept = button_type == 'accept-notification'
             result = notifications_backend.respond_to_friend_request_notification(
                 user_id=str(user_session['user_id']),
                 notification_id=notification_id,
                 accept=is_accept
             )
+            
         elif button_type == 'dismiss-notification':
             # Book recommendation dismissal
+            notification_id = button_data['notification_id']
             result = notifications_backend.respond_to_book_recommendation_notification(
                 user_id=str(user_session['user_id']),
                 notification_id=notification_id,
                 dismiss=True
             )
+            
+        elif button_type == 'dismiss-goal-reminder':
+            # Reading goal reminder dismissal
+            goal_id = button_data['goal_id']
+            result = notifications_backend.dismiss_reading_goal_reminder(
+                user_id=str(user_session['user_id']),
+                goal_id=goal_id
+            )
+            
         elif button_type == 'add-to-bookshelf-notification':
             # Open bookshelf modal with book data
+            notification_id = button_data['notification_id']
             if notifications_data and 'notifications' in notifications_data:
                 for notification in notifications_data['notifications']:
                     if notification['id'] == notification_id:
@@ -544,10 +661,12 @@ def handle_notification_response(accept_clicks, decline_clicks, dismiss_clicks, 
                         }
                         return current_interval, True, book_data
             return dash.no_update, dash.no_update, dash.no_update
+            
         else:
             return dash.no_update, dash.no_update, dash.no_update
 
-        if result['success']:
+        # For all notification responses except add-to-bookshelf (which returns above)
+        if result.get('success'):
             # Trigger a refresh by incrementing the interval counter
             return current_interval + 1, dash.no_update, dash.no_update
         else:

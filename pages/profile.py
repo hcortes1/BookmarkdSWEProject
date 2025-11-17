@@ -5,6 +5,9 @@ import backend.profile as profile_backend
 import backend.friends as friends_backend
 import backend.rewards as rewards_backend
 import backend.bookshelf as bookshelf_backend
+import backend.reading_goals as reading_goals_backend
+
+from datetime import datetime, date  
 
 # Register only the view path - all profiles use the same structure
 dash.register_page(__name__, path_template='/profile/view/<username>')
@@ -259,11 +262,389 @@ def create_completed_books_content(user_data, is_own_profile):
                 html.P(f"{user_data['username']} hasn't completed any books yet.",
                        className="tab-empty-message")
             ])
+        
+
+def create_reading_goals_tab_content(user_data, is_own_profile):
+    """Create the reading goals tab - only visible to profile owner"""
+    
+    # Privacy check - should never happen if tab is hidden, but just in case
+    if not is_own_profile:
+        return html.Div([
+            html.H3("Private", className="section-title-showcase"),
+            html.P("Reading goals are private and only visible to the profile owner.",
+                   className="showcase-empty", style={'text-align': 'center', 'margin-top': '50px'})
+        ])
+    
+    user_id = user_data.get('user_id')
+    
+    success, message, goals = reading_goals_backend.get_user_goals(user_id)
+    
+    if not success:
+        return html.Div([
+            html.H3("Reading Goals", className="section-title-showcase"),
+            html.P(f"Error loading goals: {message}", className="showcase-empty", 
+                   style={'text-align': 'center', 'margin-top': '50px', 'color': 'red'})
+        ])
+    
+    # Create goal cards in grid layout
+    goal_cards = []
+    if goals:
+        for goal in goals:
+            goal_cards.append(create_reading_goal_card(goal, user_id))
+    else:
+        # Empty state card
+        goal_cards = [
+            html.Div([
+                html.Div(style={'fontSize': '4rem', 'margin-bottom': '20px'}),
+                html.P("You haven't set any reading goals yet. Click the button above to create your first goal!",
+                       style={'text-align': 'center', 'color': 'var(--text-secondary)', 'font-size': '1.1rem'})
+            ], className='card secondary-bg', style={
+                'text-align': 'center', 
+                'padding': '60px 40px',
+                'border-radius': '12px',
+                'box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
+            })
+        ]
+    
+    return html.Div([
+        # Header with Create Goal button - spans full width at top
+        html.Div([
+            html.H3("Your Reading Goals", className="section-title-showcase", 
+                   style={'margin': '0'}),
+            html.Button("+ Create New Goal", id='open-create-goal-modal', 
+                       className='btn-primary',
+                       style={
+                           'background': '#007bff',
+                           'color': 'white',
+                           'border': 'none',
+                           'padding': '10px 20px',
+                           'border-radius': '6px',
+                           'cursor': 'pointer',
+                           'font-weight': 'bold'
+                       })
+        ], style={
+            'display': 'flex', 
+            'justify-content': 'space-between', 
+            'align-items': 'center', 
+            'margin-bottom': '30px',
+            'padding-bottom': '15px',
+            'border-bottom': '2px solid var(--border-color)'
+        }),
+        
+        # Goals grid (either with goal cards or empty state card)
+        html.Div(goal_cards, className='reading-goals-grid', style={
+            'display': 'grid',
+            'grid-template-columns': 'repeat(auto-fill, minmax(300px, 1fr))' if goals else '1fr',
+            'gap': '20px',
+            'margin-top': '20px'
+        }),
+        
+        # Create Goal Modal
+        html.Div([
+            html.Div([
+                html.Div([
+                    html.H3("Create New Reading Goal", style={'margin': '0 0 20px 0'}),
+                    html.Button("×", id='close-create-goal-modal',
+                               style={
+                                   'position': 'absolute',
+                                   'top': '15px',
+                                   'right': '15px',
+                                   'background': 'none',
+                                   'border': 'none',
+                                   'font-size': '2rem',
+                                   'cursor': 'pointer',
+                                   'color': 'var(--text-color)'
+                               })
+                ], style={'position': 'relative', 'border-bottom': '1px solid var(--border-color)', 'padding-bottom': '15px', 'margin-bottom': '20px'}),
+                
+                # Form content - ONLY Pages per day for now
+                html.Div([
+                    html.Label("Goal Type:", style={'font-weight': '600', 'margin-bottom': '8px', 'display': 'block'}),
+                    dcc.Dropdown(
+                        id='profile-rg-goal-type',
+                        options=[
+                            {'label': 'Pages per day', 'value': 'pages_per_day'}
+                        ],
+                        value='pages_per_day',  # Default to pages per day
+                        placeholder='Select goal type',
+                        style={'margin-bottom': '15px'}
+                    ),
+                    
+                    html.Label("Book (Optional):", style={'font-weight': '600', 'margin-bottom': '8px', 'display': 'block'}),
+                    dcc.Dropdown(id='profile-rg-book-search', options=[], placeholder='Search for a book (optional)',
+                             style={'margin-bottom': '15px'}),
+                    
+                    html.Label("Pages per Day:", style={'font-weight': '600', 'margin-bottom': '8px', 'display': 'block'}),
+                    dcc.Input(id='profile-rg-target', type='number', placeholder='e.g., 50', min=1,
+                             style={'width': '100%', 'padding': '8px', 'margin-bottom': '15px', 'border': '1px solid var(--border-color)', 'border-radius': '4px'}),
+                    
+                    html.Label("Deadline:", style={'font-weight': '600', 'margin-bottom': '8px', 'display': 'block'}),
+                    dcc.DatePickerSingle(id='profile-rg-end-date', placeholder='Select end date',
+                                        disabled=False,
+                                        style={'width': '100%', 'margin-bottom': '15px'}),
+                    
+                    dcc.Checklist(
+                        id='profile-rg-reminder-enabled',
+                        options=[{'label': ' Enable reminders for this goal', 'value': 'on'}],
+                        value=[],
+                        style={'margin-bottom': '20px'}
+                    ),
+                    
+                    html.Div(id='profile-rg-create-status', style={'margin-bottom': '15px', 'text-align': 'center', 'font-weight': '600'}),
+                    
+                    html.Button("Create Goal", id='profile-rg-create-btn', className='btn-primary',
+                               style={
+                                   'width': '100%',
+                                   'background': '#007bff',
+                                   'color': 'white',
+                                   'border': 'none',
+                                   'padding': '12px',
+                                   'border-radius': '6px',
+                                   'cursor': 'pointer',
+                                   'font-weight': 'bold',
+                                   'font-size': '1rem'
+                               })
+                ])
+            ], className='secondary-bg', style={
+                'position': 'relative',
+                'background': 'var(--card-bg)',
+                'padding': '30px',
+                'border-radius': '12px',
+                'max-width': '500px',
+                'width': '90%',
+                'max-height': '90vh',
+                'overflow-y': 'auto',
+                'box-shadow': '0 10px 40px rgba(0,0,0,0.3)'
+            })
+        ], id='create-goal-modal', style={
+            'display': 'none',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background': 'rgba(0,0,0,0.5)',
+            'z-index': '1000',
+            'justify-content': 'center',
+            'align-items': 'center'
+        }),
+        
+        # Stores for managing state
+        dcc.Store(id='profile-rg-refresh-trigger', data=0),
+        dcc.Store(id='profile-goal-to-delete', data=None),
+        
+        # Delete Confirmation Modal
+        html.Div([
+            html.Div([
+                html.H3("Delete Goal", style={'margin': '0 0 15px 0'}),
+                html.P("Are you sure you want to delete this reading goal? This action cannot be undone.",
+                      style={'margin-bottom': '20px'}),
+                html.Div([
+                    html.Button("Cancel", id='cancel-delete-goal',
+                               className='btn-cancel',
+                               style={
+                                   'background': '#6c757d',
+                                   'color': 'white',
+                                   'border': 'none',
+                                   'padding': '10px 20px',
+                                   'border-radius': '6px',
+                                   'cursor': 'pointer',
+                                   'margin-right': '10px'
+                               }),
+                    html.Button("Delete", id='confirm-delete-goal',
+                               className='btn-danger',
+                               style={
+                                   'background': '#dc3545',
+                                   'color': 'white',
+                                   'border': 'none',
+                                   'padding': '10px 20px',
+                                   'border-radius': '6px',
+                                   'cursor': 'pointer'
+                               })
+                ], style={'text-align': 'right'})
+            ], className='secondary-bg', style={
+                'background': 'var(--card-bg)',
+                'padding': '25px',
+                'border-radius': '12px',
+                'max-width': '400px',
+                'box-shadow': '0 10px 40px rgba(0,0,0,0.3)'
+            })
+        ], id='delete-goal-modal', style={
+            'display': 'none',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background': 'rgba(0,0,0,0.5)',
+            'z-index': '1001',
+            'justify-content': 'center',
+            'align-items': 'center'
+        })
+    ], className='profile-right-column')
 
 
+def create_reading_goal_card(goal, user_id):
+    """Create a reading goal card with progress bar"""
+    goal_id = goal.get('goal_id')
+    progress = goal.get('progress', 0) or 0
+    target = goal.get('target_books', 1) or 1
+    
+    # Calculate percentage
+    try:
+        percentage = int((progress / target) * 100) if target else 0
+    except:
+        percentage = 0
+    
+    # Format dates
+    start_date = goal.get('start_date')
+    start_text = start_date.strftime('%m/%d/%Y') if hasattr(start_date, 'strftime') else (start_date or 'Unknown')
+    
+    end_date = goal.get('end_date')
+    if hasattr(end_date, 'strftime'):
+        end_text = end_date.strftime('%m/%d/%Y')
+        days_left = (end_date - date.today()).days
+        if days_left >= 0:
+            days_text = f"{days_left} days left"
+        else:
+            days_text = "Overdue"
+    else:
+        end_text = "No deadline"
+        days_text = ""
+    
+    reminder_text = "Enabled" if goal.get('reminder_enabled') else "Disabled"
+    
+    # Determine progress bar color
+    if percentage >= 100:
+        bar_color = '#28a745'  # Green
+    elif percentage >= 50:
+        bar_color = '#ffc107'  # Yellow
+    else:
+        bar_color = '#007bff'  # Blue
+    
+    # Show book name if goal is for a specific book
+    book_name = goal.get('book_name')
+    if book_name:
+        # Fetch book details
+        book_info_section = html.Div([
+            html.Span("", style={'margin-right': '5px'}),
+            html.Span(book_name, style={'font-style': 'italic', 'color': '#007bff'})
+        ], style={'margin-bottom': '10px', 'padding': '8px', 'background': 'rgba(0, 123, 255, 0.1)', 'border-radius': '4px'})
+    else:
+        book_info_section = html.Div()
+    
+    return html.Div([
+        # Goal header
+        html.Div([
+            html.H4("Reading Goal", style={'margin': '0', 'font-size': '1.1rem'}),
+            html.Button("Delete", id={'type': 'delete-goal-btn', 'goal_id': goal_id},
+                       style={
+                           'background': '#dc3545',
+                           'color': 'white',
+                           'border': 'none',
+                           'padding': '5px 12px',
+                           'border-radius': '4px',
+                           'cursor': 'pointer',
+                           'font-size': '0.85rem'
+                       })
+        ], style={'display': 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '15px'}),
+        book_info_section,
+        # Progress bar
+        html.Div([
+            html.Div([
+                html.Div(style={
+                    'width': f'{min(percentage, 100)}%',
+                    'height': '100%',
+                    'background': bar_color,
+                    'border-radius': '10px',
+                    'transition': 'width 0.3s ease'
+                })
+            ], style={
+                'width': '100%',
+                'height': '20px',
+                'background': '#e0e0e0',
+                'border-radius': '10px',
+                'overflow': 'hidden',
+                'margin-bottom': '8px'
+            }),
+            html.Div(f"{progress} / {target} ({percentage}%)", 
+                    style={'text-align': 'center', 'font-weight': 'bold', 'font-size': '1.1rem', 'color': bar_color})
+        ], style={'margin-bottom': '15px'}),
+        
+        # Goal details
+        html.Div([
+            html.Div([
+                html.Span("Started: ", style={'font-weight': '600'}),
+                html.Span(start_text)
+            ], style={'margin-bottom': '8px'}),
+            html.Div([
+                html.Span("Deadline: ", style={'font-weight': '600'}),
+                html.Span(end_text),
+                html.Span(f" ({days_text})" if days_text else "", style={'color': '#dc3545' if 'Overdue' in days_text else '#28a745', 'font-weight': '600', 'margin-left': '5px'})
+            ], style={'margin-bottom': '8px'}),
+            html.Div([
+                html.Span("Reminders: ", style={'font-weight': '600'}),
+                html.Span(reminder_text)
+            ], style={'margin-bottom': '15px'})
+        ]),
+        
+        # Update progress section
+        html.Div([
+            html.Label("Update Progress:", style={'font-weight': '600', 'margin-bottom': '8px', 'display': 'block'}),
+            html.Div([
+                dcc.Input(
+                    id={'type': 'set-progress-input', 'goal_id': goal_id},
+                    type='number',
+                    placeholder='New progress',
+                    min=0,
+                    style={
+                        'flex': '1',
+                        'padding': '8px',
+                        'border': '1px solid var(--border-color)',
+                        'border-radius': '4px',
+                        'margin-right': '8px'
+                    }
+                ),
+                html.Button("Update", id={'type': 'set-progress-btn', 'goal_id': goal_id},
+                           style={
+                               'background': '#007bff',
+                               'color': 'white',
+                               'border': 'none',
+                               'padding': '8px 16px',
+                               'border-radius': '4px',
+                               'cursor': 'pointer',
+                               'font-weight': '600'
+                           })
+            ], style={'display': 'flex'})
+        ])
+        
+    ], className='card secondary-bg', style={
+        'padding': '20px',
+        'border-radius': '12px',
+        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
+        'transition': 'transform 0.2s, box-shadow 0.2s',
+        'height': '100%'
+    })
 def layout(username=None, **kwargs):
     return html.Div([
         html.Div([
+            html.Div([
+                html.Button("Profile", id="profile-profile-tab",
+                            className="profile-tab active-tab"),
+                html.Button("Friends", id="profile-friends-tab",
+                            className="profile-tab"),
+                html.Button("Bookshelf", id="profile-bookshelf-tab",
+                            className="profile-tab"),
+                
+                html.Div(
+                    id='reading-goals-tab-container',
+                    children=[
+                        html.Button("Reading Goals", id="profile-reading-goals-tab",
+                                    className="profile-tab")
+                    ]
+                )
+            ], className='profile-tabs-container'),
+
             # Tab Content - will show/hide different layouts
             html.Div(id='profile-tab-content', children=[]),
 
@@ -515,29 +896,34 @@ def update_profile_header(session_data, viewed_username):
     [Output('profile-active-tab', 'data'),
      Output('profile-profile-tab', 'className'),
      Output('profile-friends-tab', 'className'),
-     Output('profile-bookshelf-tab', 'className')],
+     Output('profile-bookshelf-tab', 'className'),
+     Output('profile-reading-goals-tab', 'className')
+    ],
     [Input('profile-profile-tab', 'n_clicks'),
      Input('profile-friends-tab', 'n_clicks'),
-     Input('profile-bookshelf-tab', 'n_clicks')],
+     Input('profile-bookshelf-tab', 'n_clicks'),
+     Input('profile-reading-goals-tab', 'n_clicks')],
     prevent_initial_call=True
 )
-def handle_tab_switch(profile_clicks, friends_clicks, bookshelf_clicks):
+def handle_tab_switch(profile_clicks, friends_clicks, bookshelf_clicks, reading_goals_clicks):
     """Handle tab switching and update tab classes"""
     ctx = dash.callback_context
     if not ctx.triggered:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Determine which tab was clicked
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == 'profile-profile-tab':
-        return 'profile', 'profile-tab active-tab', 'profile-tab', 'profile-tab'
+        return 'profile', 'profile-tab active-tab', 'profile-tab', 'profile-tab', 'profile-tab'
     elif button_id == 'profile-friends-tab':
-        return 'friends', 'profile-tab', 'profile-tab active-tab', 'profile-tab'
+        return 'friends', 'profile-tab', 'profile-tab active-tab', 'profile-tab', 'profile-tab'
     elif button_id == 'profile-bookshelf-tab':
-        return 'bookshelf', 'profile-tab', 'profile-tab', 'profile-tab active-tab'
+        return 'bookshelf', 'profile-tab', 'profile-tab', 'profile-tab active-tab', 'profile-tab'
+    elif button_id == 'profile-reading-goals-tab':
+        return 'reading-goals', 'profile-tab', 'profile-tab', 'profile-tab', 'profile-tab active-tab'
 
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 # Callback to update tab content based on active tab
@@ -584,6 +970,8 @@ def update_tab_content(active_tab, session_data, viewed_username):
         tab_content = create_friends_tab_content(user_data, is_own_profile)
     elif active_tab == 'bookshelf':
         tab_content = create_bookshelf_tab_content(user_data, is_own_profile)
+    elif active_tab == 'reading-goals':
+        tab_content = create_reading_goals_tab_content(user_data, is_own_profile)
     else:
         tab_content = html.Div()
 
@@ -1450,3 +1838,300 @@ def handle_friend_node_click(node_data):
         username = node_data['id']
         return f'/profile/view/{username}'
     return dash.no_update
+
+# Handle reading goals tab container - manage hiding reading goals tab if viewing someone elses profile
+
+@callback(
+    Output('reading-goals-tab-container', 'style'),
+    [Input('user-session', 'data'),
+     Input('username-store', 'children')],
+    prevent_initial_call=False
+)
+def show_hide_reading_goals_tab(session_data, viewed_username):
+    """Hide reading goals tab if viewing someone else's profile"""
+    
+    # Check if this is the logged-in user viewing their own profile
+    is_own_profile = (session_data and
+                      session_data.get('logged_in', False) and
+                      session_data.get('username', '').lower() == (viewed_username or '').lower())
+    
+    if is_own_profile:
+        # Show the tab
+        return {'display': 'inline-block'}
+    else:
+        # Hide the tab
+        return {'display': 'none'}
+    
+    # Open/Close Create Goal Modal
+@callback(
+    Output('create-goal-modal', 'style'),
+    [Input('open-create-goal-modal', 'n_clicks'),
+     Input('close-create-goal-modal', 'n_clicks'),
+     Input('profile-rg-create-btn', 'n_clicks')],
+    State('create-goal-modal', 'style'),
+    prevent_initial_call=True
+)
+def toggle_create_goal_modal(open_clicks, close_clicks, create_clicks, current_style):
+    """Toggle the create goal modal visibility"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if button_id == 'open-create-goal-modal':
+        return {**current_style, 'display': 'flex'}
+    else:
+        return {**current_style, 'display': 'none'}
+
+
+# Create Goal
+@callback(
+    [Output('profile-rg-create-status', 'children'),
+     Output('profile-rg-refresh-trigger', 'data'),
+     Output('profile-rg-target', 'value'),
+     Output('profile-rg-book-search', 'value'),
+     Output('profile-rg-end-date', 'date'),
+     Output('profile-rg-goal-type', 'value'),
+     Output('profile-rg-reminder-enabled', 'value')],
+    Input('profile-rg-create-btn', 'n_clicks'),
+    [State('user-session', 'data'),
+     State('profile-rg-goal-type', 'value'),
+     State('profile-rg-book-search', 'value'),
+     State('profile-rg-book-search', 'options'),  
+     State('profile-rg-target', 'value'),
+     State('profile-rg-end-date', 'date'),
+     State('profile-rg-reminder-enabled', 'value'),
+     State('profile-rg-refresh-trigger', 'data')],
+    prevent_initial_call=True
+)
+def create_reading_goal(n_clicks, session_data, goal_type, book_id, book_options, target, end_date, reminder_value, current_trigger):
+    """Create a new reading goal"""
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Validation
+    if not target:
+        return html.Span("Pages per day is required.", style={'color': '#dc3545'}), dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    if not end_date:
+        return html.Span("Deadline is required.", style={'color': '#dc3545'}), dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    user_id = int(session_data['user_id'])
+    reminder_enabled = 'on' in (reminder_value or [])
+    
+    # Get book name from options if book_id is selected
+    book_name = None
+    if book_id and book_options:
+        for option in book_options:
+            if option.get('value') == book_id:
+                book_name = option.get('label', '')
+                break
+    
+    import backend.reading_goals as reading_goals_backend
+    success, message = reading_goals_backend.create_goal(
+    user_id=user_id,
+    goal_type=goal_type,
+    book_name=book_name,
+    target=target,
+    start_date=None,
+    end_date=end_date,
+    reminder_enabled=reminder_enabled
+)
+    
+    if success:
+        # Clear form and refresh goals
+        return (
+            html.Span("Goal created successfully!", style={'color': '#28a745'}),
+            current_trigger + 1,
+            None,  # Clear target
+            None,  # Clear book_id
+            None,  # Clear end_date
+            'pages_per_day',  # Reset to pages_per_day
+            []     # Clear reminder checkbox
+        )
+    else:
+        return html.Span(f"Error: {message}", style={'color': '#dc3545'}), dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+
+# Update Progress
+@callback(
+    [Output('profile-rg-refresh-trigger', 'data', allow_duplicate=True),
+     Output({'type': 'set-progress-input', 'goal_id': dash.ALL}, 'value')],
+    Input({'type': 'set-progress-btn', 'goal_id': dash.ALL}, 'n_clicks'),
+    [State({'type': 'set-progress-input', 'goal_id': dash.ALL}, 'value'),
+     State({'type': 'set-progress-input', 'goal_id': dash.ALL}, 'id'),
+     State('profile-rg-refresh-trigger', 'data')],
+    prevent_initial_call=True
+)
+def update_goal_progress(set_clicks, progress_values, progress_ids, current_trigger):
+    """Update progress for a reading goal"""
+    ctx = dash.callback_context
+    if not ctx.triggered or not any(set_clicks or []):
+        return dash.no_update, dash.no_update
+    
+    # Find which button was clicked
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    goal_id = eval(button_id)['goal_id']
+    
+    # Find the corresponding input value
+    val_index = next((i for i, pid in enumerate(progress_ids) if pid['goal_id'] == goal_id), None)
+    if val_index is None or progress_values[val_index] is None:
+        return dash.no_update, dash.no_update
+    
+    new_progress = progress_values[val_index]
+    
+    import backend.reading_goals as reading_goals_backend
+    result = reading_goals_backend.update_progress_manual(int(goal_id), int(new_progress))
+    
+    if result.get('success'):
+        # Clear all inputs and refresh
+        return current_trigger + 1, [None for _ in progress_values]
+    
+    return dash.no_update, dash.no_update
+
+
+# Show Delete Confirmation
+@callback(
+    [Output('delete-goal-modal', 'style'),
+     Output('profile-goal-to-delete', 'data')],
+    Input({'type': 'delete-goal-btn', 'goal_id': dash.ALL}, 'n_clicks'),
+    State('delete-goal-modal', 'style'),
+    prevent_initial_call=True
+)
+def show_delete_goal_confirmation(delete_clicks, current_style):
+    """Show delete confirmation modal"""
+    ctx = dash.callback_context
+    if not ctx.triggered or not any(delete_clicks or []):
+        return dash.no_update, dash.no_update
+    
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    goal_id = eval(button_id)['goal_id']
+    
+    return {**current_style, 'display': 'flex'}, goal_id
+
+
+# Cancel Delete
+@callback(
+    Output('delete-goal-modal', 'style', allow_duplicate=True),
+    Input('cancel-delete-goal', 'n_clicks'),
+    State('delete-goal-modal', 'style'),
+    prevent_initial_call=True
+)
+def cancel_delete_goal(n_clicks, current_style):
+    """Cancel goal deletion"""
+    if not n_clicks:
+        return dash.no_update
+    return {**current_style, 'display': 'none'}
+
+
+# Confirm Delete
+@callback(
+    [Output('profile-rg-refresh-trigger', 'data', allow_duplicate=True),
+     Output('delete-goal-modal', 'style', allow_duplicate=True)],
+    Input('confirm-delete-goal', 'n_clicks'),
+    [State('profile-goal-to-delete', 'data'),
+     State('profile-rg-refresh-trigger', 'data'),
+     State('delete-goal-modal', 'style')],
+    prevent_initial_call=True
+)
+def confirm_delete_goal(n_clicks, goal_id, current_trigger, modal_style):
+    """Delete the goal"""
+    if not n_clicks or not goal_id:
+        return dash.no_update, dash.no_update
+    
+    import backend.reading_goals as reading_goals_backend
+    result = reading_goals_backend.delete_goal(int(goal_id))
+    
+    if result.get('success'):
+        return current_trigger + 1, {**modal_style, 'display': 'none'}
+    
+    return dash.no_update, {**modal_style, 'display': 'none'}
+
+
+# Refresh Goals when trigger changes
+@callback(
+    Output('profile-tab-content', 'children', allow_duplicate=True),
+    Input('profile-rg-refresh-trigger', 'data'),
+    [State('user-session', 'data'),
+     State('username-store', 'children'),
+     State('profile-active-tab', 'data')],
+    prevent_initial_call=True
+)
+def refresh_reading_goals(trigger, session_data, viewed_username, active_tab):
+    """Refresh the reading goals content when goals are modified"""
+    
+    if active_tab != 'reading-goals':
+        return dash.no_update
+    
+    if not viewed_username or not session_data or not session_data.get('logged_in'):
+        return dash.no_update
+    
+    user_data = profile_backend.get_user_profile_by_username(viewed_username)
+    if not user_data:
+        return dash.no_update
+    
+    is_own_profile = (session_data.get('username', '').lower() == viewed_username.lower())
+    
+    # Create profile card and tab content
+    profile_card = create_profile_info_card(user_data, is_own_profile, session_data)
+    tab_content = create_reading_goals_tab_content(user_data, is_own_profile)
+    
+    return html.Div([
+        html.Div([profile_card], className="profile-left-column"),
+        tab_content
+    ], className="profile-main-grid")
+
+
+# Enable/disable date picker based on goal type
+@callback(
+    Output('profile-rg-end-date', 'disabled'),
+    Input('profile-rg-goal-type', 'value'),
+    prevent_initial_call=True
+)
+def toggle_profile_end_date(goal_type):
+    """Enable date picker only for deadline goals"""
+    return goal_type != 'deadline'
+
+# Populate book dropdown with user's Currently Reading bookshelf books
+@callback(
+    Output('profile-rg-book-search', 'options'),
+    Input('open-create-goal-modal', 'n_clicks'),
+    State('user-session', 'data'),
+    prevent_initial_call=True
+)
+def populate_book_dropdown(n_clicks, session_data):
+    """Populate the book dropdown with books from user's Currently Reading shelf"""
+    if not n_clicks or not session_data or not session_data.get('logged_in'):
+        return []
+    
+    user_id = session_data.get('user_id')
+    
+    # Get user's bookshelf
+    success, message, bookshelf = bookshelf_backend.get_user_bookshelf(user_id)
+    
+    if not success or not bookshelf:
+        return []
+    
+    # Only get books from "Currently Reading" shelf (key is 'reading')
+    currently_reading_books = bookshelf.get('reading', [])
+    
+    if not currently_reading_books:
+        return [{'label': 'No books currently reading', 'value': None, 'disabled': True}]
+    
+    # Create dropdown options with book title and author
+    options = []
+    
+    for book in currently_reading_books:
+        book_id = book.get('book_id')
+        title = book.get('title', 'Unknown')
+        author = book.get('author_name', 'Unknown Author')
+        options.append({
+            'label': f"{title} by {author}",
+            'value': book_id
+        })
+    
+    # Sort alphabetically by title
+    options.sort(key=lambda x: x['label'])
+    
+    return options
