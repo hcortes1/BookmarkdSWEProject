@@ -186,26 +186,39 @@ def load_bookshelf_tab_content(session_data, refresh_trigger, active_tab):
             ], className='bookshelf-empty')
         ])
 
-    # Create shelf layout with underline like profile page
-    book_cards = [
-        create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
-                         user_id=user_id, show_status_buttons=active_tab != 'rented')
-        for book in books
-    ]
+    # Create shelf layout with multiple rows (shelves)
+    # Desktop: 10 books per shelf, Mobile: 4 books per shelf (handled by CSS showing only first 4)
+    books_per_shelf_desktop = 10
+    books_per_shelf_mobile = 4
+    shelf_sections = []
 
-    return html.Div([
+    # Add header first
+    shelf_sections.append(
         html.Div([
-            html.Div([
-                html.H3(current_tab_info['title'],
-                        className="bookshelf-shelf-title"),
-                html.Span(f"({len(books)} books)",
-                          className="bookshelf-book-count")
-            ], className='bookshelf-shelf-header'),
+            html.H3(current_tab_info['title'],
+                    className="bookshelf-shelf-title"),
+            html.Span(f"({len(books)} books)",
+                      className="bookshelf-book-count")
+        ], className='bookshelf-shelf-header')
+    )
+
+    # Create shelves based on mobile view (4 books per shelf) to ensure all books are accessible
+    for shelf_index in range(0, len(books), books_per_shelf_mobile):
+        shelf_books = books[shelf_index:shelf_index + books_per_shelf_mobile]
+        
+        book_cards = [
+            create_book_card(book, reading_status='rented' if active_tab == 'rented' else shelf_type,
+                             user_id=user_id, show_status_buttons=active_tab != 'rented')
+            for book in shelf_books
+        ]
+
+        shelf_sections.append(
             html.Div([
                 html.Div(book_cards, className='bookshelf-books-row')
             ], className='bookshelf-shelf-container')
-        ], className='bookshelf-shelf-section')
-    ])
+        )
+
+    return html.Div(shelf_sections, className='bookshelf-shelf-section')
 
 
 # Original callback modified to work with new layout
