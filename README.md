@@ -3,6 +3,15 @@
 ## Live demo
 The application is available for use [here](https://bookmarkdd.com/)
 
+## Images
+<p align="center">
+    <img src="assets/3.png" alt="Screenshot 1" width="80%"/>
+    <img src="assets/4.png" alt="Screenshot 2" width="80%"/>
+    <img src="assets/5.png" alt="Screenshot 3" width="80%"/>
+    <img src="assets/6.png" alt="Screenshot 4" width="80%"/>
+    <img src="assets/7.png" alt="Screenshot 5" width="80%"/>
+</p>
+
 ## Running it locally
 
 To set up and run the application locally, follow the steps below.
