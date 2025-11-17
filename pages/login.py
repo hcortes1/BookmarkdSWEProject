@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output, State, callback, clientside_callback
 import backend.login as login_backend
 
 dash.register_page(__name__, path='/login')
@@ -14,12 +14,21 @@ def login_form():
         html.Label("Password", htmlFor="password", className="login-label"),
         dcc.Input(type="password", id="password",
                   className="login-input", placeholder="Enter your password"),
-        html.Div(
-            dcc.Link("Forgot password?", href='/change-password',
-                     style={'fontSize': '12px', 'color': '#666'}),
-            style={'textAlign': 'right',
-                   'marginTop': '5px', 'marginBottom': '10px'}
-        ),
+        html.Div([
+            html.Div([
+                dcc.Checklist(
+                    id='remember-me-checkbox',
+                    options=[{'label': ' Remember me for 30 days', 'value': 'remember'}],
+                    value=[],
+                    style={'fontSize': '13px'}
+                )
+            ], style={'display': 'inline-block'}),
+            html.Div(
+                dcc.Link("Forgot password?", href='/change-password',
+                         style={'fontSize': '12px', 'color': '#666'}),
+                style={'display': 'inline-block', 'float': 'right'}
+            )
+        ], style={'marginTop': '5px', 'marginBottom': '10px', 'overflow': 'hidden'}),
         html.Button("Log in", id="login-button", className="login-button"),
         html.Div(dcc.Link("Sign up", href='/login?mode=signup',
                  className="signup-link"), style={"marginTop": "10px"})
@@ -124,17 +133,22 @@ def handle_signup(n_clicks, username, email, password, password_confirm):
     Output('url', 'pathname', allow_duplicate=True),
     Output('login-form', 'children'),
     Output('user-session', 'data', allow_duplicate=True),
+    Output('remember-token-store', 'data'),
     Input('login-button', 'n_clicks'),
     State('username', 'value'),
     State('password', 'value'),
+    State('remember-me-checkbox', 'value'),
     prevent_initial_call=True
 )
-def handle_login(n_clicks, username, password):
+def handle_login(n_clicks, username, password, remember_me):
     if not n_clicks:
-        return dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # check if remember me is checked
+    remember = 'remember' in (remember_me or [])
 
     # call backend login function
-    success, message, user_data = login_backend.login_user(username, password)
+    success, message, user_data, remember_token = login_backend.login_user(username, password, remember)
 
     if success:
         # create comprehensive session data with all user information
@@ -164,10 +178,10 @@ def handle_login(n_clicks, username, password):
         # Check if first login and redirect accordingly
         if user_data.get("first_login"):
             # First time user -> genre selection
-            return '/genre-selection', dash.no_update, session_data
+            return '/genre-selection', dash.no_update, session_data, remember_token
         else:
             # Regular user -> home page
-            return '/', dash.no_update, session_data
+            return '/', dash.no_update, session_data, remember_token
 
     else:
         # display error message below the button
@@ -187,16 +201,25 @@ def handle_login(n_clicks, username, password):
                        className="login-label"),
             dcc.Input(type="password", id="password", className="login-input",
                       placeholder="Enter your password", value=password),
-            html.Div(
-                dcc.Link("Forgot password?", href='/change-password',
-                         style={'fontSize': '12px', 'color': '#666'}),
-                style={'textAlign': 'right',
-                       'marginTop': '5px', 'marginBottom': '10px'}
-            ),
+            html.Div([
+                html.Div([
+                    dcc.Checklist(
+                        id='remember-me-checkbox',
+                        options=[{'label': ' Remember me for 30 days', 'value': 'remember'}],
+                        value=remember_me or [],
+                        style={'fontSize': '13px'}
+                    )
+                ], style={'display': 'inline-block'}),
+                html.Div(
+                    dcc.Link("Forgot password?", href='/change-password',
+                             style={'fontSize': '12px', 'color': '#666'}),
+                    style={'display': 'inline-block', 'float': 'right'}
+                )
+            ], style={'marginTop': '5px', 'marginBottom': '10px', 'overflow': 'hidden'}),
             html.Button("Log in", id="login-button", className="login-button"),
             error_message,
             html.Div(dcc.Link("Sign up", href='/login?mode=signup',
                      className="signup-link"), style={"marginTop": "10px"})
         ]
 
-        return dash.no_update, updated_form, dash.no_update
+        return dash.no_update, updated_form, dash.no_update, dash.no_update
