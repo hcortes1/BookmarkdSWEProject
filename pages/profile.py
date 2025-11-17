@@ -1262,7 +1262,8 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
         section_children = [
             html.Div([
                 html.H3(shelf_name, className="bookshelf-shelf-title"),
-                html.Span(f"({len(books)} books)", className="bookshelf-book-count")
+                html.Span(f"({len(books)} books)",
+                          className="bookshelf-book-count")
             ], className='bookshelf-shelf-header'),
             html.Div([
                 html.Div(book_cards, className='bookshelf-books-row')
