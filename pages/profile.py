@@ -676,7 +676,6 @@ def layout(username=None, **kwargs):
 # Callback to load profile header (username, image, user info)
 @callback(
     [Output("profile-username", "children"),
-     Output("profile-image", "src"),
      Output("profile-user-info", "children"),
      Output("profile-friend-request-section", "children")],
     [Input("user-session", "data"),
@@ -845,9 +844,9 @@ def update_profile_header(session_data, viewed_username):
                         }
                     )
                 elif status == 'pending_sent':
-                    # Show "Cancel Friend Request" button
+                    # Show "Cancel" button
                     friend_request_section = html.Button(
-                        "Cancel Friend Request",
+                        "Cancel",
                         id={'type': 'cancel-friend-request',
                             'username': viewed_username},
                         className='btn-cancel-friend-request',
@@ -889,17 +888,17 @@ def update_profile_header(session_data, viewed_username):
             profile_image_url = user_data.get(
                 'profile_image_url', '/assets/svg/default-profile.svg')
 
-            return username_display, profile_image_url, user_info, friend_request_section
+            return username_display, user_info, friend_request_section
 
         except Exception as e:
             print(f"Error loading user profile: {e}")
             import traceback
             traceback.print_exc()
-            return "Error loading profile", "", html.Div("An error occurred", style={'color': 'red'}), html.Div()
+            return "Error loading profile", html.Div("An error occurred", style={'color': 'red'}), html.Div()
 
     # No username provided
     else:
-        return "No user specified", '', html.Div("No user specified"), html.Div()
+        return "No user specified", html.Div("No user specified"), html.Div()
 
 
 # Callback to handle tab switching
@@ -1109,7 +1108,7 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
             )]
         elif status == 'pending_sent':
             friend_request_section.children = [html.Button(
-                "Cancel Friend Request",
+                "Cancel",
                 id={'type': 'cancel-friend-request',
                     'username': user_data['username']},
                 className='btn-cancel-friend-request',
@@ -1132,7 +1131,7 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
             )]
 
     profile_image_url = user_data.get(
-        'profile_image_url', '/assets/svg/default-profile.svg')
+        'profile_image_url') or '/assets/svg/default-profile.svg'
 
     return html.Div([
         # Left column: image, badge, and button stacked
@@ -1659,20 +1658,13 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
                 html.Div(book_cards, className='bookshelf-books-row')
             ], className='bookshelf-shelf-container')
         ]
-        if shelf_key == 'finished':
-            section_children.append(
-                html.Div(style={
-                    'borderBottom': '3px solid var(--border-color)',
-                    'marginTop': '10px',
-                    'marginBottom': '10px',
-                    'width': '100%'
-                })
-            )
         shelf_sections.append(
             html.Div(section_children, className='bookshelf-shelf-section')
         )
 
-    return html.Div(shelf_sections, className='bookshelf-layout tab-content-wrapper')
+    return html.Div([
+        html.Div(shelf_sections, className="bookshelf-content")
+    ], className="tab-content-wrapper")
 
 
 # Handle send friend request button
@@ -1714,7 +1706,7 @@ def handle_friend_actions(send_clicks, remove_clicks, cancel_clicks, user_sessio
             # Show cancel button immediately after sending request
             return html.Div([
                 html.Button(
-                    "Cancel Friend Request",
+                    "Cancel",
                     id={'type': 'cancel-friend-request',
                         'username': target_username},
                     className='btn-cancel-friend-request',

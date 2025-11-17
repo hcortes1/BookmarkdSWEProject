@@ -132,6 +132,17 @@
     margin: 0 auto;
 }
 
+/* Bookshelf content container */
+.bookshelf-content {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    width: 100%;
+    margin: 0;
+}
+
 #friends-network {
     cursor: default;
 }
@@ -270,6 +281,7 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     line-height: 1.2;
+    margin-bottom: 5px;
 }
 
 .showcase-author {
@@ -1121,9 +1133,10 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    min-width: 93px;
-    max-width: 93px;
-    width: 93px;
+    min-width: 120px;
+    max-width: 120px;
+    width: 120px;
+    height: 180px;
     transition: transform 0.2s ease;
     vertical-align: top;
 }
@@ -1138,12 +1151,12 @@
 }
 
 .bookshelf-cover-wrapper {
-    width: 85px;
+    width: 100px;
     height: 110px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f9fa;
+    background: transparent;
     border-radius: 4px;
     padding: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
