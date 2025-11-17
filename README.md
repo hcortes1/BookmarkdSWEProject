@@ -1,7 +1,7 @@
 # Bookmarkd SWE Project Fall 2025
 
 ## Live demo
-The application is available for use [here](https://bookmarkdsweproject-1083521676168.us-east1.run.app/)
+The application is available for use [here](https://bookmarkdd.com/)
 
 ## Running it locally
 
@@ -40,6 +40,8 @@ To set up and run the application locally, follow the steps below.
     SUPABASE_URL=
     SUPABASE_KEY=
     GEMINI_API_KEY=
+    EMAIL_USER=
+    EMAIL_PASSWORD=
     ```
 
 6. Run the application
