@@ -927,6 +927,7 @@ def handle_tab_switch(profile_clicks, friends_clicks, bookshelf_clicks, reading_
 
 
 # Callback to update tab content based on active tab
+# Callback to update tab content based on active tab
 @callback(
     Output('profile-tab-content', 'children'),
     [Input('profile-active-tab', 'data'),
@@ -953,8 +954,6 @@ def update_tab_content(active_tab, session_data, viewed_username):
     profile_card = create_profile_info_card(
         user_data, is_own_profile, session_data)
 
-  
-
     # Get tab-specific content
     if active_tab == 'profile':
         tab_content = create_profile_tab_content(user_data, is_own_profile)
@@ -967,12 +966,10 @@ def update_tab_content(active_tab, session_data, viewed_username):
     else:
         tab_content = html.Div()
 
-    # Return layout with profile card, tabs, then content
+    # Return layout with profile card and tab content (no extra wrapper)
     return html.Div([
         html.Div([profile_card], className="profile-left-column"),
-        html.Div([
-            tab_content
-        ], className="profile-right-wrapper")
+        tab_content
     ], className="profile-main-grid")
 
 
