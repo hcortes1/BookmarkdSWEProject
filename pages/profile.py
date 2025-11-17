@@ -953,15 +953,7 @@ def update_tab_content(active_tab, session_data, viewed_username):
     profile_card = create_profile_info_card(
         user_data, is_own_profile, session_data)
 
-    # Create tab navigation
-    tab_navigation = html.Div([
-        html.Button("Profile", id="profile-profile-tab",
-                    className="profile-tab active-tab" if active_tab == 'profile' else "profile-tab"),
-        html.Button("Friends", id="profile-friends-tab",
-                    className="profile-tab active-tab" if active_tab == 'friends' else "profile-tab"),
-        html.Button("Bookshelf", id="profile-bookshelf-tab",
-                    className="profile-tab active-tab" if active_tab == 'bookshelf' else "profile-tab")
-    ], className='profile-tabs-container')
+  
 
     # Get tab-specific content
     if active_tab == 'profile':
@@ -979,7 +971,6 @@ def update_tab_content(active_tab, session_data, viewed_username):
     return html.Div([
         html.Div([profile_card], className="profile-left-column"),
         html.Div([
-            tab_navigation,
             tab_content
         ], className="profile-right-wrapper")
     ], className="profile-main-grid")
