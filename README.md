@@ -1,7 +1,7 @@
 # Bookmarkd SWE Project Fall 2025
 
 ## Live demo
-The application is available for use [here](https://bookmarkdsweproject-1083521676168.us-east1.run.app/)
+The application is available for use [here](https://bookmarkdd.com/)
 
 ## Running it locally
 
