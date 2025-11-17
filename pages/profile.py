@@ -1636,28 +1636,17 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
             )
 
         # Create individual shelf section
-        # Add a border line below the completed books section
-        section_children = [
-            html.Div([
-                html.H3(shelf_name, className="bookshelf-shelf-title"),
-                html.Span(f"({len(books)} books)",
-                          className="bookshelf-book-count")
-            ], className='bookshelf-shelf-header'),
-            html.Div([
-                html.Div(book_cards, className='bookshelf-books-row')
-            ], className='bookshelf-shelf-container')
-        ]
-        if shelf_key == 'finished':
-            section_children.append(
-                html.Div(style={
-                    'borderBottom': '3px solid var(--border-color)',
-                    'marginTop': '10px',
-                    'marginBottom': '10px',
-                    'width': '100%'
-                })
-            )
         shelf_sections.append(
-            html.Div(section_children, className='bookshelf-shelf-section')
+            html.Div([
+                html.Div([
+                    html.H3(shelf_name, className="bookshelf-shelf-title"),
+                    html.Span(f"({len(books)} books)",
+                              className="bookshelf-book-count")
+                ], className='bookshelf-shelf-header'),
+                html.Div([
+                    html.Div(book_cards, className='bookshelf-books-row')
+                ], className='bookshelf-shelf-container')
+            ], className='bookshelf-shelf-section')
         )
 
     return html.Div(shelf_sections, className='bookshelf-layout tab-content-wrapper')
