@@ -264,16 +264,6 @@ def create_completed_books_content(user_data, is_own_profile):
 def layout(username=None, **kwargs):
     return html.Div([
         html.Div([
-            # Tab Navigation at the top
-            html.Div([
-                html.Button("Profile", id="profile-profile-tab",
-                            className="profile-tab active-tab"),
-                html.Button("Friends", id="profile-friends-tab",
-                            className="profile-tab"),
-                html.Button("Bookshelf", id="profile-bookshelf-tab",
-                            className="profile-tab")
-            ], className='profile-tabs-container'),
-
             # Tab Content - will show/hide different layouts
             html.Div(id='profile-tab-content', children=[]),
 
@@ -573,6 +563,16 @@ def update_tab_content(active_tab, session_data, viewed_username):
     # Create profile info card (shown on all tabs)
     profile_card = create_profile_info_card(user_data, is_own_profile, session_data)
     
+    # Create tab navigation
+    tab_navigation = html.Div([
+        html.Button("Profile", id="profile-profile-tab",
+                    className="profile-tab active-tab" if active_tab == 'profile' else "profile-tab"),
+        html.Button("Friends", id="profile-friends-tab",
+                    className="profile-tab active-tab" if active_tab == 'friends' else "profile-tab"),
+        html.Button("Bookshelf", id="profile-bookshelf-tab",
+                    className="profile-tab active-tab" if active_tab == 'bookshelf' else "profile-tab")
+    ], className='profile-tabs-container')
+    
     # Get tab-specific content
     if active_tab == 'profile':
         tab_content = create_profile_tab_content(user_data, is_own_profile)
@@ -583,10 +583,13 @@ def update_tab_content(active_tab, session_data, viewed_username):
     else:
         tab_content = html.Div()
     
-    # Return layout with profile card on left and tab content on right
+    # Return layout with profile card, tabs, then content
     return html.Div([
         html.Div([profile_card], className="profile-left-column"),
-        tab_content
+        html.Div([
+            tab_navigation,
+            tab_content
+        ], className="profile-right-wrapper")
     ], className="profile-main-grid")
 
 
@@ -627,7 +630,7 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
                style={'margin-top': '0px', 'margin-bottom': '10px', 'padding-top': '0px'})
     ]
 
-    # Add level badge
+    # Get level badge (will be placed in left section)
     profile_user_id = user_data.get('user_id')
     rewards = rewards_backend.get_user_rewards(profile_user_id)
     level = rewards.get('level', 1)
@@ -641,17 +644,15 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
         level_title = f"XP: {current_level_xp}/{xp_to_next} to Level {level + 1}\nPoints: {points}"
         level_style = {'cursor': 'help'}
 
-    user_info_elements.append(
-        html.Div(
-            html.Span(
-                f"Lvl {level}",
-                className=f'level-badge level-{level}',
-                title=level_title if level_title else None,
-                style=level_style
-            ),
-            className='profile-level-badge',
-            style={'margin-bottom': '10px'}
-        )
+    level_badge = html.Div(
+        html.Span(
+            f"Lvl {level}",
+            className=f'level-badge level-{level}',
+            title=level_title if level_title else None,
+            style=level_style
+        ),
+        className='profile-level-badge',
+        style={'margin-bottom': '10px'}
     )
 
     # Add bio
@@ -737,10 +738,17 @@ def create_profile_info_card(user_data, is_own_profile, session_data):
     profile_image_url = user_data.get('profile_image_url', '/assets/svg/default-profile.svg')
     
     return html.Div([
-        html.Img(src=profile_image_url, className='profile-image-compact'),
-        username_display,
-        user_info,
-        friend_request_section
+        # Left column: image, badge, and button stacked
+        html.Div([
+            html.Img(src=profile_image_url, className='profile-image-compact'),
+            level_badge,
+            friend_request_section
+        ], className='profile-left-section'),
+        # Right column: username and user info
+        html.Div([
+            username_display,
+            user_info
+        ], className='profile-right-section')
     ], className="profile-info-card card")
 
 
@@ -1135,7 +1143,7 @@ def create_friends_tab_content(user_data, is_own_profile):
     
     return html.Div([
         html.Div(cytoscape_graph, className="friends-network-container")
-    ])
+    ], className="tab-content-wrapper")
 
 
 def create_bookshelf_tab_content(user_data, is_own_profile):
@@ -1231,7 +1239,7 @@ def create_bookshelf_tab_content(user_data, is_own_profile):
             ], className='bookshelf-shelf-section')
         )
     
-    return html.Div(shelf_sections, className='bookshelf-layout')
+    return html.Div(shelf_sections, className='bookshelf-layout tab-content-wrapper')
 
 
 # Handle send friend request button

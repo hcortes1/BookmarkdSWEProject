@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from psycopg2 import Error
-from backend.moderation import moderate_review  
+from backend.moderation import moderate_review
 import backend.email_utils as email_utils
 
 # load environment variables from .env file
@@ -109,7 +109,7 @@ def generate_remember_token(user_id, remember_me=False):
     """Generate and store a remember me token for 30 days"""
     if not remember_me:
         return None
-    
+
     connection = get_db_connection()
     if not connection:
         return None
@@ -120,7 +120,7 @@ def generate_remember_token(user_id, remember_me=False):
         # generate secure token
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(days=30)
-        
+
         # store token in database
         cursor.execute(
             "UPDATE users SET remember_token = %s, remember_token_expires = %s WHERE user_id = %s",
@@ -129,7 +129,7 @@ def generate_remember_token(user_id, remember_me=False):
         connection.commit()
         cursor.close()
         connection.close()
-        
+
         return token
     except Error as e:
         print(f"Error generating remember token: {e}")
@@ -239,10 +239,10 @@ def login_user(username, password, remember_me=False):
             "display_mode": user_record[7],
             "email_verified": user_record[8]  # include email_verified status
         }
-        
+
         # generate remember me token if requested
         remember_token = generate_remember_token(user_record[0], remember_me)
-        
+
         return True, "Login successful", user_data, remember_token
     else:
         return False, "Invalid username or password", None, None

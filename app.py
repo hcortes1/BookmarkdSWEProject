@@ -306,7 +306,8 @@ def update_navigation(user_session):
                 html.Img(src=profile_image_src,
                          className='mobile-menu-profile-img'),
                 html.Span(f"Profile ({user_session.get('username', '')})"),
-                html.Span(f"Lvl {level}", className=f'mobile-level-badge level-{level}')
+                html.Span(f"Lvl {level}",
+                          className=f'mobile-level-badge level-{level}')
             ], href=f"/profile/view/{user_session.get('username', '')}", className='mobile-menu-link'),
             dcc.Link([
                 html.Img(src='/assets/svg/bell.svg',
@@ -768,10 +769,10 @@ def auto_login_from_remember_token(token, current_session):
     # only auto-login if not already logged in and token exists
     if not token or (current_session and current_session.get('logged_in')):
         return dash.no_update
-    
+
     # verify token with backend
     success, message, user_data = login_backend.verify_remember_token(token)
-    
+
     if success:
         # create session data
         session_data = {
@@ -786,7 +787,7 @@ def auto_login_from_remember_token(token, current_session):
             "display_mode": user_data.get("display_mode", "light"),
             "email_verified": user_data.get("email_verified", False)
         }
-        
+
         # fetch notifications
         try:
             import backend.notifications as notifications_backend
@@ -796,7 +797,7 @@ def auto_login_from_remember_token(token, current_session):
             session_data["notifications"] = notifications_data
         except Exception as e:
             session_data["notifications"] = {"count": 0, "notifications": []}
-        
+
         return session_data
     else:
         # invalid token, don't update session
@@ -887,4 +888,4 @@ if __name__ == "__main__":
     parser.add_argument('--port', default='8080')
     args = parser.parse_args()
 
-    app.run(debug=True, host=args.hostname, port=int(args.port))
+    app.run(debug=False, host=args.hostname, port=int(args.port))

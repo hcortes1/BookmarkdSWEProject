@@ -18,7 +18,8 @@ def login_form():
             html.Div([
                 dcc.Checklist(
                     id='remember-me-checkbox',
-                    options=[{'label': ' Remember me for 30 days', 'value': 'remember'}],
+                    options=[
+                        {'label': ' Remember me for 30 days', 'value': 'remember'}],
                     value=[],
                     style={'fontSize': '13px'}
                 )
@@ -148,7 +149,8 @@ def handle_login(n_clicks, username, password, remember_me):
     remember = 'remember' in (remember_me or [])
 
     # call backend login function
-    success, message, user_data, remember_token = login_backend.login_user(username, password, remember)
+    success, message, user_data, remember_token = login_backend.login_user(
+        username, password, remember)
 
     if success:
         # create comprehensive session data with all user information
@@ -205,7 +207,8 @@ def handle_login(n_clicks, username, password, remember_me):
                 html.Div([
                     dcc.Checklist(
                         id='remember-me-checkbox',
-                        options=[{'label': ' Remember me for 30 days', 'value': 'remember'}],
+                        options=[
+                            {'label': ' Remember me for 30 days', 'value': 'remember'}],
                         value=remember_me or [],
                         style={'fontSize': '13px'}
                     )
