@@ -45,6 +45,7 @@
     border-bottom: 3px solid var(--border-color);
     display: flex;
     justify-content: center;
+    padding-bottom: 18px; /* Add space below for book overlap */
 }
 
 .bookshelf-shelf-container::-webkit-scrollbar {
@@ -70,7 +71,7 @@
     display: flex;
     flex-wrap: nowrap;
     justify-content: center;
-    align-items: center;
+    align-items: flex-end; /* Align books to bottom of shelf */
     max-width: 100%;
 }
 
@@ -80,12 +81,15 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end; /* Push content to bottom */
     min-width: 80px;
     max-width: 80px;
     width: 80px;
     transition: transform 0.2s ease;
     vertical-align: bottom;
     position: relative;
+    margin-bottom: -14px !important; /* Overlap shelf line */
+    padding-bottom: 0 !important;
 }
 
 .bookshelf-book-card:hover {
@@ -99,7 +103,7 @@
 
 .bookshelf-cover-wrapper {
     width: 100%;
-    margin-top: 10px;
+    /* margin-top: 10px; removed to sit flush on shelf */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -132,15 +136,17 @@
     width: 100%;
     max-width: 100%;
     overflow: hidden;
-    flex: 1;
+    /* Remove flex: 1 so info doesn't push cover up */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 .bookshelf-book-title {
     font-size: 0.8rem;
-    margin: 3px 0 15px 0;
+    margin: 3px 0 3px 0; /* Remove large bottom margin */
     color: var(--text-color);
     font-weight: 600;
     overflow: hidden;
@@ -160,7 +166,7 @@
 
 .bookshelf-book-rating {
     font-size: 0.7rem;
-    margin: 3px 0;
+    margin: 3px 0 0 0; /* Remove bottom margin */
 }
 
 /* Remove button for shelf layout */
