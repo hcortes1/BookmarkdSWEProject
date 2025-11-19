@@ -1,6 +1,8 @@
 import dash
 from dash import html, dcc, Input, Output
 import backend.trending as trending_backend
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 dash.register_page(__name__, path='/trending')
 
@@ -37,7 +39,8 @@ def trending_layout():
 
             # Container for trending book cards
             html.Div(id='trending-books-container', className='trending-books-container')
-        ], className="trending-app-container")
+        ], className="trending-app-container"),
+        create_chatbot_component('trending')
     ])
 
 
@@ -45,7 +48,6 @@ def layout():
     return html.Div([
         # Store for checking login status
         dcc.Store(id='trending-session-check', data={}),
-
         html.Div(id='trending-content')
     ])
 
@@ -99,3 +101,7 @@ def update_trending_books(user_session):
             for book in books
         ], className='trending-books-grid')
     ])
+
+
+# Register chatbot callbacks for trending page
+register_chatbot_callbacks('trending')

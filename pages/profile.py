@@ -6,6 +6,8 @@ import backend.friends as friends_backend
 import backend.rewards as rewards_backend
 import backend.bookshelf as bookshelf_backend
 import backend.reading_goals as reading_goals_backend
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 from datetime import datetime, date
 
@@ -669,7 +671,8 @@ def layout(username=None, **kwargs):
             html.Div(id='username-store', children=username,
                      style={'display': 'none'})
 
-        ], className="app-container", id="profile-container")
+        ], className="app-container", id="profile-container"),
+        create_chatbot_component('profile')
     ])
 
 
@@ -2136,3 +2139,5 @@ def populate_book_dropdown(n_clicks, session_data):
     options.sort(key=lambda x: x['label'])
 
     return options
+
+register_chatbot_callbacks('profile')

@@ -1,6 +1,8 @@
 import dash
 from dash import html, dcc, Input, Output
 import backend.showcase as showcase_backend
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 dash.register_page(__name__, path='/showcase')
 
@@ -38,7 +40,9 @@ def showcase_layout():
 
             # Scrollable book section
             html.Div(id='showcase-books-container', className='showcase-books-container')
-        ], className="app-container")
+        ], className="app-container"),
+        create_chatbot_component('showcase')
+
     ])
 
 
@@ -106,3 +110,4 @@ def update_showcase_books(user_session):
         ], className='showcase-book-card')
         for book in books
     ], className='showcase-books-grid')
+register_chatbot_callbacks('showcase')
