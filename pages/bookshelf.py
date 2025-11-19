@@ -5,6 +5,8 @@ from backend.bookshelf import shelf_mapping, tab_info, empty_messages
 import backend.reviews as reviews_backend
 from backend.favorites import is_book_favorited
 from datetime import datetime, date
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 dash.register_page(__name__, path='/profile/bookshelf')
 
@@ -22,6 +24,7 @@ layout = html.Div([
         html.Button("Rented", id="bookshelf-rented-tab",
                     className="card bookshelf-tab")
     ], className='bookshelf-tabs-container'),
+    create_chatbot_component('bookshelf'),
 
     # Tab content
     html.Div(id='bookshelf-tab-content', children=[
@@ -321,3 +324,4 @@ def handle_confirmed_removal(confirm_clicks, session_data, book_id, current_trig
         return current_trigger + 1, {'display': 'none'}
     else:
         return dash.no_update, {'display': 'none'}
+register_chatbot_callbacks('bookshelf')

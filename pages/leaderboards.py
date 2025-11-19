@@ -1,6 +1,8 @@
 import dash
 from dash import html, dcc, Input, Output, State
 import backend.leaderboards as leaderboard_backend
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 dash.register_page(__name__, path='/leaderboards')
 
@@ -62,7 +64,8 @@ def leaderboards_layout():
             # Hidden store for selected tab
             dcc.Store(id='leaderboard-scope', data='friends'),
 
-        ], className="leader-app-container")
+        ], className="leader-app-container"),
+        create_chatbot_component('leaderboards')
     ])
 
 
@@ -158,3 +161,4 @@ def update_leaderboard(time_window, scope, user_session):
         )
 
     return html.Div(rows, className="leaderboard-list")
+register_chatbot_callbacks('leaderboards')

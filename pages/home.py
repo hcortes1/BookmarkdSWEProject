@@ -2,6 +2,8 @@ import dash
 from dash import html, dcc, Input, Output, State
 from backend.gemini_helper import get_book_recommendation_chat
 import backend.home as home_backend
+from backend.chatbot_component import create_chatbot_component
+from backend.chatbot_callbacks import register_chatbot_callbacks
 
 dash.register_page(__name__, path='/')
 
@@ -62,108 +64,8 @@ def homefeed_layout():
                 ], className="home-section")
             ], className="home-sections-grid"),
         ], className="app-container"),
-
-        # Floating Chat Assistant
-        html.Div([
-            html.Button(
-                "💬",
-                id='chat-toggle-btn',
-                style={
-                    'position': 'fixed',
-                    'bottom': '20px',
-                    'right': '20px',
-                    'width': '60px',
-                    'height': '60px',
-                    'borderRadius': '50%',
-                    'backgroundColor': 'var(--link-color)',
-                    'color': 'var(--button-text-color)',
-                    'border': 'none',
-                    'fontSize': '24px',
-                    'cursor': 'pointer',
-                    'boxShadow': '0 4px 12px rgba(0,0,0,0.3)',
-                    'zIndex': '3000'
-                }
-            ),
-
-            html.Div([
-                html.Div([
-                    html.Span("Bookmarkd Librarian", style={
-                              'fontWeight': 'bold', 'fontSize': '16px'}),
-                    html.Button('×', id='chat-close-btn', style={
-                        'background': 'none',
-                        'border': 'none',
-                        'fontSize': '24px',
-                        'cursor': 'pointer',
-                        'color': 'white'
-                    })
-                ], style={
-                    'display': 'flex',
-                    'justifyContent': 'space-between',
-                    'alignItems': 'center',
-                    'padding': '15px',
-                    'borderBottom': '1px solid #ddd',
-                    'backgroundColor': 'var(--link-color)',
-                    'color': 'white',
-                    'borderRadius': '12px 12px 0 0'
-                }),
-
-                html.Div(
-                    id='home-chat-display',
-                    children=[
-                        html.P("Hi! I'm your book assistant. Ask me for recommendations or questions about books.",
-                               style={'color': 'var(--text-color-secondary)', 'fontStyle': 'italic', 'fontSize': '14px'})
-                    ],
-                    style={
-                        'height': '350px',
-                        'overflowY': 'auto',
-                        'padding': '15px',
-                        'backgroundColor': 'var(--secondary-bg)'
-                    }
-                ),
-
-                html.Div([
-                    dcc.Input(
-                        id='home-chat-input',
-                        type='text',
-                        placeholder='Ask me anything about books...',
-                        style={
-                            'flex': '1',
-                            'padding': '10px',
-                            'border': '1px solid #ddd',
-                            'borderRadius': '20px',
-                            'marginRight': '10px',
-                            'backgroundColor': 'var(--input-field-bg)',
-                            'color': 'var(--text-color)'
-                        }
-                    ),
-                    html.Button('Send', id='home-chat-send-btn', style={
-                        'padding': '10px 20px',
-                        'backgroundColor': 'var(--link-color)',
-                        'color': 'var(--button-text-color)',
-                        'border': 'none',
-                        'borderRadius': '20px',
-                        'cursor': 'pointer'
-                    })
-                ], style={
-                    'display': 'flex',
-                    'padding': '15px',
-                    'borderTop': '1px solid #ddd',
-                    'backgroundColor': 'var(--secondary-bg)'
-                })
-            ], id='home-chat-window', style={
-                'display': 'none',
-                'position': 'fixed',
-                'bottom': '90px',
-                'right': '20px',
-                'width': '350px',
-                'backgroundColor': 'var(--secondary-bg)',
-                'borderRadius': '12px',
-                'boxShadow': '0 4px 20px rgba(0,0,0,0.3)',
-                'zIndex': '2999'
-            }),
-
-            dcc.Store(id='home-chat-history', data=[])
-        ])
+        #chatbot component
+        create_chatbot_component('home')
     ])
 
 
@@ -408,73 +310,5 @@ def load_ai_recommendations(user_session):
         html.Div(rec_cards, className="rec-scroll-container")
     ])
 
-
-@dash.callback(
-    Output("home-chat-window", "style"),
-    Input("chat-toggle-btn", "n_clicks"),
-    Input("chat-close-btn", "n_clicks"),
-    prevent_initial_call=True
-)
-def toggle_chat(open_click, close_click):
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise dash.exceptions.PreventUpdate
-    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    if button_id == "chat-toggle-btn":
-        return {'display': 'block',
-                'position': 'fixed',
-                'bottom': '90px',
-                'right': '20px',
-                'width': '350px',
-                'backgroundColor': 'var(--secondary-bg)',
-                'borderRadius': '12px',
-                'boxShadow': '0 4px 20px rgba(0,0,0,0.3)',
-                'zIndex': '2999'}
-    elif button_id == "chat-close-btn":
-        return {'display': 'none'}
-    else:
-        raise dash.exceptions.PreventUpdate
-
-
-@dash.callback(
-    Output("home-chat-display", "children"),
-    Output("home-chat-history", "data"),
-    Output("home-chat-input", "value"),
-    Input("home-chat-send-btn", "n_clicks"),
-    State("home-chat-input", "value"),
-    State("home-chat-history", "data"),
-    prevent_initial_call=True
-)
-def update_chat(n_clicks, user_input, history):
-    if not user_input:
-        raise dash.exceptions.PreventUpdate
-
-    history.append({'role': 'user', 'content': user_input})
-
-    success, ai_response = get_book_recommendation_chat(user_input)
-    if not success:
-        ai_response = "Sorry, I'm having trouble connecting right now. Please try again later."
-
-    # split ai response by newlines to create multiple message bubbles
-    response_parts = [part.strip()
-                      for part in ai_response.split('\n\n') if part.strip()]
-
-    # add each part as a separate message
-    for part in response_parts:
-        history.append({'role': 'ai', 'content': part})
-
-    chat_display = []
-    for msg in history:
-        if msg['role'] == 'user':
-            chat_display.append(
-                html.Div(
-                    [html.Div(msg['content'], className="chat-bubble user-bubble")])
-            )
-        else:
-            chat_display.append(
-                html.Div(
-                    [dcc.Markdown(msg['content'], className="chat-bubble ai-bubble")])
-            )
-
-    return chat_display, history, ""
+# Register chatbot callbacks
+register_chatbot_callbacks('home')

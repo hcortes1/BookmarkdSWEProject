@@ -32,6 +32,7 @@ app.layout = html.Div(id="main-app-container", children=[
     dcc.Store(id="search-data-store", storage_type="memory", data={}),
     dcc.Store(id="mobile-menu-store",
               storage_type="memory", data={"open": False}),
+    dcc.Store(id="global-chat-history", storage_type="session", data=[]),
     html.Div(id='dummy-output', style={'display': 'none'}),
 
     html.Div(id='header', className="header", children=[
