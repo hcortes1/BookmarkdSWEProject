@@ -123,70 +123,119 @@ def ai_content_moderation(text, context="general"):
         context: "review", "profile", "username", "recommendation", "general"
     
     Returns:
-        tuple: (is_approved: bool, reason: str)
+        tuple: (is_approved: bool, reason: str, violation_type: str)
     """
     
     # Context-specific instructions
     if context == "review":
         content_description = "a book review"
         reject_criteria = """
-- Hate speech or discriminatory content
-- Spam patterns (repeated characters, promotional links)
-- Threats or harassment
-- Content completely unrelated to books
+REJECT ONLY if the text contains:
+1. SEVERE hate speech or explicit discriminatory content
+2. OBVIOUS spam (e.g., "click here", repeated URLs, "buy now", external links)
+3. Direct threats or targeted harassment
+4. Content completely unrelated to books
+
+PROMOTIONAL CONTENT - Flag as "promotional" if:
+- Contains promotional language like "check out my book", "buy my book", "visit my site"
+- Includes multiple external links or website URLs
+- Self-promotion of the reviewer's own work
+
+BE LENIENT with:
+- Strong opinions (even negative ones) about books are allowed
+- Casual language and slang
+- Criticism of books, authors, or genres
+- Personal reading experiences and preferences
 """
     elif context == "profile":
         content_description = "a user profile bio"
         reject_criteria = """
-- Hate speech or discriminatory content
-- Spam patterns (repeated characters, promotional links)
-- Threats or harassment
-- Explicit sexual content
+REJECT ONLY if the text contains:
+1. SEVERE hate speech or explicit discriminatory content
+2. OBVIOUS spam or promotional links
+3. Direct threats or harassment
+
+PROMOTIONAL CONTENT - Flag as "promotional" if:
+- Contains business promotion or advertising
+- User is telling someone to buy their book or buy their service
+- Multiple external links or website URLs
+- Selling products or services
+
+BE LENIENT with:
+- Any reasonable personal bio
+- Mentioning favorite books or authors
+- Links to social media or personal blogs (1-2 links is fine)
+- Creative or quirky bios
 """
     elif context == "username":
         content_description = "a username"
         reject_criteria = """
-- Hate speech or discriminatory content
-- Impersonation attempts
-- Explicit sexual content
+REJECT ONLY if the username:
+1. Contains hate speech or slurs
+2. Is clearly impersonating someone else (e.g., "officialCEO", "realAuthorName")
+3. Contains explicit sexual content
+
+BE LENIENT with:
+- Creative or unusual names
+- References to books, characters, or authors
+- Numbers, underscores, or special characters
 """
     elif context == "recommendation":
         content_description = "a book recommendation message"
         reject_criteria = """
-- Hate speech or discriminatory content
-- Spam patterns (repeated characters, promotional links)
-- Threats or harassment
+REJECT ONLY if the text contains:
+1. SEVERE hate speech or explicit discriminatory content
+2. OBVIOUS spam patterns
+3. Direct threats or harassment
+
+BE LENIENT with:
+- Enthusiastic book recommendations
+- Strong opinions about books
+- Personal anecdotes related to reading
 """
     else:
         content_description = "user-generated content"
         reject_criteria = """
-- Hate speech or discriminatory content
-- Spam patterns
-- Threats or harassment
+REJECT ONLY if the text contains:
+1. SEVERE hate speech or explicit discriminatory content
+2. OBVIOUS spam patterns
+3. Direct threats or harassment
+
+BE LENIENT with:
+- Casual language and opinions
+- Criticism and debate
+- Personal experiences
 """
     
     system_instruction = f"""
-You are a content moderator for a book social platform.
+You are a content moderator for a book social platform. Your goal is to create a welcoming community while being LENIENT with genuine users.
 
-Review the user's text which is {content_description}.
+Review this {content_description}.
 
-REJECT if the text contains:
 {reject_criteria}
 
-APPROVE if:
-- It's genuine user-generated content
-- It doesn't violate the above criteria
-- For profiles: any reasonable bio is acceptable
-- For usernames: any reasonable name is acceptable
+IMPORTANT: Be lenient and assume good intent. Most content should be APPROVED.
 
 Respond ONLY in valid JSON format:
+
+If APPROVED:
 {{
   "approved": true,
+  "violation_type": "none",
   "reason": ""
 }}
-OR
+
+If REJECTED for promotional content:
 {{
   "approved": false,
+  "violation_type": "promotional",
+  "reason": "Brief explanation"
+}}
+
+If REJECTED for other reasons:
+{{
+  "approved": false,
+  "violation_type": "inappropriate",
   "reason": "Brief specific explanation"
 }}
 """
@@ -209,17 +258,18 @@ OR
         result = json.loads(response_text)
         
         is_approved = result.get('approved', False)
-        reason = result.get('reason', 'Content flagged by AI moderation')
+        violation_type = result.get('violation_type', 'inappropriate')
+        reason = result.get('reason', 'Content flagged by moderation')
         
-        return is_approved, reason
+        return is_approved, reason, violation_type
         
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {e}")
         print(f"Response was: {response_text}")
-        return True, ""
+        return True, "", "none"
     except Exception as e:
         print(f"AI moderation error: {e}")
-        return True, ""
+        return True, "", "none"
 
 
 def moderate_review(text, context="general"):
@@ -248,12 +298,18 @@ def moderate_review(text, context="general"):
         return False, reason, "simple"
     
     # Layer 2: AI moderation - context-specific
-    is_approved, ai_reason = ai_content_moderation(text, context)
+    is_approved, ai_reason, violation_type = ai_content_moderation(text, context)
     
-    print(f"DEBUG MODERATION: Layer 2 result - is_approved: {is_approved}, reason: '{ai_reason}'")
+    print(f"DEBUG MODERATION: Layer 2 result - is_approved: {is_approved}, violation_type: '{violation_type}', reason: '{ai_reason}'")
     
     if not is_approved:
-        return False, ai_reason, "ai"
+        # Customize the message based on violation type
+        if violation_type == "promotional":
+            final_reason = "This content appears to be promotional. Please keep your posts focused on genuine book discussions and recommendations."
+        else:
+            final_reason = ai_reason if ai_reason else "Your content violates our community guidelines. Please revise and try again."
+        
+        return False, final_reason, "ai"
     
     print(f"DEBUG MODERATION: PASSED both layers")
     return True, "", "none"
