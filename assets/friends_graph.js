@@ -1,10 +1,28 @@
 // friends graph hover effects
 document.addEventListener('DOMContentLoaded', function() {
-    // wait for cytoscape to be ready
-    const checkCytoscape = setInterval(function() {
+    // Use MutationObserver to watch for the friends-network element being added
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.id === 'friends-network' || (node.querySelector && node.querySelector('#friends-network'))) {
+                    attachHoverEffects();
+                }
+            });
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Also try to attach immediately in case it's already there
+    attachHoverEffects();
+
+    function attachHoverEffects() {
         const cyElement = document.getElementById('friends-network');
-        if (cyElement && cyElement._cyreg && cyElement._cyreg.cy) {
+        if (cyElement && cyElement._cyreg && cyElement._cyreg.cy && !cyElement.hasAttribute('data-hover-attached')) {
             const cy = cyElement._cyreg.cy;
+            
+            // Mark as attached
+            cyElement.setAttribute('data-hover-attached', 'true');
             
             // add hover effects
             cy.on('mouseover', 'node', function(evt) {
@@ -52,8 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     duration: 200
                 });
             });
-            
-            clearInterval(checkCytoscape);
         }
-    }, 100);
+    }
 });
