@@ -1460,7 +1460,8 @@ def create_friends_tab_content(user_data, is_own_profile):
     fof_connections = {}  # fof_username -> list of direct friend usernames
     for friend in friends:
         try:
-            friend_friends_data = friends_backend.get_friends_list(str(friend['user_id']))
+            friend_friends_data = friends_backend.get_friends_list(
+                str(friend['user_id']))
             for f in friend_friends_data:
                 fof_username = f['username']
                 if fof_username not in friend_usernames and fof_username != user_data['username']:
@@ -1481,7 +1482,8 @@ def create_friends_tab_content(user_data, is_own_profile):
             # Calculate average angle of connected direct friends
             angles = []
             for cf_username in connected_friends:
-                idx = next((i for i, fr in enumerate(friends) if fr['username'] == cf_username), 0)
+                idx = next((i for i, fr in enumerate(friends)
+                           if fr['username'] == cf_username), 0)
                 angle = (2 * math.pi * idx) / len(friends) if friends else 0
                 angles.append(angle)
             avg_angle = sum(angles) / len(angles)
@@ -1490,7 +1492,7 @@ def create_friends_tab_content(user_data, is_own_profile):
         if avg_angle not in angle_groups:
             angle_groups[avg_angle] = []
         angle_groups[avg_angle].append(username)
-    
+
     for avg_angle, group in angle_groups.items():
         n = len(group)
         for i, username in enumerate(group):
@@ -1541,7 +1543,8 @@ def create_friends_tab_content(user_data, is_own_profile):
     # Add edges from friends to their friends of friends
     for friend in friends:
         try:
-            friend_friends_data = friends_backend.get_friends_list(str(friend['user_id']))
+            friend_friends_data = friends_backend.get_friends_list(
+                str(friend['user_id']))
             for f in friend_friends_data:
                 fof_username = f['username']
                 if fof_username in friends_of_friends_usernames:
@@ -1618,18 +1621,17 @@ def create_friends_tab_content(user_data, is_own_profile):
             {
                 'selector': 'node[type="friend_of_friend"]',
                 'style': {
-                    'width': '30px',
-                    'height': '30px',
-                    'background-color': 'rgba(128, 128, 128, 0.6)',
+                    'width': '25px',
+                    'height': '25px',
                     'background-image': 'data(image)',
                     'background-fit': 'cover',
                     'background-clip': 'node',
+                    'background-saturation': 0,
+                    'background-blacken': 0.5,
                     'cursor': 'pointer',
-                    'transition-property': 'width, height',
-                    'transition-duration': '0.2s',
                     'label': 'data(hoverLabel)',
-                    'text-valign': 'bottom',
-                    'text-margin-y': 5,
+                    'text-valign': 'top',
+                    'text-margin-y': -5,
                     'color': '#ffffff',
                     'font-size': '10px',
                     'font-weight': 'bold',
@@ -1638,13 +1640,6 @@ def create_friends_tab_content(user_data, is_own_profile):
                     'text-background-padding': '3px',
                     'text-background-shape': 'roundrectangle',
                     'shape': 'ellipse'
-                }
-            },
-            {
-                'selector': 'node[type="friend_of_friend"]:hover',
-                'style': {
-                    'width': '40px',
-                    'height': '40px'
                 }
             },
             {

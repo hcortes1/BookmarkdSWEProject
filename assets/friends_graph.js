@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (nodeType === 'center') {
                     baseSize = 80;
                 } else if (nodeType === 'friend_of_friend') {
-                    baseSize = 30;
+                    baseSize = 25;
                 }
                 
                 node.animate({
