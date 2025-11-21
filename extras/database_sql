@@ -50,15 +50,6 @@ CREATE TABLE public.bookshelf (
   CONSTRAINT bookshelf_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
   CONSTRAINT bookshelf_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.books(book_id)
 );
-CREATE TABLE public.chatbot_logs (
-  log_id integer NOT NULL DEFAULT nextval('chatbot_logs_log_id_seq'::regclass),
-  user_id integer NOT NULL,
-  message text,
-  response text,
-  created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT chatbot_logs_pkey PRIMARY KEY (log_id),
-  CONSTRAINT chatbot_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
-);
 CREATE TABLE public.feed (
   feed_id integer NOT NULL DEFAULT nextval('feed_feed_id_seq'::regclass),
   user_id integer NOT NULL,
@@ -84,15 +75,6 @@ CREATE TABLE public.friends (
   CONSTRAINT friends_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
   CONSTRAINT friends_friend_id_fkey FOREIGN KEY (friend_id) REFERENCES public.users(user_id)
 );
-CREATE TABLE public.leaderboards (
-  leaderboard_id integer NOT NULL DEFAULT nextval('leaderboards_leaderboard_id_seq'::regclass),
-  user_id integer NOT NULL,
-  score integer NOT NULL,
-  rank_position integer,
-  calculated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT leaderboards_pkey PRIMARY KEY (leaderboard_id),
-  CONSTRAINT leaderboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
-);
 CREATE TABLE public.moderation_reports (
   report_id integer NOT NULL DEFAULT nextval('moderation_reports_report_id_seq'::regclass),
   user_id integer NOT NULL,
@@ -112,6 +94,8 @@ CREATE TABLE public.reading_goals (
   start_date date,
   end_date date,
   reminder_enabled boolean DEFAULT false,
+  goal_type character varying DEFAULT 'pages_per_day'::character varying,
+  book_name text,
   CONSTRAINT reading_goals_pkey PRIMARY KEY (goal_id),
   CONSTRAINT reading_goals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
@@ -158,23 +142,6 @@ CREATE TABLE public.rewards (
   CONSTRAINT rewards_pkey PRIMARY KEY (reward_id),
   CONSTRAINT rewards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
-CREATE TABLE public.sponsored_books (
-  sponsor_id integer NOT NULL DEFAULT nextval('sponsored_books_sponsor_id_seq'::regclass),
-  book_id integer NOT NULL,
-  sponsor_name character varying,
-  start_date date,
-  end_date date,
-  CONSTRAINT sponsored_books_pkey PRIMARY KEY (sponsor_id),
-  CONSTRAINT sponsored_books_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.books(book_id)
-);
-CREATE TABLE public.trending (
-  trend_id integer NOT NULL DEFAULT nextval('trending_trend_id_seq'::regclass),
-  book_id integer NOT NULL,
-  score integer NOT NULL,
-  calculated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT trending_pkey PRIMARY KEY (trend_id),
-  CONSTRAINT trending_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.books(book_id)
-);
 CREATE TABLE public.users (
   user_id integer NOT NULL DEFAULT nextval('users_user_id_seq'::regclass),
   username character varying NOT NULL UNIQUE,
@@ -194,14 +161,7 @@ CREATE TABLE public.users (
   token_expires_at timestamp without time zone,
   reset_password_token character varying,
   reset_token_expires_at timestamp without time zone,
+  remember_token character varying,
+  remember_token_expires timestamp without time zone,
   CONSTRAINT users_pkey PRIMARY KEY (user_id)
-);
-CREATE TABLE public.wishlist (
-  wishlist_id integer NOT NULL DEFAULT nextval('wishlist_wishlist_id_seq'::regclass),
-  user_id integer NOT NULL,
-  book_id integer NOT NULL,
-  alert boolean DEFAULT false,
-  CONSTRAINT wishlist_pkey PRIMARY KEY (wishlist_id),
-  CONSTRAINT wishlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
-  CONSTRAINT wishlist_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.books(book_id)
 );
