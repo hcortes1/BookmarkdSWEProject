@@ -9,15 +9,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // add hover effects
             cy.on('mouseover', 'node', function(evt) {
                 const node = evt.target;
-                const isCenter = node.data('type') === 'center';
+                const nodeType = node.data('type');
                 
                 // Set hover label data field
                 node.data('hoverLabel', node.data('label'));
                 
+                let hoverSize = 75;
+                if (nodeType === 'center') {
+                    hoverSize = 95;
+                } else if (nodeType === 'friend_of_friend') {
+                    hoverSize = 40;
+                }
+                
                 node.animate({
                     style: {
-                        'width': isCenter ? '95px' : '75px',
-                        'height': isCenter ? '95px' : '75px'
+                        'width': hoverSize + 'px',
+                        'height': hoverSize + 'px'
                     },
                     duration: 200
                 });
@@ -25,15 +32,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             cy.on('mouseout', 'node', function(evt) {
                 const node = evt.target;
-                const isCenter = node.data('type') === 'center';
+                const nodeType = node.data('type');
                 
                 // Clear hover label data field
                 node.data('hoverLabel', '');
                 
+                let baseSize = 60;
+                if (nodeType === 'center') {
+                    baseSize = 80;
+                } else if (nodeType === 'friend_of_friend') {
+                    baseSize = 30;
+                }
+                
                 node.animate({
                     style: {
-                        'width': isCenter ? '80px' : '60px',
-                        'height': isCenter ? '80px' : '60px'
+                        'width': baseSize + 'px',
+                        'height': baseSize + 'px'
                     },
                     duration: 200
                 });

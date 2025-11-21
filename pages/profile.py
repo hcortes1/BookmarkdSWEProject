@@ -1454,6 +1454,64 @@ def create_friends_tab_content(user_data, is_own_profile):
             }
         })
 
+    # Collect friends of friends
+    friends_of_friends_usernames = set()
+    fof_data = {}
+    fof_connections = {}  # fof_username -> list of direct friend usernames
+    for friend in friends:
+        try:
+            friend_friends_data = friends_backend.get_friends_list(str(friend['user_id']))
+            for f in friend_friends_data:
+                fof_username = f['username']
+                if fof_username not in friend_usernames and fof_username != user_data['username']:
+                    friends_of_friends_usernames.add(fof_username)
+                    fof_data[fof_username] = f['profile_image_url'] or '/assets/svg/default-profile.svg'
+                    if fof_username not in fof_connections:
+                        fof_connections[fof_username] = []
+                    fof_connections[fof_username].append(friend['username'])
+        except Exception as e:
+            print(f"Error fetching friends for {friend['username']}: {e}")
+
+    # Add friends of friends nodes positioned near their connected friends
+    outer_radius = 180
+    angle_groups = {}
+    for username in friends_of_friends_usernames:
+        connected_friends = fof_connections.get(username, [])
+        if connected_friends:
+            # Calculate average angle of connected direct friends
+            angles = []
+            for cf_username in connected_friends:
+                idx = next((i for i, fr in enumerate(friends) if fr['username'] == cf_username), 0)
+                angle = (2 * math.pi * idx) / len(friends) if friends else 0
+                angles.append(angle)
+            avg_angle = sum(angles) / len(angles)
+        else:
+            avg_angle = 0
+        if avg_angle not in angle_groups:
+            angle_groups[avg_angle] = []
+        angle_groups[avg_angle].append(username)
+    
+    for avg_angle, group in angle_groups.items():
+        n = len(group)
+        for i, username in enumerate(group):
+            if n == 1:
+                angle = avg_angle
+            else:
+                # Spread over a small arc of 0.5 radians
+                spread = 0.5
+                angle = avg_angle + (i - (n-1)/2) * (spread / max(1, n-1))
+            x = center_x + outer_radius * math.cos(angle)
+            y = center_y + outer_radius * math.sin(angle)
+            elements.append({
+                'data': {
+                    'id': username,
+                    'label': username,
+                    'image': fof_data[username],
+                    'type': 'friend_of_friend'
+                },
+                'position': {'x': x, 'y': y}
+            })
+
     # Add edges between friends who are also friends with each other (mutual friends)
     for i, friend1 in enumerate(friends):
         # Get this friend's friends list from backend
@@ -1479,6 +1537,23 @@ def create_friends_tab_content(user_data, is_own_profile):
                         'type': 'mutual'
                     }
                 })
+
+    # Add edges from friends to their friends of friends
+    for friend in friends:
+        try:
+            friend_friends_data = friends_backend.get_friends_list(str(friend['user_id']))
+            for f in friend_friends_data:
+                fof_username = f['username']
+                if fof_username in friends_of_friends_usernames:
+                    elements.append({
+                        'data': {
+                            'source': friend['username'],
+                            'target': fof_username,
+                            'type': 'friend_to_fof'
+                        }
+                    })
+        except Exception as e:
+            print(f"Error fetching friends for {friend['username']}: {e}")
 
     # Create Cytoscape graph without labels
     cytoscape_graph = cyto.Cytoscape(
@@ -1541,11 +1616,52 @@ def create_friends_tab_content(user_data, is_own_profile):
                 }
             },
             {
+                'selector': 'node[type="friend_of_friend"]',
+                'style': {
+                    'width': '30px',
+                    'height': '30px',
+                    'background-color': 'rgba(128, 128, 128, 0.6)',
+                    'background-image': 'data(image)',
+                    'background-fit': 'cover',
+                    'background-clip': 'node',
+                    'cursor': 'pointer',
+                    'transition-property': 'width, height',
+                    'transition-duration': '0.2s',
+                    'label': 'data(hoverLabel)',
+                    'text-valign': 'bottom',
+                    'text-margin-y': 5,
+                    'color': '#ffffff',
+                    'font-size': '10px',
+                    'font-weight': 'bold',
+                    'text-background-color': 'rgba(0, 0, 0, 0.7)',
+                    'text-background-opacity': 1,
+                    'text-background-padding': '3px',
+                    'text-background-shape': 'roundrectangle',
+                    'shape': 'ellipse'
+                }
+            },
+            {
+                'selector': 'node[type="friend_of_friend"]:hover',
+                'style': {
+                    'width': '40px',
+                    'height': '40px'
+                }
+            },
+            {
                 'selector': 'edge',
                 'style': {
                     'width': 1.5,
                     'line-color': '#007bff',
                     'line-style': 'dashed',
+                    'curve-style': 'bezier'
+                }
+            },
+            {
+                'selector': 'edge[type="friend_to_fof"]',
+                'style': {
+                    'width': 1,
+                    'line-color': '#999999',
+                    'line-style': 'dotted',
                     'curve-style': 'bezier'
                 }
             },
@@ -2139,5 +2255,6 @@ def populate_book_dropdown(n_clicks, session_data):
     options.sort(key=lambda x: x['label'])
 
     return options
+
 
 register_chatbot_callbacks('profile')
