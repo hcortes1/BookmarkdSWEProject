@@ -202,36 +202,13 @@ def resend_verification_email(user_id: int) -> Dict[str, Any]:
 
     except Exception as e:
         return {'success': False, 'message': f'Error: {str(e)}'}
-def create_reading_goal_reminder(user_id: int, goal_id: int, message: str) -> Dict[str, Any]:
-    """
-    Create a reminder notification for a reading goal.
-    This is called when a goal is created with reminders enabled.
-    """
-    try:
-        from backend.db import get_conn
-        
-        with get_conn() as conn, conn.cursor() as cur:
-            # Insert notification into notifications table
-            # Note: You'll need to add a 'reading_goal_reminder' type to your notifications system
-            cur.execute("""
-                INSERT INTO notifications (user_id, type, message, related_id, created_at)
-                VALUES (%s, 'reading_goal_reminder', %s, %s, NOW())
-                RETURNING notification_id
-            """, (user_id, message, goal_id))
-            
-            notification_id = cur.fetchone()[0]
-            conn.commit()
-            
-            return {'success': True, 'notification_id': notification_id}
     
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
-
 
 def get_reading_goal_reminders(user_id: int) -> List[Dict[str, Any]]:
     """
     Get active reading goal reminders for a user.
     These are shown in the notifications page.
+    Reminders are dynamically generated from reading_goals table.
     """
     try:
         from backend.db import get_conn
@@ -241,27 +218,36 @@ def get_reading_goal_reminders(user_id: int) -> List[Dict[str, Any]]:
             # Get goals that have reminders enabled and are not completed
             cur.execute("""
                 SELECT 
-                    rg.goal_id,
-                    rg.target_books,
-                    rg.progress,
-                    rg.start_date,
-                    rg.end_date,
-                    rg.created_at,
-                    b.book_id,
-                    b.title as book_title,
-                    b.cover_url as book_cover_url
-                FROM reading_goals rg
-                LEFT JOIN books b ON rg.book_id = b.book_id
-                WHERE rg.user_id = %s 
-                  AND rg.reminder_enabled = TRUE
-                  AND rg.progress < rg.target_books
-                  AND (rg.end_date IS NULL OR rg.end_date >= CURRENT_DATE)
-                ORDER BY rg.end_date ASC NULLS LAST
+                    goal_id,
+                    user_id,
+                    target_books,
+                    progress,
+                    start_date,
+                    end_date,
+                    reminder_enabled,
+                    goal_type,
+                    book_name
+                FROM reading_goals
+                WHERE user_id = %s 
+                  AND reminder_enabled = TRUE
+                  AND progress < target_books
+                  AND (end_date IS NULL OR end_date >= CURRENT_DATE)
+                ORDER BY end_date ASC NULLS LAST
             """, (user_id,))
             
             goals = cur.fetchall()
-            return [dict(g) for g in goals]
-    
+            
+            # Convert to list of dicts and add fields for compatibility with notification system
+            result = []
+            for g in goals:
+                goal_dict = dict(g)
+                # Map book_name to book_title for backward compatibility with notification display
+                goal_dict['book_title'] = goal_dict.get('book_name')
+                goal_dict['book_id'] = None
+                goal_dict['book_cover_url'] = None
+                goal_dict['created_at'] = goal_dict.get('start_date')  # Use start_date as timestamp
+                result.append(goal_dict)
+            return result
     except Exception as e:
         print(f"Error getting reading goal reminders: {e}")
         return []
